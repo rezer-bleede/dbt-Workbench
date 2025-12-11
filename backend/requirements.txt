@@ -11,3 +11,4 @@ aiofiles==23.2.1
 sse-starlette==1.8.2
 sqlalchemy==2.0.31
 psycopg2-binary==2.9.9
+croniter==6.0.0

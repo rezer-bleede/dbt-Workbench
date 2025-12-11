@@ -10,6 +10,8 @@ from typing import Dict, List, Optional, Any, AsyncGenerator
 import hashlib
 
 from app.core.config import get_settings
+from app.database.connection import SessionLocal
+from app.database.models import models as db_models
 from app.schemas.execution import (
     DbtCommand, RunStatus, RunSummary, RunDetail, 
     LogMessage, ArtifactInfo
@@ -220,6 +222,41 @@ class DbtExecutor:
                 ).total_seconds()
         
         finally:
+            # Persist run summary to database run history
+            try:
+                db = SessionLocal()
+                db_run = db.query(db_models.Run).filter(db_models.Run.run_id == run_id).first()
+                if not db_run:
+                    db_run = db_models.Run(
+                        run_id=run_id,
+                        command=run_detail.command.value,
+                        timestamp=run_detail.start_time,
+                        status=run_detail.status.value,
+                        summary={
+                            "description": run_detail.description,
+                            "error_message": run_detail.error_message,
+                            "duration_seconds": run_detail.duration_seconds,
+                            "artifacts_available": run_detail.artifacts_available,
+                        },
+                    )
+                else:
+                    db_run.status = run_detail.status.value
+                    db_run.timestamp = run_detail.start_time
+                    db_run.summary = {
+                        "description": run_detail.description,
+                        "error_message": run_detail.error_message,
+                        "duration_seconds": run_detail.duration_seconds,
+                        "artifacts_available": run_detail.artifacts_available,
+                    }
+                db.add(db_run)
+                db.commit()
+            except Exception:
+                # Database persistence failures must not affect run execution lifecycle
+                pass
+            finally:
+                if 'db' in locals():
+                    db.close()
+
             # Clean up
             if run_id in self.active_runs:
                 del self.active_runs[run_id]

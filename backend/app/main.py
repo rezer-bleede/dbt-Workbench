@@ -2,9 +2,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import artifacts, health, lineage, models, projects, runs, execution, diff
+from app.api.routes import artifacts, health, lineage, models, projects, runs, execution, diff, schedules
 from app.core.config import get_settings
 from app.core.watcher_manager import start_watcher, stop_watcher
+from app.core.scheduler_manager import start_scheduler, stop_scheduler
 from app.database.connection import engine, Base
 import app.database.models.models
 
@@ -14,8 +15,10 @@ async def lifespan(app: FastAPI):
     # Startup
     Base.metadata.create_all(bind=engine)
     start_watcher()
+    await start_scheduler()
     yield
     # Shutdown
+    await stop_scheduler()
     stop_watcher()
 
 
@@ -43,6 +46,7 @@ app.include_router(lineage.router)
 app.include_router(runs.router)
 app.include_router(execution.router)
 app.include_router(diff.router)
+app.include_router(schedules.router)
 
 @app.get("/config")
 async def get_config():

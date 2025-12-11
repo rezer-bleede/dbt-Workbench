@@ -6,6 +6,7 @@ const navItems = [
   { label: 'Lineage', to: '/lineage' },
   { label: 'Runs', to: '/runs' },
   { label: 'Run History', to: '/run-history' },
+  { label: 'Schedules', to: '/schedules' },
   { label: 'Docs', to: '/docs' },
   { label: 'Settings', to: '/settings' },
 ]

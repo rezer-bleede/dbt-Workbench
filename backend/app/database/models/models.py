@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from ..connection import Base
+
 
 class Model(Base):
     __tablename__ = "models"
@@ -19,6 +20,7 @@ class Model(Base):
 
     run = relationship("Run", back_populates="models")
 
+
 class Run(Base):
     __tablename__ = "runs"
 
@@ -32,6 +34,7 @@ class Run(Base):
     models = relationship("Model", back_populates="run")
     tests = relationship("Test", back_populates="run")
     artifacts = relationship("Artifact", back_populates="run")
+
 
 class Lineage(Base):
     __tablename__ = "lineage"
@@ -52,6 +55,7 @@ class ColumnLineage(Base):
     target_node = Column(String, ForeignKey("models.unique_id"))
     run_id = Column(Integer, ForeignKey("runs.id"))
 
+
 class Test(Base):
     __tablename__ = "tests"
 
@@ -64,6 +68,7 @@ class Test(Base):
 
     run = relationship("Run", back_populates="tests")
 
+
 class Artifact(Base):
     __tablename__ = "artifacts"
 
@@ -74,3 +79,120 @@ class Artifact(Base):
     run_id = Column(Integer, ForeignKey("runs.id"))
 
     run = relationship("Run", back_populates="artifacts")
+
+
+class Environment(Base):
+    __tablename__ = "environments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True, nullable=False)
+    description = Column(String, nullable=True)
+    dbt_target_name = Column(String, nullable=True)
+    connection_profile_reference = Column(String, nullable=True)
+    variables = Column(JSON, default=dict)
+    default_retention_policy = Column(JSON, nullable=True)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+
+    schedules = relationship("Schedule", back_populates="environment")
+
+
+class Schedule(Base):
+    __tablename__ = "schedules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    cron_expression = Column(String, nullable=False)
+    timezone = Column(String, nullable=False)
+    dbt_command = Column(String, nullable=False)
+    environment_id = Column(Integer, ForeignKey("environments.id"), nullable=False)
+    notification_config = Column(JSON, default=dict)
+    retry_policy = Column(JSON, default=dict)
+    retention_policy = Column(JSON, nullable=True)
+    catch_up_policy = Column(String, default="skip")
+    overlap_policy = Column(String, default="no_overlap")
+    enabled = Column(Boolean, default=True)
+    status = Column(String, default="active")
+    next_run_time = Column(DateTime)
+    last_run_time = Column(DateTime)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+    created_by = Column(String, nullable=True)
+    updated_by = Column(String, nullable=True)
+
+    environment = relationship("Environment", back_populates="schedules")
+    runs = relationship("ScheduledRun", back_populates="schedule", cascade="all, delete-orphan")
+
+
+class ScheduledRun(Base):
+    __tablename__ = "scheduled_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    schedule_id = Column(Integer, ForeignKey("schedules.id"), nullable=False)
+    triggering_event = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    retry_status = Column(String, nullable=False)
+    attempts_total = Column(Integer, default=0)
+    scheduled_at = Column(DateTime, nullable=False)
+    queued_at = Column(DateTime)
+    started_at = Column(DateTime)
+    finished_at = Column(DateTime)
+    environment_snapshot = Column(JSON, default=dict)
+    command = Column(JSON, default=dict)
+    log_links = Column(JSON, default=dict)
+    artifact_links = Column(JSON, default=dict)
+
+    schedule = relationship("Schedule", back_populates="runs")
+    attempts = relationship("ScheduledRunAttempt", back_populates="scheduled_run", cascade="all, delete-orphan")
+    notification_events = relationship("NotificationEvent", back_populates="scheduled_run", cascade="all, delete-orphan")
+    scheduler_events = relationship("SchedulerEvent", back_populates="scheduled_run", cascade="all, delete-orphan")
+
+
+class ScheduledRunAttempt(Base):
+    __tablename__ = "scheduled_run_attempts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    scheduled_run_id = Column(Integer, ForeignKey("scheduled_runs.id"), nullable=False)
+    attempt_number = Column(Integer, nullable=False)
+    run_id = Column(String, index=True, nullable=True)
+    db_run_id = Column(Integer, ForeignKey("runs.id"), nullable=True)
+    status = Column(String, nullable=False)
+    queued_at = Column(DateTime)
+    started_at = Column(DateTime)
+    finished_at = Column(DateTime)
+    error_message = Column(String, nullable=True)
+
+    scheduled_run = relationship("ScheduledRun", back_populates="attempts")
+    db_run = relationship("Run")
+
+
+class SchedulerEvent(Base):
+    __tablename__ = "scheduler_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    schedule_id = Column(Integer, ForeignKey("schedules.id"), nullable=True)
+    scheduled_run_id = Column(Integer, ForeignKey("scheduled_runs.id"), nullable=True)
+    level = Column(String, default="INFO")
+    event_type = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    details = Column(JSON, default=dict)
+    timestamp = Column(DateTime)
+
+    schedule = relationship("Schedule")
+    scheduled_run = relationship("ScheduledRun", back_populates="scheduler_events")
+
+
+class NotificationEvent(Base):
+    __tablename__ = "notification_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    scheduled_run_id = Column(Integer, ForeignKey("scheduled_runs.id"), nullable=False)
+    channel = Column(String, nullable=False)
+    trigger = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    error_message = Column(String, nullable=True)
+    payload = Column(JSON, default=dict)
+    created_at = Column(DateTime)
+
+    scheduled_run = relationship("ScheduledRun", back_populates="notification_events")

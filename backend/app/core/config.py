@@ -48,6 +48,22 @@ class Settings(BaseSettings):
     max_artifact_sets: int = Field(50, alias="MAX_ARTIFACT_SETS")
     log_buffer_size: int = Field(1000, alias="LOG_BUFFER_SIZE")  # lines
 
+    # Scheduler settings
+    scheduler_enabled: bool = Field(True, alias="SCHEDULER_ENABLED")
+    scheduler_poll_interval_seconds: int = Field(30, alias="SCHEDULER_POLL_INTERVAL_SECONDS")
+    scheduler_max_catchup_runs: int = Field(10, alias="SCHEDULER_MAX_CATCHUP_RUNS")
+    scheduler_default_timezone: str = Field("UTC", alias="SCHEDULER_DEFAULT_TIMEZONE")
+
+    # Notification settings
+    notifications_slack_timeout_seconds: int = Field(10, alias="NOTIFICATIONS_SLACK_TIMEOUT_SECONDS")
+    notifications_webhook_timeout_seconds: int = Field(10, alias="NOTIFICATIONS_WEBHOOK_TIMEOUT_SECONDS")
+    notifications_email_from: str = Field("dbt-workbench@example.com", alias="NOTIFICATIONS_EMAIL_FROM")
+    notifications_email_smtp_host: str = Field("localhost", alias="NOTIFICATIONS_EMAIL_SMTP_HOST")
+    notifications_email_smtp_port: int = Field(25, alias="NOTIFICATIONS_EMAIL_SMTP_PORT")
+    notifications_email_use_tls: bool = Field(False, alias="NOTIFICATIONS_EMAIL_USE_TLS")
+    notifications_email_username: str = Field("", alias="NOTIFICATIONS_EMAIL_USERNAME")
+    notifications_email_password: str = Field("", alias="NOTIFICATIONS_EMAIL_PASSWORD")
+
 
 @lru_cache
 def get_settings() -> Settings:

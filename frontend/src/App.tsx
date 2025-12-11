@@ -10,6 +10,7 @@ import RunsPage from './pages/Runs'
 import RunHistoryPage from './pages/RunHistory'
 import DocsPage from './pages/Docs'
 import SettingsPage from './pages/Settings'
+import SchedulesPage from './pages/Schedules'
 
 function App() {
   const handleRefreshNeeded = (updatedArtifacts: string[]) => {
@@ -35,6 +36,7 @@ function App() {
             <Route path="/lineage" element={<LineagePage />} />
             <Route path="/runs" element={<RunsPage />} />
             <Route path="/run-history" element={<RunHistoryPage />} />
+            <Route path="/schedules" element={<SchedulesPage />} />
             <Route path="/docs" element={<DocsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>

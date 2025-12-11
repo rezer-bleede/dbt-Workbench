@@ -206,3 +206,187 @@ export interface RunArtifactsResponse {
   artifacts: ArtifactInfo[];
   artifacts_path: string;
 }
+
+export type NotificationTrigger =
+  | 'run_started'
+  | 'run_succeeded'
+  | 'run_failed'
+  | 'run_cancelled';
+
+export type NotificationChannelType = 'slack' | 'email' | 'webhook';
+
+export type BackoffStrategy = 'fixed' | 'exponential';
+
+export type CatchUpPolicy = 'skip' | 'catch_up';
+
+export type OverlapPolicy = 'no_overlap' | 'allow_overlap';
+
+export type ScheduleStatus = 'active' | 'paused';
+
+export type RunFinalResult = 'success' | 'failure' | 'cancelled' | 'skipped';
+
+export type RetryStatus = 'not_applicable' | 'in_progress' | 'exhausted';
+
+export interface SlackNotificationConfig {
+  webhook_url: string;
+  triggers: NotificationTrigger[];
+  enabled: boolean;
+}
+
+export interface EmailNotificationConfig {
+  recipients: string[];
+  triggers: NotificationTrigger[];
+  enabled: boolean;
+}
+
+export interface WebhookNotificationConfig {
+  endpoint_url: string;
+  headers: Record<string, string>;
+  triggers: NotificationTrigger[];
+  enabled: boolean;
+}
+
+export interface NotificationConfig {
+  slack?: SlackNotificationConfig;
+  email?: EmailNotificationConfig;
+  webhook?: WebhookNotificationConfig;
+}
+
+export interface RetryPolicy {
+  max_retries: number;
+  delay_seconds: number;
+  backoff_strategy: BackoffStrategy;
+  max_delay_seconds?: number | null;
+}
+
+export type RetentionScope = 'per_schedule' | 'per_environment';
+
+export type RetentionAction = 'archive' | 'delete';
+
+export interface RetentionPolicy {
+  scope: RetentionScope;
+  keep_last_n_runs?: number | null;
+  keep_for_n_days?: number | null;
+  action: RetentionAction;
+}
+
+export interface EnvironmentConfig {
+  id: number;
+  name: string;
+  description?: string | null;
+  dbt_target_name?: string | null;
+  connection_profile_reference?: string | null;
+  variables: Record<string, any>;
+  default_retention_policy?: RetentionPolicy | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScheduleSummary {
+  id: number;
+  name: string;
+  description?: string | null;
+  environment_id: number;
+  dbt_command: DbtCommand;
+  status: ScheduleStatus;
+  next_run_time?: string | null;
+  last_run_time?: string | null;
+  enabled: boolean;
+}
+
+export interface Schedule extends ScheduleSummary {
+  cron_expression: string;
+  timezone: string;
+  notification_config: NotificationConfig;
+  retry_policy: RetryPolicy;
+  retention_policy?: RetentionPolicy | null;
+  catch_up_policy: CatchUpPolicy;
+  overlap_policy: OverlapPolicy;
+  created_at: string;
+  updated_at: string;
+  created_by?: string | null;
+  updated_by?: string | null;
+}
+
+export type TriggeringEvent = 'cron' | 'manual';
+
+export interface ScheduledRunAttempt {
+  id: number;
+  attempt_number: number;
+  run_id?: string | null;
+  status: RunStatus;
+  queued_at?: string | null;
+  started_at?: string | null;
+  finished_at?: string | null;
+  error_message?: string | null;
+}
+
+export interface ScheduledRun {
+  id: number;
+  schedule_id: number;
+  triggering_event: TriggeringEvent;
+  status: RunFinalResult;
+  retry_status: RetryStatus;
+  attempts_total: number;
+  scheduled_at: string;
+  queued_at?: string | null;
+  started_at?: string | null;
+  finished_at?: string | null;
+  environment_snapshot: Record<string, any>;
+  command: Record<string, any>;
+  log_links: Record<string, string>;
+  artifact_links: Record<string, string>;
+  attempts: ScheduledRunAttempt[];
+}
+
+export interface ScheduledRunListResponse {
+  schedule_id: number;
+  runs: ScheduledRun[];
+}
+
+export interface SchedulerOverview {
+  active_schedules: number;
+  paused_schedules: number;
+  next_run_times: Record<number, string | null>;
+  total_scheduled_runs: number;
+  total_successful_runs: number;
+  total_failed_runs: number;
+}
+
+export interface ScheduleMetrics {
+  schedule_id: number;
+  total_runs: number;
+  success_count: number;
+  failure_count: number;
+  cancelled_count: number;
+  skipped_count: number;
+  retry_exhausted_count: number;
+  last_run_status?: RunFinalResult | null;
+  last_run_time?: string | null;
+}
+
+export interface NotificationTestChannelResult {
+  channel: NotificationChannelType;
+  success: boolean;
+  error_message?: string | null;
+}
+
+export interface NotificationTestResponse {
+  results: NotificationTestChannelResult[];
+}
+
+export type ScheduleCreate = Omit<
+  Schedule,
+  | 'id'
+  | 'status'
+  | 'next_run_time'
+  | 'last_run_time'
+  | 'created_at'
+  | 'updated_at'
+  | 'created_by'
+  | 'updated_by'
+>;
+
+export type ScheduleUpdate = Partial<ScheduleCreate> & {
+  updated_by?: string | null;
+};
