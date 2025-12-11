@@ -54,6 +54,7 @@ class LineageGraph(BaseModel):
 
 
 class RunRecord(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     status: Optional[str]
     start_time: Optional[str]
     end_time: Optional[str]

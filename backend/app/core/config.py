@@ -1,6 +1,6 @@
 from functools import lru_cache
 from typing import List
-from pydantic import Field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,10 +18,16 @@ class Settings(BaseSettings):
     postgres_host: str = Field("localhost", alias="POSTGRES_HOST")
     postgres_port: int = Field(5432, alias="POSTGRES_PORT")
     postgres_db: str = Field("dbt_workbench", alias="POSTGRES_DB")
-    database_url: str = Field(
-        "postgresql://user:password@localhost:5432/dbt_workbench",
-        alias="DATABASE_URL"
-    )
+
+    @computed_field
+    @property
+    def database_url(self) -> str:
+        return (
+            f"postgresql://"
+            f"{self.postgres_user}:{self.postgres_password}@"
+            f"{self.postgres_host}:{self.postgres_port}/"
+            f"{self.postgres_db}"
+        )
 
     backend_port: int = Field(8000, alias="BACKEND_PORT")
     dbt_artifacts_path: str = Field("./dbt_artifacts", alias="DBT_ARTIFACTS_PATH")
