@@ -16,6 +16,13 @@ class Settings(BaseSettings):
         default=["manifest.json", "run_results.json", "catalog.json"],
         alias="MONITORED_ARTIFACT_FILES"
     )
+    
+    # dbt execution settings
+    dbt_project_path: str = Field("./dbt_project", alias="DBT_PROJECT_PATH")
+    max_concurrent_runs: int = Field(1, alias="MAX_CONCURRENT_RUNS")
+    max_run_history: int = Field(100, alias="MAX_RUN_HISTORY")
+    max_artifact_sets: int = Field(50, alias="MAX_ARTIFACT_SETS")
+    log_buffer_size: int = Field(1000, alias="LOG_BUFFER_SIZE")  # lines
 
     class Config:
         env_file = ".env"
