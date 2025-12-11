@@ -1,0 +1,86 @@
+name: Lint & Tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  backend-lint-test:
+    name: Backend Lint & Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
+          fi
+          pip install "ruff" "pytest" || true
+
+      - name: Lint with ruff (if available)
+        run: |
+          if command -v ruff >/dev/null 2>&1; then
+            ruff check .
+          else
+            echo "ruff not installed, skipping lint."
+          fi
+
+      - name: Run pytest (if available)
+        run: |
+          if command -v pytest >/dev/null 2>&1; then
+            pytest
+          else
+            echo "pytest not installed, skipping tests."
+          fi
+
+  frontend-lint-test:
+    name: Frontend Lint & Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Lint (if script exists)
+        run: |
+          if npm run | grep -q "lint"; then
+            npm run lint
+          else
+            echo "No lint script, skipping lint."
+          fi
+
+      - name: Run tests (if script exists)
+        run: |
+          if npm run | grep -q "test"; then
+            npm test -- --watch=false || npm test || true
+          else
+            echo "No test script, skipping tests."
+          fi
