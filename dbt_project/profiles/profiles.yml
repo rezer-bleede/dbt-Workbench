@@ -1,0 +1,7 @@
+test_project:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ':memory:'
+      threads: 1

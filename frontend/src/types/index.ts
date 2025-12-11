@@ -69,3 +69,60 @@ export interface VersionCheckResponse {
   current_versions: Record<string, number>
   version_info: Record<string, ArtifactVersionInfo>
 }
+
+// Execution types
+export type RunStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
+export type DbtCommand = 'run' | 'test' | 'seed' | 'docs generate';
+
+export interface RunRequest {
+  command: DbtCommand;
+  parameters?: Record<string, any>;
+  description?: string;
+}
+
+export interface RunSummary {
+  run_id: string;
+  command: DbtCommand;
+  status: RunStatus;
+  start_time: string;
+  end_time?: string;
+  duration_seconds?: number;
+  description?: string;
+  error_message?: string;
+  artifacts_available: boolean;
+}
+
+export interface RunDetail extends RunSummary {
+  parameters: Record<string, any>;
+  log_lines: string[];
+  artifacts_path?: string;
+  dbt_output?: Record<string, any>;
+}
+
+export interface LogMessage {
+  run_id: string;
+  timestamp: string;
+  level: string;
+  message: string;
+  line_number: number;
+}
+
+export interface RunHistoryResponse {
+  runs: RunSummary[];
+  total_count: number;
+  page: number;
+  page_size: number;
+}
+
+export interface ArtifactInfo {
+  filename: string;
+  size_bytes: number;
+  last_modified: string;
+  checksum: string;
+}
+
+export interface RunArtifactsResponse {
+  run_id: string;
+  artifacts: ArtifactInfo[];
+  artifacts_path: string;
+}

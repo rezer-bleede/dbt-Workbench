@@ -1,57 +1,56 @@
-import { useEffect, useState, useCallback } from 'react'
-import { api } from '../api/client'
-import { RunRecord } from '../types'
-import { StatusBadge } from '../components/StatusBadge'
-import { Table } from '../components/Table'
+import React, { useState } from 'react'
+import { RefreshIndicator } from '../components/RefreshIndicator'
 import { useAutoRefresh } from '../hooks/useAutoRefresh'
+import { RunCommand } from '../components/RunCommand'
+import { RunViewer } from '../components/RunViewer'
+import { RunHistory } from '../components/RunHistory'
 
 function RunsPage() {
-  const [runs, setRuns] = useState<RunRecord[]>([])
+  const { isRefreshing, hasUpdates } = useAutoRefresh(['run_results']);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const loadRuns = useCallback(() => {
-    api.get<RunRecord[]>('/runs').then((res) => setRuns(res.data)).catch(() => setRuns([]))
-  }, [])
+  const handleRunStarted = (runId: string) => {
+    setSelectedRunId(runId);
+    setRefreshTrigger(prev => prev + 1);
+  };
 
-  useEffect(() => {
-    loadRuns()
-  }, [loadRuns])
+  const handleRunSelect = (runId: string) => {
+    setSelectedRunId(runId);
+  };
 
-  // Auto-refresh when run_results updates
-  useAutoRefresh({
-    onRunResultsUpdate: loadRuns,
-    onAnyUpdate: (updatedArtifacts) => {
-      console.log('Runs page: artifacts updated:', updatedArtifacts)
-    }
-  })
-
-  // Listen for global refresh events
-  useEffect(() => {
-    const handleArtifactsUpdated = (event: CustomEvent) => {
-      const { updatedArtifacts } = event.detail
-      if (updatedArtifacts.includes('run_results')) {
-        loadRuns()
-      }
-    }
-
-    window.addEventListener('artifactsUpdated', handleArtifactsUpdated as EventListener)
-    return () => {
-      window.removeEventListener('artifactsUpdated', handleArtifactsUpdated as EventListener)
-    }
-  }, [loadRuns])
+  const handleCloseViewer = () => {
+    setSelectedRunId(null);
+  };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Runs</h1>
-      <Table
-        columns={[
-          { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
-          { key: 'start_time', header: 'Start' },
-          { key: 'end_time', header: 'End' },
-          { key: 'duration', header: 'Duration (s)' },
-          { key: 'model_unique_id', header: 'Model ID' },
-        ]}
-        data={runs}
-      />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">dbt Execution</h1>
+        <RefreshIndicator isRefreshing={isRefreshing} hasUpdates={hasUpdates} />
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Run Command Panel */}
+        <div className="lg:col-span-1">
+          <RunCommand onRunStarted={handleRunStarted} />
+        </div>
+
+        {/* Run Viewer or History */}
+        <div className="lg:col-span-2">
+          {selectedRunId ? (
+            <RunViewer 
+              runId={selectedRunId} 
+              onClose={handleCloseViewer}
+            />
+          ) : (
+            <RunHistory 
+              onRunSelect={handleRunSelect}
+              refreshTrigger={refreshTrigger}
+            />
+          )}
+        </div>
+      </div>
     </div>
   )
 }
