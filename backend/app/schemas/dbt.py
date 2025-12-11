@@ -10,7 +10,7 @@ class Model(BaseModel):
     id: int
     unique_id: str
     name: str
-    schema: str = Field(..., alias="schema_")
+    schema_: str = Field(..., alias="schema")
     database: str
     resource_type: str
     columns: dict
@@ -27,7 +27,7 @@ class LineageNode(BaseModel):
     label: str
     type: str
     database: Optional[str] = None
-    schema: Optional[str] = None
+    schema_: Optional[str] = Field(default=None, alias="schema")
     tags: List[str] = Field(default_factory=list)
 
 
@@ -58,7 +58,7 @@ class ColumnNode(BaseModel):
     label: str
     type: str
     database: Optional[str] = None
-    schema: Optional[str] = None
+    schema_: Optional[str] = Field(default=None, alias="schema")
     tags: List[str] = Field(default_factory=list)
     data_type: Optional[str] = None
     description: Optional[str] = None
@@ -82,6 +82,7 @@ class ImpactResponse(BaseModel):
 
 
 class ModelImpactResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
     model_id: str
     impact: ImpactResponse
 
@@ -99,7 +100,7 @@ class ModelLineageDetail(BaseModel):
     children: List[str] = Field(default_factory=list)
     columns: Dict[str, Dict[str, Optional[str]]] = Field(default_factory=dict)
     tags: List[str] = Field(default_factory=list)
-    schema: Optional[str] = None
+    schema_: Optional[str] = Field(default=None, alias="schema")
     database: Optional[str] = None
 
 

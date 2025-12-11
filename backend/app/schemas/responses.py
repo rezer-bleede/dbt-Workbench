@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class HealthResponse(BaseModel):
@@ -20,12 +20,13 @@ class ArtifactSummary(BaseModel):
 
 
 class ModelSummary(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
     unique_id: str
     name: str
     resource_type: str
     depends_on: List[str] = Field(default_factory=list)
     database: Optional[str] = None
-    schema: Optional[str] = None
+    schema_: Optional[str] = Field(default=None, alias="schema")
     alias: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
 

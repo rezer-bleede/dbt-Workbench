@@ -70,7 +70,7 @@ class Artifact(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     checksum = Column(String)
-    metadata = Column(JSON)
+    metadata_ = Column("metadata", JSON)
     run_id = Column(Integer, ForeignKey("runs.id"))
 
     run = relationship("Run", back_populates="artifacts")

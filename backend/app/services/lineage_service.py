@@ -73,7 +73,7 @@ class LineageService:
         tag_groups: Dict[str, List[str]] = defaultdict(list)
 
         for node in nodes:
-            schema_parts = [part for part in [node.database, node.schema] if part]
+            schema_parts = [part for part in [node.database, node.schema_] if part]
             schema_key = ".".join(schema_parts) or "default"
             schema_groups[schema_key].append(node.id)
             resource_groups[node.type].append(node.id)
@@ -218,7 +218,7 @@ class LineageService:
             children=sorted(children),
             columns={name: {"description": meta.get("description"), "type": meta.get("type")} for name, meta in columns.items()},
             tags=node.get("tags", []),
-            schema=node.get("schema"),
+            schema_=node.get("schema"),
             database=node.get("database"),
         )
 
