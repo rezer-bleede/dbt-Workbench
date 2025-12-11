@@ -50,3 +50,22 @@ export interface RunRecord {
   invocation_id?: string
   model_unique_id?: string
 }
+
+export interface ArtifactVersionInfo {
+  current_version: number
+  timestamp: string | null
+  checksum: string | null
+  available_versions: number[]
+  status: {
+    healthy: boolean
+    last_error: string | null
+    last_check: string | null
+  }
+}
+
+export interface VersionCheckResponse {
+  updates_available: Record<string, boolean>
+  any_updates: boolean
+  current_versions: Record<string, number>
+  version_info: Record<string, ArtifactVersionInfo>
+}

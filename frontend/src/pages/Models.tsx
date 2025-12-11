@@ -1,17 +1,45 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { ModelSummary } from '../types'
 import { Table } from '../components/Table'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
 
 function ModelsPage() {
   const [models, setModels] = useState<ModelSummary[]>([])
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
 
-  useEffect(() => {
+  const loadModels = useCallback(() => {
     api.get<ModelSummary[]>('/models').then((res) => setModels(res.data)).catch(() => setModels([]))
   }, [])
+
+  useEffect(() => {
+    loadModels()
+  }, [loadModels])
+
+  // Auto-refresh when manifest updates (models depend on manifest)
+  useAutoRefresh({
+    onManifestUpdate: loadModels,
+    onAnyUpdate: (updatedArtifacts) => {
+      console.log('Models page: artifacts updated:', updatedArtifacts)
+    }
+  })
+
+  // Listen for global refresh events
+  useEffect(() => {
+    const handleArtifactsUpdated = (event: CustomEvent) => {
+      const { updatedArtifacts } = event.detail
+      if (updatedArtifacts.includes('manifest')) {
+        loadModels()
+      }
+    }
+
+    window.addEventListener('artifactsUpdated', handleArtifactsUpdated as EventListener)
+    return () => {
+      window.removeEventListener('artifactsUpdated', handleArtifactsUpdated as EventListener)
+    }
+  }, [loadModels])
 
   const filtered = useMemo(() => {
     return models.filter((model) => model.name.toLowerCase().includes(query.toLowerCase()))

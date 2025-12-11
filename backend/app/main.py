@@ -1,13 +1,28 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import artifacts, health, lineage, models, projects, runs
 from app.core.config import get_settings
+from app.core.watcher_manager import start_watcher, stop_watcher
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    start_watcher()
+    yield
+    # Shutdown
+    stop_watcher()
 
 
 settings = get_settings()
 
-app = FastAPI(title="dbt-Workbench API", version=settings.backend_version)
+app = FastAPI(
+    title="dbt-Workbench API", 
+    version=settings.backend_version,
+    lifespan=lifespan
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,6 +38,18 @@ app.include_router(artifacts.router)
 app.include_router(models.router)
 app.include_router(lineage.router)
 app.include_router(runs.router)
+
+@app.get("/config")
+async def get_config():
+    """Get application configuration."""
+    return {
+        "artifact_watcher": {
+            "max_versions": settings.max_artifact_versions,
+            "monitored_files": settings.monitored_artifact_files,
+            "polling_interval": settings.artifact_polling_interval
+        },
+        "artifacts_path": settings.dbt_artifacts_path
+    }
 
 
 @app.get("/")
