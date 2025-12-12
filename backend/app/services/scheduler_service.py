@@ -309,7 +309,7 @@ class SchedulerService:
                     .first()
                 )
                 if not env:
-                    raise ValueError("Environment does not belong to theid
+                    raise ValueError("Environment does not belong to the active workspace")
         if schedule_in.notification_config is not None:
             db_schedule.notification_config = schedule_in.notification_config.model_dump()
         if schedule_in.retry_policy is not None:

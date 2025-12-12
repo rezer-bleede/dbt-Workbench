@@ -114,8 +114,7 @@ def pause_schedule(
     schedule = scheduler_service.pause_schedule(db, schedule_id, workspace_id=workspace.id)
     if not schedule:
         raise HTTPException(status_code=404, detail="Schedule not found")
-    return sche_codedunewl</e
-e
+    return schedule
 
 
 @router.post(
@@ -163,7 +162,7 @@ async def run_schedule_now(
         query = query.filter(db_models.Environment.workspace_id == workspace.id)
     db_schedule = query.first()
     if not db_schedule:
-        raise HTTPException(status_code=404, detaild")
+        raise HTTPException(status_code=404, detail="Schedule not found")
 
     now = datetime.now(timezone.utc)
     scheduled_run = scheduler_service.create_scheduled_run(
@@ -230,7 +229,7 @@ async def test_notifications(
     request: NotificationTestRequest,
     db: Session = Depends(get_db),
 ) -> NotificationTestResponse:
-
+    pass
 
 
 # Environment endpoints
