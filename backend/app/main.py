@@ -1,13 +1,29 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import artifacts, catalog, health, lineage, models, projects, runs, execution, diff, schedules, sql_workspace
+from app.api.routes import (
+    artifacts,
+    auth,
+    catalog,
+    health,
+    lineage,
+    models,
+    projects,
+    runs,
+    execution,
+    diff,
+    schedules,
+    sql_workspace,
+    workspaces,
+    admin,
+)
 from app.core.config import get_settings
-from app.core.watcher_manager import start_watcher, stop_watcher
 from app.core.scheduler_manager import start_scheduler, stop_scheduler
-from app.database.connection import engine, Base
-import app.database.models.models
+from app.core.watcher_manager import start_watcher, stop_watcher
+from app.database.connection import Base, engine
+import app.database.models.models  # noqa: F401
 
 
 @asynccontextmanager
@@ -25,9 +41,9 @@ async def lifespan(app: FastAPI):
 settings = get_settings()
 
 app = FastAPI(
-    title="dbt-Workbench API", 
+    title="dbt-Workbench API",
     version=settings.backend_version,
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -39,6 +55,9 @@ app.add_middleware(
 )
 
 app.include_router(health.router)
+app.include_router(auth.router)
+app.include_router(workspaces.router)
+app.include_router(admin.router)
 app.include_router(projects.router)
 app.include_router(artifacts.router)
 app.include_router(models.router)
@@ -50,6 +69,7 @@ app.include_router(schedules.router)
 app.include_router(sql_workspace.router)
 app.include_router(catalog.router)
 
+
 @app.get("/config")
 async def get_config():
     """Get application configuration."""
@@ -57,7 +77,7 @@ async def get_config():
         "artifact_watcher": {
             "max_versions": settings.max_artifact_versions,
             "monitored_files": settings.monitored_artifact_files,
-            "polling_interval": settings.artifact_polling_interval
+            "polling_interval": settings.artifact_polling_interval,
         },
         "artifacts_path": settings.dbt_artifacts_path,
         "lineage": {
@@ -71,7 +91,7 @@ async def get_config():
             "max_concurrent_runs": settings.max_concurrent_runs,
             "max_run_history": settings.max_run_history,
             "max_artifact_sets": settings.max_artifact_sets,
-            "log_buffer_size": settings.log_buffer_size
+            "log_buffer_size": settings.log_buffer_size,
         },
         "catalog": {
             "allow_metadata_edits": settings.allow_metadata_edits,
@@ -79,7 +99,19 @@ async def get_config():
             "freshness_threshold_override_minutes": settings.freshness_threshold_override_minutes,
             "validation_severity": settings.validation_severity,
             "statistics_refresh_policy": settings.statistics_refresh_policy,
-        }
+        },
+        "auth": {
+            "enabled": settings.auth_enabled,
+            "single_project_mode": settings.single_project_mode,
+            "access_token_expire_minutes": settings.access_token_expire_minutes,
+            "refresh_token_expire_minutes": settings.refresh_token_expire_minutes,
+            "password_min_length": settings.password_min_length,
+        },
+        "workspaces": {
+            "default_workspace_key": settings.default_workspace_key,
+            "default_workspace_name": settings.default_workspace_name,
+            "single_project_mode": settings.single_project_mode,
+        },
     }
 
 

@@ -54,6 +54,9 @@ function persistState(state: PersistedState) {
 }
 
 function SqlWorkspacePage() {
+  const { user, isAuthEnabled } = useAuth();
+  const isDeveloperOrAdmin = !isAuthEnabled || user?.role === 'developer' || user?.role === 'admin';
+
   const [sqlText, setSqlText] = useState('');
   const [environmentId, setEnvironmentId] = useState<number | ''>('');
   const [environments, setEnvironments] = useState<EnvironmentConfig[]>([]);
@@ -328,6 +331,10 @@ function SqlWorkspacePage() {
   }, [mode, previewResult, result]);
 
   const handleRun = useCallback(async () => {
+    if (!isDeveloperOrAdmin) {
+      setError('You do not have permission to run SQL queries.');
+      return;
+    }
     if (!sqlText.trim() && mode === 'sql') {
       setError('Enter a SQL query to run.');
       return;
@@ -496,11 +503,11 @@ function SqlWorkspacePage() {
           <button
             type="button"
             onClick={handleRun}
-            disabled={isRunning}
+            disabled={isRunning || !isDeveloperOrAdmin}
             className="mt-5 inline-flex items-center px-4 py-2 rounded-md bg-accent text-white text-sm font-medium disabled:opacity-60"
           >
             {isRunning ? 'Running…' : 'Run (Ctrl/Cmd+Enter)'}
-          </button>
+        </  but_codetonewn</>
         </div>
       </div>
 
@@ -693,7 +700,7 @@ function SqlWorkspacePage() {
               <button
                 type="button"
                 onClick={handleRun}
-                disabled={mode !== 'preview' || isRunning}
+                disabled={mode !== 'preview' || isRunning || !isDeveloperOrAdmin}
                 className="w-full mt-2 inline-flex items-center justify-center px-3 py-1.5 rounded-md bg-gray-800 text-gray-100 text-xs disabled:opacity-60"
               >
                 Preview model

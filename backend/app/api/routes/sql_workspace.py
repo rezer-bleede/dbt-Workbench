@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.core.auth import Role, WorkspaceContext, get_current_user, get_current_workspace, require_role
 from app.schemas.sql_workspace import (
     AutocompleteMetadataResponse,
     ModelPreviewRequest,
@@ -17,20 +18,23 @@ from app.services.sql_workspace_service import (
     QueryCancelledError,
     QueryTimeoutError,
     SqlWorkspaceService,
-    get_default_sql_workspace_service,
+    get_sql_workspace_service_for_path,
 )
 
-router = APIRouter(prefix="/sql", tags=["sql"])
+router = APIRouter(prefix="/sql", tags=["sql"], dependencies=[Depends(get_current_user)])
 
 
-def get_service() -> SqlWorkspaceService:
-    return get_default_sql_workspace_service()
+def get_service(
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+) -> SqlWorkspaceService:
+    return get_sql_workspace_service_for_path(workspace.artifacts_path)
 
 
 @router.post(
     "/execute",
     response_model=SqlQueryResult,
     responses={400: {"model": SqlErrorResponse}, 403: {"model": SqlErrorResponse}, 408: {"model": SqlErrorResponse}},
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
 )
 def execute_sql(
     request: SqlQueryRequest,
@@ -60,7 +64,10 @@ def execute_sql(
         ) from exc
 
 
-@router.post("/queries/{query_id}/cancel")
+@router.post(
+    "/queries/{query_id}/cancel",
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
 def cancel_sql_query(
     query_id: str,
     service: SqlWorkspaceService = Depends(get_service),
@@ -71,7 +78,11 @@ def cancel_sql_query(
     return {"query_id": query_id, "status": "not_found_or_completed"}
 
 
-@router.get("/history", response_model=SqlQueryHistoryResponse)
+@router.get(
+    "/history",
+    response_model=SqlQueryHistoryResponse,
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
 def get_sql_history(
     environment_id: Optional[int] = Query(default=None),
     model_ref: Optional[str] = Query(default=None),
@@ -93,14 +104,23 @@ def get_sql_history(
     )
 
 
-@router.get("/metadata", response_model=AutocompleteMetadataResponse)
+@router.get(
+    "/metadata",
+    response_model=AutocompleteMetadataResponse,
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
 def get_sql_metadata(
     service: SqlWorkspaceService = Depends(get_service),
-) -> AutocompleteMetadataResponse:
+) -> AutocompleteMetadataRespo_codensnewe</:
+ponse:
     return service.get_autocomplete_metadata()
 
 
-@router.post("/preview", response_model=ModelPreviewResponse)
+@router.post(
+    "/preview",
+    response_model=ModelPreviewResponse,
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
 def preview_model(
     request: ModelPreviewRequest,
     service: SqlWorkspaceService = Depends(get_service),
@@ -119,7 +139,11 @@ def preview_model(
         ) from exc
 
 
-@router.post("/profile", response_model=SqlQueryProfile)
+@router.post(
+    "/profile",
+    response_model=SqlQueryProfile,
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
 def profile_sql(
     request: SqlQueryRequest,
     service: SqlWorkspaceService = Depends(get_service),

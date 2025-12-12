@@ -1,6 +1,50 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, Boolean, Float
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import relationship
+
 from ..connection import Base
+
+
+class Workspace(Base):
+    __tablename__ = "workspaces"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    artifacts_path = Column(String, nullable=False)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+    is_active = Column(Boolean, default=True)
+
+    environments = relationship("Environment", back_populates="workspace")
+    user_links = relationship("UserWorkspace", back_populates="workspace")
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    full_name = Column(String, nullable=True)
+    hashed_password = Column(String, nullable=False)
+    role = Column(String, nullable=False)  # viewer, developer, admin
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+
+    workspaces = relationship("UserWorkspace", back_populates="user")
+
+
+class UserWorkspace(Base):
+    __tablename__ = "user_workspaces"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False)
+    is_default = Column(Boolean, default=False)
+
+    user = relationship("User", back_populates="workspaces")
+    workspace = relationship("Workspace", back_populates="user_links")
 
 
 class Model(Base):
@@ -93,7 +137,9 @@ class Environment(Base):
     default_retention_policy = Column(JSON, nullable=True)
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
 
+    workspace = relationship("Workspace", back_populates="environments")
     schedules = relationship("Schedule", back_populates="environment")
     sql_queries = relationship("SqlQuery", back_populates="environment")
 
@@ -145,16 +191,32 @@ class ScheduledRun(Base):
     artifact_links = Column(JSON, default=dict)
 
     schedule = relationship("Schedule", back_populates="runs")
-    attempts = relationship("ScheduledRunAttempt", back_populates="scheduled_run", cascade="all, delete-orphan")
-    notification_events = relationship("NotificationEvent", back_populates="scheduled_run", cascade="all, delete-orphan")
-    scheduler_events = relationship("SchedulerEvent", back_populates="scheduled_run", cascade="all, delete-orphan")
+    attempts = relationship(
+        "ScheduledRunAttempt",
+        back_populates="scheduled_run",
+        cascade="all, delete-orphan",
+    )
+    notification_events = relationship(
+        "NotificationEvent",
+        back_populates="scheduled_run",
+        cascade="all, delete-orphan",
+    )
+    scheduler_events = relationship(
+        "SchedulerEvent",
+        back_populates="scheduled_run",
+        cascade="all, delete-orphan",
+    )
 
 
 class ScheduledRunAttempt(Base):
     __tablename__ = "scheduled_run_attempts"
 
     id = Column(Integer, primary_key=True, index=True)
-    scheduled_run_id = Column(Integer, ForeignKey("scheduled_runs.id"), nullable=False)
+    scheduled_run_id = Column(
+        Integer,
+        ForeignKey("scheduled_runs.id"),
+        nullable=False,
+    )
     attempt_number = Column(Integer, nullable=False)
     run_id = Column(String, index=True, nullable=True)
     db_run_id = Column(Integer, ForeignKey("runs.id"), nullable=True)

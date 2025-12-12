@@ -13,6 +13,7 @@ import {
 } from '../types';
 import { SchedulerService } from '../services/schedulerService';
 import { StatusBadge } from '../components/StatusBadge';
+import { useAuth } from '../context/AuthContext';
 
 type Mode = 'list' | 'detail' | 'create' | 'edit';
 
@@ -62,6 +63,9 @@ const defaultFormState: ScheduleFormState = {
 };
 
 function SchedulesPage() {
+  const { user, isAuthEnabled } = useAuth();
+  const isDeveloperOrAdmin = !isAuthEnabled || user?.role === 'developer' || user?.role === 'admin';
+
   const [mode, setMode] = useState<Mode>('list');
   const [schedules, setSchedules] = useState<ScheduleSummary[]>([]);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
@@ -109,6 +113,7 @@ function SchedulesPage() {
   };
 
   const handleCreateClick = () => {
+    if (!isDeveloperOrAdmin) return;
     setForm(defaultFormState);
     setSelectedSchedule(null);
     setMode('create');
@@ -116,7 +121,7 @@ function SchedulesPage() {
   };
 
   const handleEditClick = () => {
-    if (!selectedSchedule) return;
+    if (!isDeveloperOrAdmin || !selectedSchedule) return;
     setForm({
       name: selectedSchedule.name,
       description: selectedSchedule.description || '',
@@ -139,6 +144,7 @@ function SchedulesPage() {
   };
 
   const handleSave = async () => {
+    if (!isDeveloperOrAdmin) return;
     if (!form.environment_id) {
       setError('Environment is required');
       return;
@@ -170,7 +176,7 @@ function SchedulesPage() {
   };
 
   const handleDelete = async () => {
-    if (!selectedSchedule) return;
+    if (!isDeveloperOrAdmin || !selectedSchedule) return;
     if (!window.confirm('Delete this schedule? This cannot be undone.')) {
       return;
     }
@@ -186,7 +192,7 @@ function SchedulesPage() {
   };
 
   const handlePauseResume = async () => {
-    if (!selectedSchedule) return;
+    if (!isDeveloperOrAdmin || !selectedSchedule) return;
     try {
       const updated =
         selectedSchedule.status === 'active'
@@ -200,7 +206,7 @@ function SchedulesPage() {
   };
 
   const handleRunNow = async () => {
-    if (!selectedSchedule) return;
+    if (!isDeveloperOrAdmin || !selectedSchedule) return;
     try {
       const run = await SchedulerService.runScheduleNow(selectedSchedule.id);
       setRuns(prev => [run, ...prev]);
@@ -211,7 +217,7 @@ function SchedulesPage() {
   };
 
   const handleTestNotifications = async () => {
-    if (!selectedSchedule) return;
+    if (!isDeveloperOrAdmin || !selectedSchedule) return;
     try {
       const result = await SchedulerService.testScheduleNotifications(selectedSchedule.id);
       setNotificationResult(result);
@@ -242,12 +248,14 @@ function SchedulesPage() {
             Configure automated dbt runs with cron schedules, retries, and notifications.
           </p>
         </div>
-        <button
-          onClick={handleCreateClick}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-accent hover:bg-accent/90"
-        >
-          New Schedule
-        </button>
+        {isDeveloperOrAdmin && (
+          <button
+            onClick={handleCreateClick}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-accent hover:bg-accent/90"
+          >
+            New Schedule
+          </button>
+        )}
       </div>
 
       {error && (
@@ -555,38 +563,40 @@ function SchedulesPage() {
                       {renderStatusBadge(selectedSchedule.status)}
                     </p>
                   </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={handleRunNow}
-                      className="px-3 py-1 text-sm rounded-md border border-accent/30 bg-accent/10 text-accent hover:bg-accent/20"
-                    >
-                      Run now
-                    </button>
-                    <button
-                      onClick={handleTestNotifications}
-                      className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                    >
-                      Test notifications
-                    </button>
-                    <button
-                      onClick={handleEditClick}
-                      className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={handlePauseResume}
-                      className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                    >
-                      {selectedSchedule.status === 'active' ? 'Pause' : 'Resume'}
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      className="px-3 py-1 text-sm rounded-md border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
-                    >
-                      Delete
-                    </button>
-                  </div>
+                  {isDeveloperOrAdmin && (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={handleRunNow}
+                        className="px-3 py-1 text-sm rounded-md border border-accent/30 bg-accent/10 text-accent hover:bg-accent/20"
+                      >
+                        Run now
+                      </button>
+                      <button
+                        onClick={handleTestNotifications}
+                        className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                      >
+                        Test notifications
+                      </button>
+                      <button
+                        onClick={handleEditClick}
+                        className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={handlePauseResume}
+                        className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                      >
+                        {selectedSchedule.status === 'active' ? 'Pause' : 'Resume'}
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        className="px-3 py-1 text-sm rounded-md border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <dl className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">

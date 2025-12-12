@@ -1,20 +1,22 @@
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
 from app.core.watcher_manager import get_watcher
 
 
 class ArtifactService:
     def __init__(self, artifacts_path: str):
         self.base_path = Path(artifacts_path)
-        self.watcher = get_watcher()
+        # Use a watcher that is scoped to this artifacts path
+        self.watcher = get_watcher(str(self.base_path))
 
     def _load_json(self, filename: str) -> Optional[Dict[str, Any]]:
         # Use watcher for versioned artifacts if available
         content = self.watcher.get_artifact_content(filename)
         if content is not None:
             return content
-        
+
         # Fallback to direct file reading for non-monitored files
         file_path = self.base_path / filename
         if not file_path.exists():

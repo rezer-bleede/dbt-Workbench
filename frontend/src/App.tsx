@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
 import { RefreshIndicator } from './components/RefreshIndicator'
@@ -12,16 +12,37 @@ import DocsPage from './pages/Docs'
 import SettingsPage from './pages/Settings'
 import SchedulesPage from './pages/Schedules'
 import SqlWorkspacePage from './pages/SqlWorkspace'
+import LoginPage from './pages/Login'
+import { useAuth } from './context/AuthContext'
 
 function App() {
+  const { isLoading, isAuthEnabled, user } = useAuth()
+
   const handleRefreshNeeded = (updatedArtifacts: string[]) => {
-    // Force refresh of components that depend on the updated artifacts
     console.log('Artifacts updated:', updatedArtifacts)
-    
-    // Trigger a custom event that pages can listen to
-    window.dispatchEvent(new CustomEvent('artifactsUpdated', { 
-      detail: { updatedArtifacts } 
-    }))
+
+    window.dispatchEvent(
+      new CustomEvent('artifactsUpdated', {
+        detail: { updatedArtifacts },
+      }),
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center text-gray-300">
+        Loading…
+      </div>
+    )
+  }
+
+  if (isAuthEnabled && !user) {
+    return (
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    )
   }
 
   return (
@@ -41,6 +62,7 @@ function App() {
             <Route path="/schedules" element={<SchedulesPage />} />
             <Route path="/docs" element={<DocsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/login" element={<LoginPage />} />
           </Routes>
         </main>
       </div>

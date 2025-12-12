@@ -1,14 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.config import get_settings, Settings
+from app.core.auth import WorkspaceContext, get_current_user, get_current_workspace
+from app.core.config import Settings, get_settings
 from app.schemas.responses import ModelDetail, ModelSummary
 from app.services.artifact_service import ArtifactService
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-def get_service(settings: Settings = Depends(get_settings)) -> ArtifactService:
-    return ArtifactService(settings.dbt_artifacts_path)
+def get_service(
+    settings: Settings = Depends(get_settings),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+) -> ArtifactService:
+    return ArtifactService(workspace.artifacts_path or settings.dbt_artifacts_path)
 
 
 @router.get("/models", response_model=list[ModelSummary])

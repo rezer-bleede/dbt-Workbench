@@ -1,12 +1,19 @@
 import asyncio
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from sse_starlette.sse import EventSourceResponse
 
+from app.core.auth import Role, decode_token, get_current_user, require_role
+from app.core.config import get_settings
 from app.schemas.execution import (
-    RunRequest, RunSummary, RunDetail, RunHistoryResponse, 
-    RunArtifactsResponse, LogMessage
+    RunRequest,
+    RunSummary,
+    RunDetail,
+    RunHistoryResponse,
+    RunArtifactsResponse,
+    LogMessage,
 )
 from app.services.dbt_executor import executor
 
@@ -14,7 +21,11 @@ from app.services.dbt_executor import executor
 router = APIRouter(prefix="/execution", tags=["execution"])
 
 
-@router.post("/runs", response_model=RunSummary)
+@router.post(
+    "/runs",
+    response_model=RunSummary,
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
 async def start_run(run_request: RunRequest, background_tasks: BackgroundTasks):
     """Start a new dbt run."""
     try:
@@ -41,7 +52,11 @@ async def start_run(run_request: RunRequest, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=500, detail=f"Failed to start run: {str(e)}")
 
 
-@router.get("/runs/{run_id}", response_model=RunSummary)
+@router.get(
+    "/runs/{run_id}",
+    response_model=RunSummary,
+    dependencies=[Depends(get_current_user)],
+)
 async def get_run_status(run_id: str):
     """Get the status of a specific run."""
     run_status = executor.get_run_status(run_id)
@@ -50,7 +65,11 @@ async def get_run_status(run_id: str):
     return run_status
 
 
-@router.get("/runs/{run_id}/detail", response_model=RunDetail)
+@router.get(
+    "/runs/{run_id}/detail",
+    response_model=RunDetail,
+    dependencies=[Depends(get_current_user)],
+)
 async def get_run_detail(run_id: str):
     """Get detailed information about a run."""
     run_detail = executor.get_run_detail(run_id)
@@ -59,68 +78,97 @@ async def get_run_detail(run_id: str):
     return run_detail
 
 
-@router.get("/runs", response_model=RunHistoryResponse)
+@router.get(
+    "/runs",
+    response_model=RunHistoryResponse,
+    dependencies=[Depends(get_current_user)],
+)
 async def get_run_history(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100)
+    page_size: int = Query(20, ge=1, le=100),
 ):
     """Get paginated run history."""
     runs = executor.get_run_history(page=page, page_size=page_size)
     total_count = len(executor.run_history)
-    
+
     return RunHistoryResponse(
         runs=runs,
         total_count=total_count,
         page=page,
-        page_size=page_size
-    )
+        page_size=page_size,
+ _code  new </)
+
 
 
 @router.get("/runs/{run_id}/logs")
-async def stream_run_logs(run_id: str):
+async def stream_run_logs(
+    run_id: str,
+    request: Request,
+):
     """Stream logs for a running dbt command using Server-Sent Events."""
+    settings = get_settings()
+    if settings.auth_enabled:
+        token = request.query_params.get("access_token")
+        if not token:
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "error": "authentication_required",
+                    "message": "Access token is required to stream logs.",
+                },
+            )
+        # Will raise if token is invalid or expired
+        decode_token(token, settings)
+
     run_status = executor.get_run_status(run_id)
     if not run_status:
         raise HTTPException(status_code=404, detail="Run not found")
-    
+
     async def log_generator():
         try:
             async for log_message in executor.stream_logs(run_id):
                 yield {
                     "event": "log",
-                    "data": log_message.model_dump_json()
+                    "data": log_message.model_dump_json(),
                 }
         except Exception as e:
             yield {
                 "event": "error",
-                "data": f"Error streaming logs: {str(e)}"
+                "data": f"Error streaming logs: {str(e)}",
             }
         finally:
             yield {
                 "event": "end",
-                "data": "Log stream ended"
+                "data": "Log stream ended",
             }
-    
+
     return EventSourceResponse(log_generator())
 
 
-@router.get("/runs/{run_id}/artifacts", response_model=RunArtifactsResponse)
+@router.get(
+    "/runs/{run_id}/artifacts",
+    response_model=RunArtifactsResponse,
+    dependencies=[Depends(get_current_user)],
+)
 async def get_run_artifacts(run_id: str):
     """Get artifacts for a specific run."""
     if run_id not in executor.run_history:
         raise HTTPException(status_code=404, detail="Run not found")
-    
+
     artifacts = executor.get_run_artifacts(run_id)
     artifacts_path = executor.run_artifacts.get(run_id, "")
-    
+
     return RunArtifactsResponse(
         run_id=run_id,
         artifacts=artifacts,
-        artifacts_path=artifacts_path
+        artifacts_path=artifacts_path,
     )
 
 
-@router.post("/runs/{run_id}/cancel")
+@router.post(
+    "/runs/{run_id}/cancel",
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
 async def cancel_run(run_id: str):
     """Cancel a running dbt command."""
     if run_id not in executor.run_history:
@@ -133,22 +181,28 @@ async def cancel_run(run_id: str):
     return {"message": "Run cancelled successfully"}
 
 
-@router.post("/cleanup")
+@router.post(
+    "/cleanup",
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
 async def cleanup_old_runs():
     """Clean up old runs and artifacts."""
     executor.cleanup_old_runs()
     return {"message": "Cleanup completed"}
 
 
-@router.get("/status")
+@router.get(
+    "/status",
+    dependencies=[Depends(get_current_user)],
+)
 async def get_execution_status():
     """Get overall execution system status."""
     active_runs = len([r for r in executor.active_runs.values() if r.poll() is None])
     total_runs = len(executor.run_history)
-    
+
     return {
         "active_runs": active_runs,
         "total_runs": total_runs,
         "max_concurrent_runs": executor.settings.max_concurrent_runs,
-        "max_run_history": executor.settings.max_run_history
+        "max_run_history": executor.settings.max_run_history,
     }

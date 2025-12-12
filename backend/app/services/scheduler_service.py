@@ -58,8 +58,15 @@ class SchedulerService:
 
     # --- Environment management ---
 
-    def list_environments(self, db: Session) -> List[Environment]:
-        query = db.query(db_models.Environment).order_by(db_models.Environment.id)
+    def list_environments(
+        self,
+        db: Session,
+        workspace_id: Optional[int] = None,
+    ) -> List[Environment]:
+        query = db.query(db_models.Environment)
+        if workspace_id is not None:
+            query = query.filter(db_models.Environment.workspace_id == workspace_id)
+        query = query.order_by(db_models.Environment.id)
         envs = query.all()
 
         if not envs:
@@ -74,6 +81,7 @@ class SchedulerService:
                 default_retention_policy=None,
                 created_at=now,
                 updated_at=now,
+                workspace_id=workspace_id,
             )
             db.add(default_env)
             db.commit()
@@ -82,13 +90,28 @@ class SchedulerService:
 
         return [self._to_environment_schema(e) for e in envs]
 
-    def get_environment(self, db: Session, environment_id: int) -> Optional[Environment]:
-        env = db.query(db_models.Environment).filter(db_models.Environment.id == environment_id).first()
+    def get_environment(
+        self,
+        db: Session,
+        environment_id: int,
+        workspace_id: Optional[int] = None,
+    ) -> Optional[Environment]:
+        query = db.query(db_models.Environment).filter(
+            db_models.Environment.id == environment_id,
+        )
+        if workspace_id is not None:
+            query = query.filter(db_models.Environment.workspace_id == workspace_id)
+        env = query.first()
         if not env:
             return None
         return self._to_environment_schema(env)
 
-    def create_environment(self, db: Session, env_in: EnvironmentCreate) -> Environment:
+    def create_environment(
+        self,
+        db: Session,
+        env_in: EnvironmentCreate,
+        workspace_id: Optional[int] = None,
+    ) -> Environment:
         now = datetime.now(timezone.utc)
         db_env = db_models.Environment(
             name=env_in.name,
@@ -96,9 +119,12 @@ class SchedulerService:
             dbt_target_name=env_in.dbt_target_name,
             connection_profile_reference=env_in.connection_profile_reference,
             variables=env_in.variables,
-            default_retention_policy=env_in.default_retention_policy.model_dump() if env_in.default_retention_policy else None,
+            default_retention_policy=env_in.default_retention_policy.model_dump()
+            if env_in.default_retention_policy
+            else None,
             created_at=now,
             updated_at=now,
+            workspace_id=workspace_id,
         )
         db.add(db_env)
         db.commit()
@@ -110,8 +136,12 @@ class SchedulerService:
         db: Session,
         environment_id: int,
         env_in: EnvironmentUpdate,
+        workspace_id: Optional[int] = None,
     ) -> Optional[Environment]:
-        db_env = db.query(db_models.Environment).filter(db_models.Environment.id == environment_id).first()
+        query = db.query(db_models.Environment).filter(db_models.Environment.id == environment_id)
+        if workspace_id is not None:
+            query = query.filter(db_models.Environment.workspace_id == workspace_id)
+        db_env = query.first()
         if not db_env:
             return None
 
@@ -151,18 +181,53 @@ class SchedulerService:
 
     # --- Schedule management ---
 
-    def list_schedules(self, db: Session) -> List[ScheduleSummary]:
-        schedules = db.query(db_models.Schedule).order_by(db_models.Schedule.id).all()
+    def list_schedules(
+        self,
+        db: Session,
+        workspace_id: Optional[int] = None,
+    ) -> List[ScheduleSummary]:
+        query = db.query(db_models.Schedule).join(db_models.Environment)
+        if workspace_id is not None:
+            query = query.filter(db_models.Environment.workspace_id == workspace_id)
+        schedules = query.order_by(db_models.Schedule.id).all()
         return [self._to_schedule_summary_schema(s) for s in schedules]
 
-    def get_schedule(self, db: Session, schedule_id: int) -> Optional[Schedule]:
-        db_schedule = db.query(db_models.Schedule).filter(db_models.Schedule.id == schedule_id).first()
+    def get_schedule(
+        self,
+        db: Session,
+        schedule_id: int,
+        workspace_id: Optional[int] = None,
+    ) -> Optional[Schedule]:
+        query = db.query(db_models.Schedule).join(db_models.Environment).filter(
+            db_models.Schedule.id == schedule_id,
+        )
+        if workspace_id is not None:
+            query = query.filter(db_models.Environment.workspace_id == workspace_id)
+        db_schedule = query.first()
         if not db_schedule:
             return None
         return self._to_schedule_schema(db_schedule)
 
-    def create_schedule(self, db: Session, schedule_in: ScheduleCreate) -> Schedule:
+    def create_schedule(
+        self,
+        db: Session,
+        schedule_in: ScheduleCreate,
+        workspace_id: Optional[int] = None,
+    ) -> Schedule:
         now = datetime.now(timezone.utc)
+
+        # Ensure the environment belongs to the given workspace if one is provided
+        if workspace_id is not None:
+            env = (
+                db.query(db_models.Environment)
+                .filter(
+                    db_models.Environment.id == schedule_in.environment_id,
+                    db_models.Environment.workspace_id == workspace_id,
+                )
+                .first()
+            )
+            if not env:
+                raise ValueError("Environment does not belong to the active workspace")
 
         next_run_time = self._compute_next_run_time(
             cron_expression=schedule_in.cron_expression,
@@ -212,8 +277,14 @@ class SchedulerService:
         db: Session,
         schedule_id: int,
         schedule_in: ScheduleUpdate,
+        workspace_id: Optional[int] = None,
     ) -> Optional[Schedule]:
-        db_schedule = db.query(db_models.Schedule).filter(db_models.Schedule.id == schedule_id).first()
+        query = db.query(db_models.Schedule).join(db_models.Environment).filter(
+            db_models.Schedule.id == schedule_id,
+        )
+        if workspace_id is not None:
+            query = query.filter(db_models.Environment.workspace_id == workspace_id)
+        db_schedule = query.first()
         if not db_schedule:
             return None
 
@@ -228,7 +299,17 @@ class SchedulerService:
         if schedule_in.dbt_command is not None:
             db_schedule.dbt_command = schedule_in.dbt_command.value
         if schedule_in.environment_id is not None:
-            db_schedule.environment_id = schedule_in.environment_id
+            if workspace_id is not None:
+                env = (
+                    db.query(db_models.Environment)
+                    .filter(
+                        db_models.Environment.id == schedule_in.environment_id,
+                        db_models.Environment.workspace_id == workspace_id,
+                    )
+                    .first()
+                )
+                if not env:
+                    raise ValueError("Environment does not belong to theid
         if schedule_in.notification_config is not None:
             db_schedule.notification_config = schedule_in.notification_config.model_dump()
         if schedule_in.retry_policy is not None:
@@ -274,16 +355,36 @@ class SchedulerService:
 
         return self._to_schedule_schema(db_schedule)
 
-    def delete_schedule(self, db: Session, schedule_id: int) -> bool:
-        db_schedule = db.query(db_models.Schedule).filter(db_models.Schedule.id == schedule_id).first()
+    def delete_schedule(
+        self,
+        db: Session,
+        schedule_id: int,
+        workspace_id: Optional[int] = None,
+    ) -> bool:
+        query = db.query(db_models.Schedule).join(db_models.Environment).filter(
+            db_models.Schedule.id == schedule_id,
+        )
+        if workspace_id is not None:
+            query = query.filter(db_models.Environment.workspace_id == workspace_id)
+        db_schedule = query.first()
         if not db_schedule:
             return False
         db.delete(db_schedule)
         db.commit()
         return True
 
-    def pause_schedule(self, db: Session, schedule_id: int) -> Optional[Schedule]:
-        db_schedule = db.query(db_models.Schedule).filter(db_models.Schedule.id == schedule_id).first()
+    def pause_schedule(
+        self,
+        db: Session,
+        schedule_id: int,
+        workspace_id: Optional[int] = None,
+    ) -> Optional[Schedule]:
+        query = db.query(db_models.Schedule).join(db_models.Environment).filter(
+            db_models.Schedule.id == schedule_id,
+        )
+        if workspace_id is not None:
+            query = query.filter(db_models.Environment.workspace_id == workspace_id)
+        db_schedule = query.first()
         if not db_schedule:
             return None
         db_schedule.enabled = False
@@ -304,8 +405,18 @@ class SchedulerService:
 
         return self._to_schedule_schema(db_schedule)
 
-    def resume_schedule(self, db: Session, schedule_id: int) -> Optional[Schedule]:
-        db_schedule = db.query(db_models.Schedule).filter(db_models.Schedule.id == schedule_id).first()
+    def resume_schedule(
+        self,
+        db: Session,
+        schedule_id: int,
+        workspace_id: Optional[int] = None,
+    ) -> Optional[Schedule]:
+        query = db.query(db_models.Schedule).join(db_models.Environment).filter(
+            db_models.Schedule.id == schedule_id,
+        )
+        if workspace_id is not None:
+            query = query.filter(db_models.Environment.workspace_id == workspace_id)
+        db_schedule = query.first()
         if not db_schedule:
             return None
         db_schedule.enabled = True
@@ -371,13 +482,21 @@ class SchedulerService:
 
     # --- Scheduled run management ---
 
-    def list_runs_for_schedule(self, db: Session, schedule_id: int) -> ScheduledRunListResponse:
-        db_runs = (
+    def list_runs_for_schedule(
+        self,
+        db: Session,
+        schedule_id: int,
+        workspace_id: Optional[int] = None,
+    ) -> ScheduledRunListResponse:
+        query = (
             db.query(db_models.ScheduledRun)
+            .join(db_models.Schedule)
+            .join(db_models.Environment)
             .filter(db_models.ScheduledRun.schedule_id == schedule_id)
-            .order_by(db_models.ScheduledRun.scheduled_at.desc())
-            .all()
         )
+        if workspace_id is not None:
+            query = query.filter(db_models.Environment.workspace_id == workspace_id)
+        db_runs = query.order_by(db_models.ScheduledRun.scheduled_at.desc()).all()
         runs = [self._to_scheduled_run_schema(r) for r in db_runs]
         return ScheduledRunListResponse(schedule_id=schedule_id, runs=runs)
 
@@ -725,29 +844,39 @@ class SchedulerService:
 
     # --- Monitoring and metrics ---
 
-    def get_overview(self, db: Session) -> SchedulerOverview:
-        active_count = (
-            db.query(db_models.Schedule).filter(db_models.Schedule.enabled.is_(True)).count()
-        )
-        paused_count = (
-            db.query(db_models.Schedule).filter(db_models.Schedule.enabled.is_(False)).count()
-        )
+    def get_overview(
+        self,
+        db: Session,
+        workspace_id: Optional[int] = None,
+    ) -> SchedulerOverview:
+        query = db.query(db_models.Schedule).join(db_models.Environment)
+        if workspace_id is not None:
+            query = query.filter(db_models.Environment.workspace_id == workspace_id)
+        active_count = query.filter(db_models.Schedule.enabled.is_(True)).count()
+        paused_count = query.filter(db_models.Schedule.enabled.is_(False)).count()
         next_run_times: Dict[int, Optional[datetime]] = {}
-        schedules = db.query(db_models.Schedule.id, db_models.Schedule.next_run_time).all()
+        schedules = query.with_entities(
+            db_models.Schedule.id,
+            db_models.Schedule.next_run_time,
+        ).all()
         for schedule_id, next_run_time in schedules:
             next_run_times[schedule_id] = next_run_time
 
-        total_scheduled_runs = db.query(db_models.ScheduledRun).count()
-        success_count = (
+        runs_query = (
             db.query(db_models.ScheduledRun)
-            .filter(db_models.ScheduledRun.status == RunFinalResult.SUCCESS.value)
-            .count()
+            .join(db_models.Schedule)
+            .join(db_models.Environment)
         )
-        failure_count = (
-            db.query(db_models.ScheduledRun)
-            .filter(db_models.ScheduledRun.status == RunFinalResult.FAILURE.value)
-            .count()
-        )
+        if workspace_id is not None:
+            runs_query = runs_query.filter(db_models.Environment.workspace_id == workspace_id)
+
+        total_scheduled_runs = runs_query.count()
+        success_count = runs_query.filter(
+            db_models.ScheduledRun.status == RunFinalResult.SUCCESS.value
+        ).count()
+        failure_count = runs_query.filter(
+            db_models.ScheduledRun.status == RunFinalResult.FAILURE.value
+        ).count()
 
         return SchedulerOverview(
             active_schedules=active_count,

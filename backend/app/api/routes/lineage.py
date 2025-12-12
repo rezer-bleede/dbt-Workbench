@@ -2,16 +2,20 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
+from app.core.auth import WorkspaceContext, get_current_user, get_current_workspace
 from app.core.config import Settings, get_settings
 from app.schemas import dbt as dbt_schemas
 from app.services.artifact_service import ArtifactService
 from app.services.lineage_service import LineageService
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-def get_lineage_service(settings: Settings = Depends(get_settings)) -> LineageService:
-    artifact_service = ArtifactService(settings.dbt_artifacts_path)
+def get_lineage_service(
+    settings: Settings = Depends(get_settings),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+) -> LineageService:
+    artifact_service = ArtifactService(workspace.artifacts_path or settings.dbt_artifacts_path)
     return LineageService(artifact_service, settings)
 
 

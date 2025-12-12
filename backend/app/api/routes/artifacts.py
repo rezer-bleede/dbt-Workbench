@@ -1,21 +1,29 @@
-from fastapi import APIRouter, Depends
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
-from app.core.config import get_settings, Settings
+from fastapi import APIRouter, Depends
+
+from app.core.auth import WorkspaceContext, get_current_user, get_current_workspace
+from app.core.config import Settings, get_settings
 from app.core.watcher_manager import get_watcher
 from app.schemas.responses import ArtifactSummary
 from app.services.artifact_service import ArtifactService
 from app.services.artifact_watcher import ArtifactWatcher
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-def get_service(settings: Settings = Depends(get_settings)) -> ArtifactService:
-    return ArtifactService(settings.dbt_artifacts_path)
+def get_service(
+    settings: Settings = Depends(get_settings),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+) -> ArtifactService:
+    artifacts_path = workspace.artifacts_path or settings.dbt_artifacts_path
+    return ArtifactService(artifacts_path)
 
 
-def get_artifact_watcher() -> ArtifactWatcher:
-    return get_watcher()
+def get_artifact_watcher(
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+) -> ArtifactWatcher:
+    return get_watcher(workspace.artifacts_path)
 
 
 @router.get("/artifacts", response_model=ArtifactSummary)

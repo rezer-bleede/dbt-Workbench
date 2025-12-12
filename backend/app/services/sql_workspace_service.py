@@ -546,5 +546,16 @@ class QueryTimeoutError(Exception):
 _default_sql_workspace_service = SqlWorkspaceService(get_settings().dbt_artifacts_path)
 
 
+_sql_services_by_path: dict[str, SqlWorkspaceService] = {}
+
+
+def get_sql_workspace_service_for_path(artifacts_path: str) -> SqlWorkspaceService:
+    service = _sql_services_by_path.get(artifacts_path)
+    if service is None:
+        service = SqlWorkspaceService(artifacts_path)
+        _sql_services_by_path[artifacts_path] = service
+    return service
+
+
 def get_default_sql_workspace_service() -> SqlWorkspaceService:
-    return _default_sql_workspace_service
+    return get_sql_workspace_service_for_path(get_settings().dbt_artifacts_path)

@@ -1,15 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.core.auth import Role, WorkspaceContext, get_current_user, get_current_workspace, require_role
 from app.core.config import Settings, get_settings
 from app.schemas import catalog as catalog_schemas
 from app.services.artifact_service import ArtifactService
 from app.services.catalog_service import CatalogService
 
-router = APIRouter(prefix="/catalog", tags=["catalog"])
+router = APIRouter(prefix="/catalog", tags=["catalog"], dependencies=[Depends(get_current_user)])
 
 
-def get_service(settings: Settings = Depends(get_settings)) -> CatalogService:
-    artifact_service = ArtifactService(settings.dbt_artifacts_path)
+def get_service(
+    settings: Settings = Depends(get_settings),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+) -> CatalogService:
+    artifact_service = ArtifactService(workspace.artifacts_path or settings.dbt_artifacts_path)
     return CatalogService(artifact_service, settings)
 
 
@@ -36,7 +40,11 @@ async def validation(service: CatalogService = Depends(get_service)):
     return service.validate()
 
 
-@router.patch("/entities/{unique_id}", response_model=catalog_schemas.CatalogEntityDetail)
+@router.patch(
+    "/entities/{unique_id}",
+    response_model=catalog_schemas.CatalogEntityDetail,
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
 async def update_entity_metadata(
     unique_id: str,
     payload: catalog_schemas.MetadataUpdate,
@@ -50,7 +58,11 @@ async def update_entity_metadata(
         raise HTTPException(status_code=404, detail="Entity not found")
 
 
-@router.patch("/entities/{unique_id}/columns/{column_name}", response_model=list[catalog_schemas.ColumnMetadata])
+@router.patch(
+    "/entities/{unique_id}/columns/{column_name}",
+    response_model=list[catalog_schemas.ColumnMetadata],
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
 async def update_column_metadata(
     unique_id: str,
     column_name: str,

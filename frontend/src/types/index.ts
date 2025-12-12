@@ -4,6 +4,38 @@ export interface HealthResponse {
   version: string
 }
 
+export type UserRole = 'viewer' | 'developer' | 'admin'
+
+export interface WorkspaceSummary {
+  id: number
+  key: string
+  name: string
+  description?: string | null
+  artifacts_path: string
+}
+
+export interface UserSummary {
+  id: number
+  username: string
+  full_name?: string | null
+  role: UserRole
+  is_active: boolean
+  workspaces: WorkspaceSummary[]
+  default_workspace_id?: number | null
+}
+
+export interface TokenResponse {
+  access_token: string
+  refresh_token: string
+  token_type: string
+}
+
+export interface LoginResponse {
+  tokens: TokenResponse
+  user: UserSummary
+  active_workspace?: WorkspaceSummary | null
+}
+
 export interface Run {
   id: number;
   run_id: string;

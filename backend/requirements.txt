@@ -12,3 +12,5 @@ sse-starlette==1.8.2
 sqlalchemy==2.0.31
 psycopg2-binary==2.9.9
 croniter==6.0.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
