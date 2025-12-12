@@ -134,9 +134,12 @@ def decode_token(token: str, settings: Settings) -> Dict[str, Any]:
 # DB session helper
 
 
-def get_db() -> Session:
+def get_db():
     db = SessionLocal()
-    return db
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 # Current user / workspace dependencies

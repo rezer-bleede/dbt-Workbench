@@ -15,13 +15,12 @@ from app.schemas.auth import UserCreate, UserSummary, UserUpdate, WorkspaceSumma
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def get_db() -> Session:
+def get_db():
     db = SessionLocal()
     try:
-        return db
-    except Exception:
+        yield db
+    finally:
         db.close()
-        raise
 
 
 def _to_workspace_summary(workspace: db_models.Workspace) -> WorkspaceSummary:

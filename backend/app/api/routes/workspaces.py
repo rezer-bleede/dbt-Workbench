@@ -15,13 +15,12 @@ from app.schemas.auth import WorkspaceCreate, WorkspaceSummary, WorkspaceUpdate
 router = APIRouter(prefix="/workspaces", tags=["workspaces"])
 
 
-def get_db() -> Session:
+def get_db():
     db = SessionLocal()
     try:
-        return db
-    except Exception:
+        yield db
+    finally:
         db.close()
-        raise
 
 
 def _to_summary(workspace: db_models.Workspace) -> WorkspaceSummary:

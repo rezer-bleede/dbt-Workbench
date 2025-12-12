@@ -28,13 +28,12 @@ from app.services import git_service
 router = APIRouter(prefix="/git", tags=["git"])
 
 
-def get_db() -> Session:
+def get_db():
     db = SessionLocal()
     try:
-        return db
-    except Exception:
+        yield db
+    finally:
         db.close()
-        raise
 
 
 @router.post(
