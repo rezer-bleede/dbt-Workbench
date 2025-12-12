@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SqlColumnMetadata(BaseModel):
@@ -11,6 +11,8 @@ class SqlColumnMetadata(BaseModel):
 
 
 class SqlQueryRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     sql: str
     environment_id: Optional[int] = None
     row_limit: Optional[int] = None
@@ -53,6 +55,8 @@ SqlQueryResult.model_rebuild()
 
 
 class SqlQueryHistoryEntry(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     id: int
     created_at: datetime
     environment_id: Optional[int] = None
@@ -80,7 +84,7 @@ class RelationColumn(BaseModel):
 class RelationInfo(BaseModel):
     unique_id: Optional[str] = None
     name: str
-    schema: Optional[str] = None
+    schema_: Optional[str] = Field(default=None, alias="schema")
     database: Optional[str] = None
     relation_name: str
     resource_type: str
@@ -96,6 +100,8 @@ class AutocompleteMetadataResponse(BaseModel):
 
 
 class ModelPreviewRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     model_unique_id: str
     environment_id: Optional[int] = None
     row_limit: Optional[int] = None

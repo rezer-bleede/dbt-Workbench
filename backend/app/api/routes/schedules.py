@@ -184,7 +184,7 @@ async def run_schedule_now(
 
 
 @router.get("/overview", response_model=SchedulerOverview)
-def get_scheduler_overview(
+async def get_scheduler_overview(
     db: Session = Depends(get_db),
     workspace: WorkspaceContext = Depends(get_current_workspace),
 ) -> SchedulerOverview:
@@ -201,6 +201,7 @@ def get_schedule_metrics(
     if not metrics:
         raise HTTPException(status_code=404, detail="Schedule not found or no runs")
     return
+
 
 @router.get("/{schedule_id}/logs", response_model=list[SchedulerLogEntry])
 def get_schedule_logs(schedule_id: int, db: Session = Depends(get_db)) -> list[SchedulerLogEntry]:
@@ -236,7 +237,7 @@ async def test_notifications(
 
 
 @router.get("/environments", response_model=list[Environment])
-def list_environments(
+async def list_environments(
     db: Session = Depends(get_db),
     workspace: WorkspaceContext = Depends(get_current_workspace),
 ) -> list[Environment]:
