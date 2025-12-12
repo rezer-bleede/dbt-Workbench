@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, Boolean, Float
 from sqlalchemy.orm import relationship
 from ..connection import Base
 
@@ -197,6 +197,44 @@ class NotificationEvent(Base):
     created_at = Column(DateTime)
 
     scheduled_run = relationship("ScheduledRun", back_populates="notification_events")
+
+
+class CatalogMetadata(Base):
+    __tablename__ = "catalog_metadata"
+
+    id = Column(Integer, primary_key=True, index=True)
+    unique_id = Column(String, index=True, nullable=False)
+    entity_type = Column(String, nullable=False)
+    owner = Column(String, nullable=True)
+    description_override = Column(String, nullable=True)
+    tags_override = Column(JSON, default=list)
+    custom_metadata = Column(JSON, default=dict)
+
+
+class ColumnMetadata(Base):
+    __tablename__ = "column_metadata"
+
+    id = Column(Integer, primary_key=True, index=True)
+    unique_id = Column(String, index=True, nullable=False)
+    column_name = Column(String, nullable=False)
+    description_override = Column(String, nullable=True)
+    owner = Column(String, nullable=True)
+    tags_override = Column(JSON, default=list)
+    custom_metadata = Column(JSON, default=dict)
+
+
+class ColumnStatistic(Base):
+    __tablename__ = "column_statistics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    unique_id = Column(String, index=True, nullable=False)
+    column_name = Column(String, nullable=False)
+    null_count = Column(Float, nullable=True)
+    distinct_count = Column(Float, nullable=True)
+    min_value = Column(String, nullable=True)
+    max_value = Column(String, nullable=True)
+    distribution = Column(JSON, default=dict)
+    updated_at = Column(DateTime, nullable=True)
 
 
 class SqlQuery(Base):

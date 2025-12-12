@@ -19,9 +19,13 @@ class Settings(BaseSettings):
     postgres_port: int = Field(5432, alias="POSTGRES_PORT")
     postgres_db: str = Field("dbt_workbench", alias="POSTGRES_DB")
 
+    database_url_override: str | None = Field(None, alias="DATABASE_URL")
+
     @computed_field
     @property
     def database_url(self) -> str:
+        if self.database_url_override:
+            return self.database_url_override
         return (
             f"postgresql://"
             f"{self.postgres_user}:{self.postgres_password}@"
@@ -53,6 +57,15 @@ class Settings(BaseSettings):
     max_run_history: int = Field(100, alias="MAX_RUN_HISTORY")
     max_artifact_sets: int = Field(50, alias="MAX_ARTIFACT_SETS")
     log_buffer_size: int = Field(1000, alias="LOG_BUFFER_SIZE")  # lines
+
+    # Catalog settings
+    allow_metadata_edits: bool = Field(True, alias="ALLOW_METADATA_EDITS")
+    search_indexing_frequency_seconds: int = Field(30, alias="SEARCH_INDEXING_FREQUENCY_SECONDS")
+    freshness_threshold_override_minutes: int | None = Field(
+        None, alias="FRESHNESS_THRESHOLD_OVERRIDE_MINUTES"
+    )
+    validation_severity: str = Field("warning", alias="VALIDATION_SEVERITY")
+    statistics_refresh_policy: str = Field("on_artifact_change", alias="STATISTICS_REFRESH_POLICY")
 
     # Scheduler settings
     scheduler_enabled: bool = Field(True, alias="SCHEDULER_ENABLED")
