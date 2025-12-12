@@ -82,9 +82,16 @@ dbt-Workbench/
 ├── backend/               # FastAPI service for metadata + execution engine
 ├── frontend/              # React + TS + Tailwind UI
 ├── sample_artifacts/      # Minimal demo dbt artifacts
+├── plugins/               # Marketplace-style plugin directory (manifest + backend/frontend assets)
 ├── docker-compose.yml     # Full stack orchestration
 └── README.md
 ```
+
+### Plugin bootstrap
+
+- Set `PLUGINS_DIRECTORY` to point to your plugin root (default `./plugins`).
+- Each plugin lives in `plugins/<name>/manifest.json` with optional `backend/`, `frontend/`, and `static/` folders.
+- Use the admin-only Plugins navigation in the UI to enable/disable or hot-reload plugins at runtime.
 
 ---
 
@@ -129,6 +136,14 @@ dbt-Workbench/
 - Persistent metadata enrichment for owners/tags/descriptions with optional edit controls
 - Column-level descriptions, data types, nullability, and statistics synced from `catalog.json`
 - Validation of missing documentation, owners/tags, failing tests, freshness gaps, and stale sources
+
+### **Phase 10 — Plugin Ecosystem (New)**
+- Backend plugin manager with manifest validation, capability/permission checks, and lifecycle events
+- Hot-reloadable plugins discovered from the configurable `PLUGINS_DIRECTORY` (default `./plugins`)
+- Admin APIs to list, enable, disable, and reload plugins without restarting the server
+- Frontend marketplace and installed-plugins views with dynamic enable/disable controls
+- Standardized plugin layout (`/plugins/<name>/manifest.json`, `backend/`, `frontend/`, `static/`)
+- Safe opt-out via `PLUGIN_SYSTEM_ENABLED=false` for minimal installations
 
 ---
 

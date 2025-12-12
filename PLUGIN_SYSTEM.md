@@ -2,6 +2,10 @@
 
 This document specifies the functional and behavioral requirements of the dbt-Workbench plugin system. It defines what the system must support without prescribing implementation details. Another agent is responsible for designing and implementing the concrete backend, frontend, configuration, and infrastructure changes.
 
+## Current Implementation Snapshot
+
+The Phase 10 implementation includes a FastAPI-based `PluginManager` that validates manifests, enforces capability and permission declarations, hot-reloads plugin folders, and exposes administrative APIs at `/plugins`. A React marketplace experience surfaces installed plugins, capability requirements, and enable/disable toggles. Plugins are discovered under `PLUGINS_DIRECTORY` (default `./plugins`) following the standardized layout described below, and the system can be disabled entirely with `PLUGIN_SYSTEM_ENABLED=false`.
+
 ---
 
 ## 1. Goals and Scope

@@ -18,12 +18,14 @@ from app.api.routes import (
     sql_workspace,
     workspaces,
     admin,
+    plugins,
 )
 from app.core.config import get_settings
 from app.core.scheduler_manager import start_scheduler, stop_scheduler
 from app.core.watcher_manager import start_watcher, stop_watcher
 from app.database.connection import Base, engine
 import app.database.models.models  # noqa: F401
+from app.services.plugin_service import PluginService
 
 
 @asynccontextmanager
@@ -32,19 +34,28 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     start_watcher()
     await start_scheduler()
+    plugin_service.initialize()
     yield
     # Shutdown
     await stop_scheduler()
     stop_watcher()
+    plugin_service.manager.stop_hot_reload()
 
 
 settings = get_settings()
+
+plugin_service = PluginService(None)  # type: ignore[arg-type]
 
 app = FastAPI(
     title="dbt-Workbench API",
     version=settings.backend_version,
     lifespan=lifespan,
 )
+
+# Rebind plugin service now that the FastAPI app exists
+plugin_service.app = app
+plugin_service.manager.app = app
+app.state.plugin_service = plugin_service
 
 app.add_middleware(
     CORSMiddleware,
@@ -68,6 +79,7 @@ app.include_router(diff.router)
 app.include_router(schedules.router)
 app.include_router(sql_workspace.router)
 app.include_router(catalog.router)
+app.include_router(plugins.router)
 
 
 @app.get("/config")

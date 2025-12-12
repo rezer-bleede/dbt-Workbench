@@ -9,6 +9,7 @@ const baseNavItems = [
   { label: 'Runs', to: '/runs', minRole: 'developer' as const },
   { label: 'Run History', to: '/run-history', minRole: 'viewer' as const },
   { label: 'Schedules', to: '/schedules', minRole: 'developer' as const },
+  { label: 'Plugins', to: '/plugins/installed', minRole: 'admin' as const },
   { label: 'Docs', to: '/docs' },
   { label: 'Settings', to: '/settings', minRole: 'admin' as const },
 ]

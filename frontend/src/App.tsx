@@ -13,6 +13,8 @@ import SettingsPage from './pages/Settings'
 import SchedulesPage from './pages/Schedules'
 import SqlWorkspacePage from './pages/SqlWorkspace'
 import LoginPage from './pages/Login'
+import PluginsInstalledPage from './pages/PluginsInstalled'
+import PluginMarketplacePage from './pages/PluginMarketplace'
 import { useAuth } from './context/AuthContext'
 
 function App() {
@@ -60,6 +62,8 @@ function App() {
             <Route path="/runs" element={<RunsPage />} />
             <Route path="/run-history" element={<RunHistoryPage />} />
             <Route path="/schedules" element={<SchedulesPage />} />
+            <Route path="/plugins/installed" element={<PluginsInstalledPage />} />
+            <Route path="/plugins/marketplace" element={<PluginMarketplacePage />} />
             <Route path="/docs" element={<DocsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/login" element={<LoginPage />} />
