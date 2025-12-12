@@ -7,7 +7,7 @@ const RunHistory: React.FC = () => {
 
   useEffect(() => {
     const fetchRuns = async () => {
-      const response = await api.get<Run[]>('/api/v2/runs');
+      const response = await api.get<Run[]>('/runs');
       setRuns(response.data);
     };
     fetchRuns();
