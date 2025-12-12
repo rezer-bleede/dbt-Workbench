@@ -135,7 +135,7 @@ export default function VersionControlPage() {
     console.log('Connect started for:', remoteUrl)
     setConnectError(null)
     setConnectSuccess(null)
-    if (!activeWorkspace?.id) {
+    if (activeWorkspace?.id == null) {
       setConnectError('Select a workspace before connecting a repository.')
       return
     }
