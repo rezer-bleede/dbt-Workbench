@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import artifacts, health, lineage, models, projects, runs, execution, diff, schedules, sql_workspace
+from app.api.routes import artifacts, catalog, health, lineage, models, projects, runs, execution, diff, schedules, sql_workspace
 from app.core.config import get_settings
 from app.core.watcher_manager import start_watcher, stop_watcher
 from app.core.scheduler_manager import start_scheduler, stop_scheduler
@@ -48,6 +48,7 @@ app.include_router(execution.router)
 app.include_router(diff.router)
 app.include_router(schedules.router)
 app.include_router(sql_workspace.router)
+app.include_router(catalog.router)
 
 @app.get("/config")
 async def get_config():
@@ -71,6 +72,13 @@ async def get_config():
             "max_run_history": settings.max_run_history,
             "max_artifact_sets": settings.max_artifact_sets,
             "log_buffer_size": settings.log_buffer_size
+        },
+        "catalog": {
+            "allow_metadata_edits": settings.allow_metadata_edits,
+            "search_indexing_frequency_seconds": settings.search_indexing_frequency_seconds,
+            "freshness_threshold_override_minutes": settings.freshness_threshold_override_minutes,
+            "validation_severity": settings.validation_severity,
+            "statistics_refresh_policy": settings.statistics_refresh_policy,
         }
     }
 

@@ -121,6 +121,15 @@ dbt-Workbench/
 - Upstream and downstream impact highlighting at model and column granularity
 - Configurable defaults for grouping mode, graph depth, and column-level loading
 
+### **Phase 8 — Data Catalog Layer (New)**
+- Global fuzzy/prefix search across models, sources, exposures, macros, tests, tags, and columns
+- Rich entity detail pages with dbt metadata, owners, tags, documentation, lineage previews, and column statistics
+- Test health indicators surfaced in search, detail pages, and validation reports
+- Source freshness visibility (max loaded timestamp, age, thresholds, status, last check)
+- Persistent metadata enrichment for owners/tags/descriptions with optional edit controls
+- Column-level descriptions, data types, nullability, and statistics synced from `catalog.json`
+- Validation of missing documentation, owners/tags, failing tests, freshness gaps, and stale sources
+
 ---
 
 ## 🧪 Testing
@@ -149,6 +158,25 @@ Configuration flags (via environment variables or `/config` endpoint):
 - `MAX_INITIAL_LINEAGE_DEPTH`
 - `LOAD_COLUMN_LINEAGE_BY_DEFAULT`
 - `LINEAGE_PERFORMANCE_MODE`
+
+---
+
+## 📚 Catalog API
+
+- `GET /catalog/entities` — list all catalog entities with tags, owners, freshness, and test summaries
+- `GET /catalog/entities/{unique_id}` — full detail including columns, tests, metadata overrides, and statistics
+- `GET /catalog/search?q=` — fuzzy/prefix search grouped by resource type (models, sources, exposures, macros, tests, tags, columns)
+- `GET /catalog/validation` — validation issues (missing docs/owners/tags, failing tests, stale or missing freshness)
+- `PATCH /catalog/entities/{unique_id}` — apply metadata overrides (owner, tags, description) when edits are enabled
+- `PATCH /catalog/entities/{unique_id}/columns/{column_name}` — update column-level overrides (description, owner, tags)
+
+Configuration (env vars or `/config`):
+
+- `ALLOW_METADATA_EDITS` — toggle editability of catalog metadata
+- `SEARCH_INDEXING_FREQUENCY_SECONDS` — controls how often searches refresh from artifacts
+- `FRESHNESS_THRESHOLD_OVERRIDE_MINUTES` — optional override for source freshness thresholds
+- `VALIDATION_SEVERITY` — default severity for validation rules
+- `STATISTICS_REFRESH_POLICY` — determines when column statistics refresh (default: `on_artifact_change`)
 
 ---
 
