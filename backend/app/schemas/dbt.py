@@ -18,6 +18,7 @@ class Model(BaseModel):
     checksum: str
     timestamp: datetime
     run_id: int
+    workspace_id: Optional[int] = None
 
 
 class LineageNode(BaseModel):
@@ -113,3 +114,4 @@ class Run(BaseModel):
     timestamp: datetime
     status: str
     summary: dict
+    workspace_id: Optional[int] = None
