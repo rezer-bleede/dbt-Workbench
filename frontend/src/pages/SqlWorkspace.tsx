@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { sql as sqlLang } from '@codemirror/lang-sql';
 import { autocompletion, Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
-import { vscodeDark, vscodeLight } from '@uiw/codemirror-themes';
+import { vscodeDark, vscodeLight } from '@uiw/codemirror-theme-vscode';
 
 import { Table } from '../components/Table';
 import { StatusBadge } from '../components/StatusBadge';
@@ -507,7 +507,7 @@ function SqlWorkspacePage() {
             className="mt-5 inline-flex items-center px-4 py-2 rounded-md bg-accent text-white text-sm font-medium disabled:opacity-60"
           >
             {isRunning ? 'Running…' : 'Run (Ctrl/Cmd+Enter)'}
-        </  but_codetonewn</>
+        </button>
         </div>
       </div>
 

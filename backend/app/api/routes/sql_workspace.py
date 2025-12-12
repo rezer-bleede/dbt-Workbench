@@ -111,8 +111,7 @@ def get_sql_history(
 )
 def get_sql_metadata(
     service: SqlWorkspaceService = Depends(get_service),
-) -> AutocompleteMetadataRespo_codensnewe</:
-ponse:
+) -> AutocompleteMetadataResponse:
     return service.get_autocomplete_metadata()
 
 
