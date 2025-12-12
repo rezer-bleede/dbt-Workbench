@@ -109,6 +109,7 @@ class ModelPreviewRequest(BaseModel):
 
 
 class ModelPreviewResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     query_id: str
     model_unique_id: str
     rows: List[Dict[str, Any]]

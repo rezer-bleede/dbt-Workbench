@@ -86,7 +86,7 @@ class SchedulerService:
             db.add(default_env)
             db.commit()
             db.refresh(default_env)
-            envs = [default_env]
+            return [self._to_environment_schema(default_env)]
 
         return [self._to_environment_schema(e) for e in envs]
 
