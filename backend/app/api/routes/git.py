@@ -37,6 +37,10 @@ def get_db() -> Session:
         raise
 
 
+from fastapi import APIRouter, Depends, Response
+from sqlalchemy.orm import Session
+# ... (imports)
+
 @router.post(
     "/connect",
     response_model=GitRepositorySummary,
@@ -44,9 +48,11 @@ def get_db() -> Session:
 )
 def connect_repository(
     request: ConnectRepositoryRequest,
+    response: Response,
     current_user: UserContext = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> GitRepositorySummary:
+    response.headers["Cache-Control"] = "no-store"
     return git_service.connect_repository(
         db,
         workspace_id=request.workspace_id,

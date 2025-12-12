@@ -18,7 +18,12 @@ export class GitService {
     directory?: string
     provider?: string
   }): Promise<GitRepository> {
-    const response = await api.post<GitRepository>('/git/connect', payload)
+    const response = await api.post<GitRepository>('/git/connect', payload, {
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+      },
+    })
     return response.data
   }
 

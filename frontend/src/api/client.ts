@@ -7,6 +7,18 @@ export const api = axios.create({
   baseURL: apiBase,
 })
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error)
+    if (error.response) {
+      console.error('Response status:', error.response.status)
+      console.error('Response data:', error.response.data)
+    }
+    return Promise.reject(error)
+  }
+)
+
 api.interceptors.request.use((config) => {
   try {
     const storedRaw = window.localStorage.getItem('dbt_workbench_auth')

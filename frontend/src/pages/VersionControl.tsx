@@ -132,6 +132,7 @@ export default function VersionControlPage() {
 
   const handleConnect = async (event: FormEvent) => {
     event.preventDefault()
+    console.log('Connect started for:', remoteUrl)
     setConnectError(null)
     setConnectSuccess(null)
     if (!activeWorkspace?.id) {
@@ -149,6 +150,7 @@ export default function VersionControlPage() {
       setRepoMissing(false)
       await reload()
     } catch (err: any) {
+      console.error('Connect failed:', err)
       const message =
         err?.response?.data?.detail?.message ||
         err?.response?.data?.detail ||
