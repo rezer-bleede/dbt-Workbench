@@ -88,6 +88,7 @@ class Model(Base):
     checksum = Column(String)
     timestamp = Column(DateTime)
     run_id = Column(Integer, ForeignKey("runs.id"))
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
 
     run = relationship("Run", back_populates="models")
 
@@ -101,6 +102,7 @@ class Run(Base):
     timestamp = Column(DateTime)
     status = Column(String)
     summary = Column(JSON)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
 
     models = relationship("Model", back_populates="run")
     tests = relationship("Test", back_populates="run")
@@ -114,6 +116,7 @@ class Lineage(Base):
     parent_id = Column(String, ForeignKey("models.unique_id"))
     child_id = Column(String, ForeignKey("models.unique_id"))
     run_id = Column(Integer, ForeignKey("runs.id"))
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
 
 
 class ColumnLineage(Base):
@@ -125,6 +128,7 @@ class ColumnLineage(Base):
     source_node = Column(String, ForeignKey("models.unique_id"))
     target_node = Column(String, ForeignKey("models.unique_id"))
     run_id = Column(Integer, ForeignKey("runs.id"))
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
 
 
 class Test(Base):
@@ -136,6 +140,7 @@ class Test(Base):
     status = Column(String)
     timestamp = Column(DateTime)
     run_id = Column(Integer, ForeignKey("runs.id"))
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
 
     run = relationship("Run", back_populates="tests")
 
@@ -148,6 +153,7 @@ class Artifact(Base):
     checksum = Column(String)
     metadata_ = Column("metadata", JSON)
     run_id = Column(Integer, ForeignKey("runs.id"))
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
 
     run = relationship("Run", back_populates="artifacts")
 
@@ -298,6 +304,7 @@ class CatalogMetadata(Base):
     description_override = Column(String, nullable=True)
     tags_override = Column(JSON, default=list)
     custom_metadata = Column(JSON, default=dict)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
 
 
 class ColumnMetadata(Base):
@@ -310,6 +317,7 @@ class ColumnMetadata(Base):
     owner = Column(String, nullable=True)
     tags_override = Column(JSON, default=list)
     custom_metadata = Column(JSON, default=dict)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
 
 
 class ColumnStatistic(Base):
@@ -324,6 +332,7 @@ class ColumnStatistic(Base):
     max_value = Column(String, nullable=True)
     distribution = Column(JSON, default=dict)
     updated_at = Column(DateTime, nullable=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
 
 
 class SqlQuery(Base):

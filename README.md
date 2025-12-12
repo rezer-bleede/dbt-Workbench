@@ -119,6 +119,11 @@ dbt-Workbench/
 - PostgreSQL backend
 - Historical model snapshots
 
+### **Multi-workspace & RBAC expectations**
+- Every request is evaluated in the context of the active workspace encoded in the JWT token; run history, models, and lineage are filtered by that workspace.
+- Switching workspaces clears cached state and forces fresh metadata to avoid leaking artifacts between projects.
+- Roles enforce the UI/API contract: viewers can inspect metadata, developers can run dbt and edit project files, and admins manage users/workspaces and global settings.
+
 ### **Phase 11 — Git-Integrated dbt Workspace**
 - Workspace-scoped Git connections with branch switching, pull, push, and commit workflows
 - In-app file tree with SQL/Jinja editor for models and YAML editor support for dbt configs

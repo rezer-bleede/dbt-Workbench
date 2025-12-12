@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+
 from ..connection import SessionLocal
 from ..models import models as db_models
 from ...schemas import dbt as dbt_schemas
@@ -10,18 +11,26 @@ def get_db():
     finally:
         db.close()
 
-def create_run(db: Session, run: dbt_schemas.Run):
-    db_run = db_models.Run(**run.dict())
+def create_run(db: Session, run: dbt_schemas.Run, *, workspace_id: int | None = None):
+    payload = run.model_dump()
+    payload["workspace_id"] = workspace_id
+    db_run = db_models.Run(**payload)
     db.add(db_run)
     db.commit()
     db.refresh(db_run)
     return db_run
 
-def get_run(db: Session, run_id: int):
-    return db.query(db_models.Run).filter(db_models.Run.id == run_id).first()
+def get_run(db: Session, run_id: int, *, workspace_id: int | None = None):
+    query = db.query(db_models.Run).filter(db_models.Run.id == run_id)
+    if workspace_id is not None:
+        query = query.filter(db_models.Run.workspace_id == workspace_id)
+    return query.first()
 
-def get_runs(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(db_models.Run).offset(skip).limit(limit).all()
+def get_runs(db: Session, skip: int = 0, limit: int = 100, *, workspace_id: int | None = None):
+    query = db.query(db_models.Run)
+    if workspace_id is not None:
+        query = query.filter(db_models.Run.workspace_id == workspace_id)
+    return query.offset(skip).limit(limit).all()
 
 def create_model(db: Session, model: dbt_schemas.Model):
     db_model = db_models.Model(**model.dict())
