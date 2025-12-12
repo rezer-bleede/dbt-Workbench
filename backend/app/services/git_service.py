@@ -73,8 +73,14 @@ def _resolve_workspace(db: Session, workspace_id: int | None) -> db_models.Works
 
 
 def _ensure_repo(path: str) -> Repo:
+    path_obj = Path(path)
+    if not path_obj.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "git_not_configured", "message": "Repository connection not configured."},
+        )
     try:
-        return Repo(path)
+        return Repo(path_obj)
     except InvalidGitRepositoryError as exc:  # pragma: no cover - defensive
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -213,6 +219,7 @@ def _build_tree(base_path: Path) -> List[FileNode]:
 def get_status(db: Session, workspace_id: int) -> GitStatusResponse:
     try:
         record = _repo_record(db, workspace_id)
+        repo = _ensure_repo(record.directory)
     except HTTPException as exc:
         detail = getattr(exc, "detail", {}) or {}
         if exc.status_code == status.HTTP_404_NOT_FOUND and detail.get("error") == "git_not_configured":
@@ -227,7 +234,6 @@ def get_status(db: Session, workspace_id: int) -> GitStatusResponse:
                 configured=False,
             )
         raise
-    repo = _ensure_repo(record.directory)
     branch_name = repo.active_branch.name
 
     ahead = behind = 0

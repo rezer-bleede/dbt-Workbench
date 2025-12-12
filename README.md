@@ -24,6 +24,7 @@ docker compose up --build
 ### **Services**
 - **UI:** http://localhost:3000  
 - **API:** http://localhost:8000  
+- **API Docs:** http://localhost:8000/docs (Swagger UI)
 
 ### **Mounting dbt Artifacts**
 
@@ -58,7 +59,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ---
 
-### **Frontend (React + TypeScript + Tailwind)**
+### **Frontend (React + TypeScript + Vite)**
 
 ```bash
 cd frontend
@@ -80,18 +81,202 @@ VITE_API_BASE_URL = http://localhost:8000
 dbt-Workbench/
 │
 ├── backend/               # FastAPI service for metadata + execution engine
-├── frontend/              # React + TS + Tailwind UI
-├── sample_artifacts/      # Minimal demo dbt artifacts
-├── plugins/               # Marketplace-style plugin directory (manifest + backend/frontend assets)
+│   ├── app/
+│   │   ├── api/routes/    # API endpoint handlers
+│   │   ├── core/          # Config, auth, plugins
+│   │   ├── database/      # SQLAlchemy models and services
+│   │   ├── schemas/       # Pydantic request/response models
+│   │   ├── services/      # Business logic services
+│   │   └── main.py        # FastAPI application entry
+│   └── requirements.txt
+├── frontend/              # React + TS + Vite UI
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── context/       # React contexts (Auth, etc.)
+│   │   ├── pages/         # Page components
+│   │   └── services/      # API service clients
+│   └── package.json
+├── plugins/               # Plugin directory (manifest + backend/frontend assets)
+├── sample_artifacts/      # Demo dbt artifacts
 ├── docker-compose.yml     # Full stack orchestration
+├── ARCHITECTURE.md        # System architecture documentation
+├── PLUGIN_SYSTEM.md       # Plugin system specification
+├── CONTRIBUTING.md        # Contribution guidelines
+├── ROADMAP.md             # Development roadmap
 └── README.md
 ```
 
-### Plugin bootstrap
+---
 
-- Set `PLUGINS_DIRECTORY` to point to your plugin root (default `./plugins`).
-- Each plugin lives in `plugins/<name>/manifest.json` with optional `backend/`, `frontend/`, and `static/` folders.
-- Use the admin-only Plugins navigation in the UI to enable/disable or hot-reload plugins at runtime.
+## 🔐 Authentication & RBAC
+
+### Authentication Modes
+
+| Setting | Behavior |
+|---------|----------|
+| `AUTH_ENABLED=false` (default) | No login required, all users have Admin access |
+| `AUTH_ENABLED=true` | JWT-based authentication with username/password |
+
+### Authentication Endpoints (when enabled)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/auth/login` | POST | Login with username/password, returns JWT tokens |
+| `/auth/refresh` | POST | Refresh access token using refresh token |
+| `/auth/logout` | POST | Logout (client discards tokens) |
+| `/auth/me` | GET | Get current user information |
+| `/auth/switch-workspace` | POST | Switch active workspace |
+
+### Roles & Permissions
+
+| Role | Level | Permissions |
+|------|-------|-------------|
+| **Viewer** | 0 | Read-only access to all data |
+| **Developer** | 1 | + Create/edit environments, schedules, run dbt commands |
+| **Admin** | 2 | + Manage users, plugins, workspaces, global settings |
+
+### RBAC by Feature
+
+| Feature | Viewer | Developer | Admin |
+|---------|--------|-----------|-------|
+| View models, lineage, catalog | ✅ | ✅ | ✅ |
+| View runs and history | ✅ | ✅ | ✅ |
+| Execute dbt commands | ❌ | ✅ | ✅ |
+| Create/edit environments | ❌ | ✅ | ✅ |
+| Create/edit schedules | ❌ | ✅ | ✅ |
+| Enable/disable plugins | ❌ | ❌ | ✅ |
+| Manage users | ❌ | ❌ | ✅ |
+| Manage workspaces | ❌ | ❌ | ✅ |
+
+---
+
+## ⚙️ Environment Variables
+
+### Database Settings
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES_HOST` | `localhost` | PostgreSQL server hostname |
+| `POSTGRES_PORT` | `5432` | PostgreSQL server port |
+| `POSTGRES_USER` | `user` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | `password` | PostgreSQL password |
+| `POSTGRES_DB` | `dbt_workbench` | PostgreSQL database name |
+| `DATABASE_URL` | - | Override full database URL (optional) |
+
+### Core Application
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BACKEND_PORT` | `8000` | Backend API server port |
+| `DBT_ARTIFACTS_PATH` | `./dbt_artifacts` | Path to dbt artifacts directory |
+| `DBT_PROJECT_PATH` | `./dbt_project` | Path to dbt project for execution |
+| `GIT_REPOS_BASE_PATH` | `./data/repos` | Base path for cloned Git repositories |
+
+### Authentication & Security
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTH_ENABLED` | `false` | Enable JWT authentication |
+| `SINGLE_PROJECT_MODE` | `true` | Single workspace mode (no workspace switching) |
+| `JWT_SECRET_KEY` | `change_me` | **CHANGE IN PRODUCTION** - Secret key for JWT signing |
+| `JWT_ALGORITHM` | `HS256` | JWT signing algorithm |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Access token expiration time |
+| `REFRESH_TOKEN_EXPIRE_MINUTES` | `43200` | Refresh token expiration (30 days) |
+
+### Password Policy
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PASSWORD_MIN_LENGTH` | `12` | Minimum password length |
+| `PASSWORD_REQUIRE_UPPERCASE` | `true` | Require uppercase letter |
+| `PASSWORD_REQUIRE_LOWERCASE` | `true` | Require lowercase letter |
+| `PASSWORD_REQUIRE_NUMBER` | `true` | Require number |
+| `PASSWORD_REQUIRE_SPECIAL` | `false` | Require special character |
+
+### Default Workspace
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DEFAULT_WORKSPACE_KEY` | `default` | Default workspace key identifier |
+| `DEFAULT_WORKSPACE_NAME` | `Default dbt Project` | Default workspace display name |
+| `DEFAULT_WORKSPACE_DESCRIPTION` | `Default workspace` | Default workspace description |
+
+### Artifact Watcher
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ARTIFACT_POLLING_INTERVAL` | `5` | Polling interval in seconds |
+| `MAX_ARTIFACT_VERSIONS` | `10` | Maximum artifact versions to retain |
+| `MONITORED_ARTIFACT_FILES` | `manifest.json,run_results.json,catalog.json` | Files to monitor for changes |
+
+### Lineage Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DEFAULT_GROUPING_MODE` | `none` | Default graph grouping (`none`, `schema`, `tag`) |
+| `MAX_INITIAL_LINEAGE_DEPTH` | `4` | Maximum initial graph depth |
+| `LOAD_COLUMN_LINEAGE_BY_DEFAULT` | `false` | Load column-level lineage by default |
+| `LINEAGE_PERFORMANCE_MODE` | `balanced` | Performance mode (`fast`, `balanced`, `detailed`) |
+
+### dbt Execution
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MAX_CONCURRENT_RUNS` | `1` | Maximum concurrent dbt runs |
+| `MAX_RUN_HISTORY` | `100` | Maximum runs to keep in history |
+| `MAX_ARTIFACT_SETS` | `50` | Maximum artifact sets to retain |
+| `LOG_BUFFER_SIZE` | `1000` | Log buffer size in lines |
+
+### Data Catalog
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ALLOW_METADATA_EDITS` | `true` | Allow editing catalog metadata |
+| `SEARCH_INDEXING_FREQUENCY_SECONDS` | `30` | Search index refresh interval |
+| `FRESHNESS_THRESHOLD_OVERRIDE_MINUTES` | - | Override source freshness threshold |
+| `VALIDATION_SEVERITY` | `warning` | Default validation severity |
+| `STATISTICS_REFRESH_POLICY` | `on_artifact_change` | When to refresh column statistics |
+
+### Scheduler
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SCHEDULER_ENABLED` | `true` | Enable the scheduler background process |
+| `SCHEDULER_POLL_INTERVAL_SECONDS` | `30` | Scheduler polling interval |
+| `SCHEDULER_MAX_CATCHUP_RUNS` | `10` | Maximum catch-up runs on restart |
+| `SCHEDULER_DEFAULT_TIMEZONE` | `UTC` | Default timezone for schedules |
+
+### SQL Workspace
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SQL_WORKSPACE_DEFAULT_CONNECTION_URL` | - | **Required** - Database URL for SQL queries |
+| `SQL_WORKSPACE_MAX_ROWS` | `5000` | Maximum rows returned per query |
+| `SQL_WORKSPACE_TIMEOUT_SECONDS` | `60` | Query execution timeout |
+| `SQL_WORKSPACE_ALLOW_DESTRUCTIVE_DEFAULT` | `false` | Allow destructive queries by default |
+
+### Notifications
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NOTIFICATIONS_SLACK_TIMEOUT_SECONDS` | `10` | Slack notification timeout |
+| `NOTIFICATIONS_WEBHOOK_TIMEOUT_SECONDS` | `10` | Webhook notification timeout |
+| `NOTIFICATIONS_EMAIL_FROM` | `dbt-workbench@example.com` | Email sender address |
+| `NOTIFICATIONS_EMAIL_SMTP_HOST` | `localhost` | SMTP server host |
+| `NOTIFICATIONS_EMAIL_SMTP_PORT` | `25` | SMTP server port |
+| `NOTIFICATIONS_EMAIL_USE_TLS` | `false` | Use TLS for SMTP |
+| `NOTIFICATIONS_EMAIL_USERNAME` | - | SMTP username |
+| `NOTIFICATIONS_EMAIL_PASSWORD` | - | SMTP password |
+
+### Plugin System
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PLUGIN_SYSTEM_ENABLED` | `true` | Enable the plugin system |
+| `PLUGINS_DIRECTORY` | `./plugins` | Plugin discovery directory |
+| `PLUGIN_HOT_RELOAD_ENABLED` | `true` | Enable hot-reload on file changes |
+| `PLUGIN_API_VERSION` | `1.0.0` | Plugin API version |
+| `PLUGIN_ALLOWED_ENV_PREFIXES` | `DBT_,DBT_WORKBENCH_` | Allowed environment variable prefixes for plugins |
 
 ---
 
@@ -104,33 +289,20 @@ dbt-Workbench/
 - Runs list + statuses  
 - Dashboard overview  
 
-### **Phase 2 — Live Metadata Updates**
+### **Phase 2 — Live Metadata Updates (Complete)**
 - Auto-detect changes to dbt artifacts  
 - Background watcher reloads metadata  
 - Frontend shows update indicators  
 - In-memory versioning  
 
-### **Phase 3 — dbt Execution Engine**
+### **Phase 3 — dbt Execution Engine (Complete)**
 - Run dbt commands from UI  
 - Real-time log streaming  
 - Persist artifacts per run  
 
-### **Phase 4 — Metadata Persistence Layer**
+### **Phase 4 — Metadata Persistence Layer (Complete)**
 - PostgreSQL backend
 - Historical model snapshots
-
-### **Multi-workspace & RBAC expectations**
-- Every request is evaluated in the context of the active workspace encoded in the JWT token; run history, models, and lineage are filtered by that workspace.
-- Switching workspaces clears cached state and forces fresh metadata to avoid leaking artifacts between projects.
-- Roles enforce the UI/API contract: viewers can inspect metadata, developers can run dbt and edit project files, and admins manage users/workspaces and global settings.
-
-### **Phase 11 — Git-Integrated dbt Workspace**
-- Workspace-scoped Git connections with branch switching, pull, push, and commit workflows
-- In-app file tree with SQL/Jinja editor for models and YAML editor support for dbt configs
-- Git-aware commit diffing, status, and history panels plus audit log visibility
-- Role-aware editing controls for protected configuration files and conflict handling cues
-- Model diff viewer
-- Historical lineage browser
 
 ### **Phase 5 — Advanced Lineage (Complete)**
 - Column-level lineage derived from manifest and catalog artifacts
@@ -139,7 +311,20 @@ dbt-Workbench/
 - Upstream and downstream impact highlighting at model and column granularity
 - Configurable defaults for grouping mode, graph depth, and column-level loading
 
-### **Phase 8 — Data Catalog Layer (New)**
+### **Phase 6 — Scheduler (Complete)**
+- Cron-style scheduled runs with timezone support
+- Email, Slack, and webhook notifications
+- Environment-specific configurations
+- Retry policies with exponential backoff
+- Catch-up and overlap policies
+
+### **Phase 7 — SQL Workspace (Complete)**
+- SQL editor with syntax highlighting
+- Query execution against configured database
+- Result profiling and statistics
+- Query history
+
+### **Phase 8 — Data Catalog Layer (Complete)**
 - Global fuzzy/prefix search across models, sources, exposures, macros, tests, tags, and columns
 - Rich entity detail pages with dbt metadata, owners, tags, documentation, lineage previews, and column statistics
 - Test health indicators surfaced in search, detail pages, and validation reports
@@ -148,13 +333,119 @@ dbt-Workbench/
 - Column-level descriptions, data types, nullability, and statistics synced from `catalog.json`
 - Validation of missing documentation, owners/tags, failing tests, freshness gaps, and stale sources
 
-### **Phase 10 — Plugin Ecosystem (New)**
+### **Phase 9 — RBAC & Multi-Project (Complete)**
+- JWT-based authentication (optional)
+- Role-based access control (Viewer, Developer, Admin)
+- Multiple workspaces with independent data
+- Workspace switching and per-user defaults
+
+### **Phase 10 — Plugin Ecosystem (Complete)**
 - Backend plugin manager with manifest validation, capability/permission checks, and lifecycle events
 - Hot-reloadable plugins discovered from the configurable `PLUGINS_DIRECTORY` (default `./plugins`)
 - Admin APIs to list, enable, disable, and reload plugins without restarting the server
+- **Workspace-scoped plugin configuration API** for per-workspace settings
 - Frontend marketplace and installed-plugins views with dynamic enable/disable controls
 - Standardized plugin layout (`/plugins/<name>/manifest.json`, `backend/`, `frontend/`, `static/`)
 - Safe opt-out via `PLUGIN_SYSTEM_ENABLED=false` for minimal installations
+
+### **Phase 11 — Git-Integrated dbt Workspace (Complete)**
+- Workspace-scoped Git connections with branch switching, pull, push, and commit workflows
+- In-app file tree with SQL/Jinja editor for models and YAML editor support for dbt configs
+- Git-aware commit diffing, status, and history panels plus audit log visibility
+- Role-aware editing controls for protected configuration files and conflict handling cues
+- Model diff viewer
+- Historical lineage browser
+
+---
+
+## 🔗 API Reference
+
+### Lineage API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/lineage/graph` | GET | Model-level lineage with grouping metadata |
+| `/lineage/columns` | GET | Column-level lineage graph |
+| `/lineage/model/{unique_id}` | GET | Parents, children, and columns for a model |
+| `/lineage/upstream/{id}` | GET | Upstream impact analysis |
+| `/lineage/downstream/{id}` | GET | Downstream impact analysis |
+| `/lineage/groups` | GET | Grouping metadata for schemas, types, tags |
+
+### Catalog API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/catalog/entities` | GET | List all catalog entities |
+| `/catalog/entities/{unique_id}` | GET | Full entity detail with columns and tests |
+| `/catalog/search` | GET | Fuzzy/prefix search across all entities |
+| `/catalog/validation` | GET | Validation issues report |
+| `/catalog/entities/{unique_id}` | PATCH | Update entity metadata (owner, tags, description) |
+| `/catalog/entities/{unique_id}/columns/{column_name}` | PATCH | Update column-level metadata |
+
+### Execution API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/execution/run` | POST | Start a new dbt run |
+| `/execution/runs` | GET | List run history |
+| `/execution/runs/{run_id}` | GET | Get run details |
+| `/execution/runs/{run_id}/logs` | GET | Stream run logs |
+| `/execution/runs/{run_id}/artifacts` | GET | Get run artifacts |
+| `/execution/runs/{run_id}/cancel` | POST | Cancel a running job |
+
+### Scheduler API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/schedules` | GET | List all schedules |
+| `/schedules` | POST | Create a new schedule |
+| `/schedules/{id}` | GET | Get schedule details |
+| `/schedules/{id}` | PUT | Update schedule |
+| `/schedules/{id}` | DELETE | Delete schedule |
+| `/schedules/{id}/pause` | POST | Pause schedule |
+| `/schedules/{id}/resume` | POST | Resume schedule |
+| `/schedules/{id}/run` | POST | Trigger immediate run |
+| `/schedules/environments` | GET | List environments |
+| `/schedules/environments` | POST | Create environment |
+
+### Plugin API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/plugins/installed` | GET | List installed plugins |
+| `/plugins/{name}/enable` | POST | Enable a plugin (Admin) |
+| `/plugins/{name}/disable` | POST | Disable a plugin (Admin) |
+| `/plugins/reload` | POST | Hot-reload plugins (Admin) |
+| `/plugins/config` | GET | List workspace plugin configs |
+| `/plugins/config/{name}` | GET | Get plugin config |
+| `/plugins/config` | POST | Create plugin config (Admin) |
+| `/plugins/config/{name}` | PUT | Update plugin config (Admin) |
+| `/plugins/config/{name}` | DELETE | Delete plugin config (Admin) |
+
+### Git API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/git/connect` | POST | Clone and connect a repository |
+| `/git/status` | GET | Get repository status |
+| `/git/branches` | GET | List branches |
+| `/git/checkout` | POST | Switch branch |
+| `/git/pull` | POST | Pull latest changes |
+| `/git/push` | POST | Push commits |
+| `/git/commit` | POST | Create a commit |
+| `/git/history` | GET | Get commit history |
+| `/git/diff` | GET | Get file diff |
+| `/git/files` | GET | List repository files |
+| `/git/files/{path}` | GET | Read file content |
+| `/git/files/{path}` | PUT | Write file content |
+
+### Configuration API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/config` | GET | Get application configuration |
+| `/workspaces/active` | GET | Get active workspace |
+| `/workspaces` | GET | List workspaces (when auth enabled) |
 
 ---
 
@@ -162,47 +453,15 @@ dbt-Workbench/
 
 ### Backend
 ```bash
+cd backend
 pytest
 ```
 
 ### Frontend
 ```bash
+cd frontend
 npm test
 ```
-
-## 🔗 Lineage API
-
-- `GET /lineage/graph?max_depth=` — model-level lineage with grouping metadata
-- `GET /lineage/columns` — column-level lineage graph
-- `GET /lineage/model/{unique_id}` — parents, children, and columns for a model
-- `GET /lineage/upstream/{id}` / `GET /lineage/downstream/{id}` — impact highlighting for models or columns (via `column` query param)
-- `GET /lineage/groups` — grouping metadata for schemas, resource types, and tags
-
-Configuration flags (via environment variables or `/config` endpoint):
-
-- `DEFAULT_GROUPING_MODE`
-- `MAX_INITIAL_LINEAGE_DEPTH`
-- `LOAD_COLUMN_LINEAGE_BY_DEFAULT`
-- `LINEAGE_PERFORMANCE_MODE`
-
----
-
-## 📚 Catalog API
-
-- `GET /catalog/entities` — list all catalog entities with tags, owners, freshness, and test summaries
-- `GET /catalog/entities/{unique_id}` — full detail including columns, tests, metadata overrides, and statistics
-- `GET /catalog/search?q=` — fuzzy/prefix search grouped by resource type (models, sources, exposures, macros, tests, tags, columns)
-- `GET /catalog/validation` — validation issues (missing docs/owners/tags, failing tests, stale or missing freshness)
-- `PATCH /catalog/entities/{unique_id}` — apply metadata overrides (owner, tags, description) when edits are enabled
-- `PATCH /catalog/entities/{unique_id}/columns/{column_name}` — update column-level overrides (description, owner, tags)
-
-Configuration (env vars or `/config`):
-
-- `ALLOW_METADATA_EDITS` — toggle editability of catalog metadata
-- `SEARCH_INDEXING_FREQUENCY_SECONDS` — controls how often searches refresh from artifacts
-- `FRESHNESS_THRESHOLD_OVERRIDE_MINUTES` — optional override for source freshness thresholds
-- `VALIDATION_SEVERITY` — default severity for validation rules
-- `STATISTICS_REFRESH_POLICY` — determines when column statistics refresh (default: `on_artifact_change`)
 
 ---
 
