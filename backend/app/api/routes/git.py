@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from app.core.auth import Role, UserContext, WorkspaceContext, get_current_user, get_current_workspace, require_role
@@ -36,10 +36,6 @@ def get_db() -> Session:
         db.close()
         raise
 
-
-from fastapi import APIRouter, Depends, Response
-from sqlalchemy.orm import Session
-# ... (imports)
 
 @router.post(
     "/connect",

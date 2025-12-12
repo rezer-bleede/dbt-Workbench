@@ -213,7 +213,7 @@ export default function VersionControlPage() {
               <button
                 type="submit"
                 className="btn"
-                disabled={!remoteUrl || !activeWorkspace?.id || loading}
+                disabled={!remoteUrl || activeWorkspace?.id == null || loading}
               >
                 {loading ? 'Connecting…' : 'Clone & Connect'}
               </button>
