@@ -27,6 +27,15 @@ export class GitService {
     return response.data
   }
 
+  static async getRepository(): Promise<GitRepository | null> {
+    const response = await api.get<GitRepository | null>('/git/repository')
+    return response.data
+  }
+
+  static async disconnect(deleteFiles: boolean = false): Promise<void> {
+    await api.delete('/git/disconnect', { params: { delete_files: deleteFiles } })
+  }
+
   static async status(): Promise<GitStatus> {
     const response = await api.get<GitStatus>('/git/status')
     return response.data

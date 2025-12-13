@@ -181,6 +181,59 @@ def _repo_record(db: Session, workspace_id: int) -> db_models.GitRepository:
     return record
 
 
+def get_repository(db: Session, workspace_id: int) -> GitRepositorySummary | None:
+    """Get the currently connected repository for a workspace, or None if not configured."""
+    record = (
+        db.query(db_models.GitRepository)
+        .filter(db_models.GitRepository.workspace_id == workspace_id)
+        .first()
+    )
+    if not record:
+        return None
+    return GitRepositorySummary.model_validate(record)
+
+
+def disconnect_repository(
+    db: Session,
+    workspace_id: int,
+    *,
+    delete_files: bool = False,
+    user_id: int | None,
+    username: str | None,
+) -> None:
+    """Disconnect the repository from the workspace. Optionally delete cloned files."""
+    record = (
+        db.query(db_models.GitRepository)
+        .filter(db_models.GitRepository.workspace_id == workspace_id)
+        .first()
+    )
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "git_not_configured", "message": "No repository to disconnect."},
+        )
+
+    directory = record.directory
+    db.delete(record)
+    db.commit()
+
+    if delete_files and directory:
+        import shutil
+        dir_path = Path(directory)
+        if dir_path.exists():
+            shutil.rmtree(dir_path)
+
+    audit_service.record_audit(
+        db,
+        workspace_id=workspace_id,
+        user_id=user_id,
+        username=username,
+        action="disconnect_repository",
+        resource="git",
+        metadata={"directory": directory, "delete_files": delete_files},
+    )
+
+
 def _categorize(path: Path, base: Path) -> Optional[str]:
     parts = path.relative_to(base).parts
     if not parts:

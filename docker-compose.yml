@@ -17,6 +17,7 @@ services:
       - SQL_WORKSPACE_DEFAULT_CONNECTION_URL=postgresql://user:password@db:5432/dbt_workbench
     volumes:
       - ./sample_artifacts:/app/dbt_artifacts:ro
+      - ./data/repos:/app/data/repos
     networks:
       - dbt_workbench
 
@@ -37,9 +38,14 @@ services:
       - POSTGRES_DB=dbt_workbench
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - dbt_workbench
 
 networks:
   dbt_workbench:
     driver: bridge
+
+volumes:
+  postgres_data:

@@ -9,6 +9,7 @@ import {
   GitFileContent,
   GitFileNode,
   GitHistoryEntry,
+  GitRepository,
   GitStatus,
 } from '../types'
 
@@ -58,17 +59,23 @@ export default function VersionControlPage() {
   const [auditRecords, setAuditRecords] = useState<AuditRecord[]>([])
   const [loading, setLoading] = useState(false)
   const [repoMissing, setRepoMissing] = useState(false)
+  const [repository, setRepository] = useState<GitRepository | null>(null)
   const [connectError, setConnectError] = useState<string | null>(null)
   const [connectSuccess, setConnectSuccess] = useState<string | null>(null)
   const [remoteUrl, setRemoteUrl] = useState('')
   const [branch, setBranch] = useState('main')
   const [provider, setProvider] = useState('')
+  const [showCloneForm, setShowCloneForm] = useState(false)
   const workspaceId = activeWorkspace?.id ?? null
 
   const reload = async () => {
     setLoading(true)
     try {
-      const newStatus = await GitService.status()
+      const [repoInfo, newStatus] = await Promise.all([
+        GitService.getRepository(),
+        GitService.status(),
+      ])
+      setRepository(repoInfo)
       if (newStatus.configured === false) {
         setRepoMissing(true)
         setStatus(newStatus)
@@ -116,8 +123,10 @@ export default function VersionControlPage() {
     setSelectedPath('')
     setFileContent(null)
     setRepoMissing(false)
+    setRepository(null)
     setConnectError(null)
     setConnectSuccess(null)
+    setShowCloneForm(false)
 
     if (workspaceId == null) {
       setRepoMissing(true)
@@ -176,6 +185,25 @@ export default function VersionControlPage() {
     }
   }
 
+  const handleDisconnect = async () => {
+    if (!confirm('Are you sure you want to disconnect this repository?')) return
+    try {
+      await GitService.disconnect(false)
+      setRepository(null)
+      setRepoMissing(true)
+      setShowCloneForm(false)
+      setConnectSuccess(null)
+      await reload()
+    } catch (err: any) {
+      console.error('Disconnect failed:', err)
+      setConnectError(
+        err?.response?.data?.detail?.message ||
+        err?.response?.data?.detail ||
+        'Failed to disconnect repository.'
+      )
+    }
+  }
+
   const actionsDisabled = repoMissing || loading
 
   return (
@@ -187,11 +215,61 @@ export default function VersionControlPage() {
         </div>
       </div>
 
-      {repoMissing && (
+      {/* Connected Repository Info */}
+      {repository && !repoMissing && (
         <div className="bg-panel border border-gray-800 rounded p-4">
-          <div className="text-white font-semibold mb-2">Clone repository</div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-white font-semibold">Connected Repository</div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => setShowCloneForm(!showCloneForm)}
+              >
+                {showCloneForm ? 'Cancel' : 'Clone Another'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm bg-red-600 hover:bg-red-700"
+                onClick={handleDisconnect}
+                disabled={loading}
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <div className="text-gray-400 text-xs">Remote URL</div>
+              <div className="text-gray-200 font-mono truncate">{repository.remote_url}</div>
+            </div>
+            <div>
+              <div className="text-gray-400 text-xs">Default Branch</div>
+              <div className="text-gray-200">{repository.default_branch}</div>
+            </div>
+            <div>
+              <div className="text-gray-400 text-xs">Last Synced</div>
+              <div className="text-gray-200">
+                {repository.last_synced_at
+                  ? new Date(repository.last_synced_at).toLocaleString()
+                  : 'Never'}
+              </div>
+            </div>
+          </div>
+          {connectError && <div className="mt-2 text-sm text-red-400">{connectError}</div>}
+        </div>
+      )}
+
+      {/* Clone Repository Form */}
+      {(repoMissing || showCloneForm) && (
+        <div className="bg-panel border border-gray-800 rounded p-4">
+          <div className="text-white font-semibold mb-2">
+            {repository ? 'Clone a Different Repository' : 'Clone Repository'}
+          </div>
           <p className="text-sm text-gray-400 mb-3">
-            Provide a remote URL to clone into the backend workspace. Requires admin privileges.
+            {repository
+              ? 'This will disconnect the current repository and clone a new one.'
+              : 'Provide a remote URL to clone into the backend workspace. Requires admin privileges.'}
           </p>
           <form className="grid grid-cols-1 md:grid-cols-2 gap-3" onSubmit={handleConnect}>
             <div className="md:col-span-2">
@@ -231,7 +309,7 @@ export default function VersionControlPage() {
                 className="btn"
                 disabled={!remoteUrl || workspaceId == null || loading}
               >
-                {loading ? 'Connecting…' : 'Clone & Connect'}
+                {loading ? 'Connecting…' : repository ? 'Replace & Clone' : 'Clone & Connect'}
               </button>
               {connectError && <div className="text-sm text-red-400">{connectError}</div>}
               {connectSuccess && <div className="text-sm text-green-400">{connectSuccess}</div>}

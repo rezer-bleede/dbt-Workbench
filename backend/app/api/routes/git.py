@@ -60,6 +60,33 @@ def connect_repository(
     )
 
 
+@router.get("/repository", response_model=GitRepositorySummary | None)
+def get_repository(
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+    db: Session = Depends(get_db),
+) -> GitRepositorySummary | None:
+    return git_service.get_repository(db, workspace.id)
+
+
+@router.delete(
+    "/disconnect",
+    dependencies=[Depends(require_role(Role.ADMIN))],
+)
+def disconnect_repository(
+    delete_files: bool = False,
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+    current_user: UserContext = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    return git_service.disconnect_repository(
+        db,
+        workspace_id=workspace.id,
+        delete_files=delete_files,
+        user_id=current_user.id,
+        username=current_user.username,
+    )
+
+
 @router.get("/status", response_model=GitStatusResponse)
 def get_status(
     workspace: WorkspaceContext = Depends(get_current_workspace),
