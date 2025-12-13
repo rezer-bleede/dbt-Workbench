@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { DbtCommand, RunRequest } from '../types';
+import React, { useState, useEffect } from 'react';
+import { DbtCommand, RunRequest, ModelSummary, Environment } from '../types';
 import { ExecutionService } from '../services/executionService';
+import { api } from '../api/client';
+import { EnvironmentService } from '../services/environmentService';
+import { Autocomplete } from './Autocomplete';
 
 interface RunCommandProps {
   onRunStarted?: (runId: string) => void;
@@ -9,9 +12,12 @@ interface RunCommandProps {
 export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   const [command, setCommand] = useState<DbtCommand>('run');
   const [description, setDescription] = useState('');
-  const [parameters, setParameters] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Suggestion data
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [availableTargets, setAvailableTargets] = useState<string[]>([]);
 
   // Parameter form state
   const [selectModels, setSelectModels] = useState('');
@@ -21,6 +27,26 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   const [failFast, setFailFast] = useState(false);
   const [storeFailures, setStoreFailures] = useState(false);
   const [noCompile, setNoCompile] = useState(false);
+
+  useEffect(() => {
+    // Fetch models for autocomplete
+    api.get<ModelSummary[]>('/models')
+      .then(res => {
+        setAvailableModels(res.data.map(m => m.name));
+      })
+      .catch(err => console.error('Failed to fetch models for autocomplete', err));
+
+    // Fetch environments for target autocomplete
+    EnvironmentService.list()
+      .then(envs => {
+        const targets = envs
+          .map(e => e.dbt_target_name)
+          .filter((t): t is string => !!t); // Filter out null/undefined
+        // Dedup targets
+        setAvailableTargets(Array.from(new Set(targets)));
+      })
+      .catch(err => console.error('Failed to fetch environments for autocomplete', err));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +72,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
 
       const result = await ExecutionService.startRun(request);
       onRunStarted?.(result.run_id);
-      
+
       // Reset form
       setDescription('');
       setSelectModels('');
@@ -63,26 +89,38 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
     }
   };
 
+  const commands: { id: DbtCommand; label: string }[] = [
+    { id: 'run', label: 'Run' },
+    { id: 'test', label: 'Test' },
+    { id: 'seed', label: 'Seed' },
+    { id: 'docs generate', label: 'Docs' },
+  ];
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-xl font-semibold mb-4">Run dbt Command</h2>
-      
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Command Selection */}
+        {/* Command Selection - Buttons */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Command
           </label>
-          <select
-            value={command}
-            onChange={(e) => setCommand(e.target.value as DbtCommand)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="run">dbt run</option>
-            <option value="test">dbt test</option>
-            <option value="seed">dbt seed</option>
-            <option value="docs generate">dbt docs generate</option>
-          </select>
+          <div className="flex space-x-2">
+            {commands.map((cmd) => (
+              <button
+                key={cmd.id}
+                type="button"
+                onClick={() => setCommand(cmd.id)}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${command === cmd.id
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                {cmd.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Description */}
@@ -105,39 +143,42 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Models
             </label>
-            <input
-              type="text"
+            <Autocomplete
+              options={availableModels}
               value={selectModels}
-              onChange={(e) => setSelectModels(e.target.value)}
-              placeholder="e.g., my_model+, tag:daily"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={setSelectModels}
+              placeholder="e.g., my_model"
+              strict={true}
             />
+            <p className="mt-1 text-xs text-gray-500">Only configured models allowed.</p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Exclude Models
             </label>
-            <input
-              type="text"
+            <Autocomplete
+              options={availableModels}
               value={excludeModels}
-              onChange={(e) => setExcludeModels(e.target.value)}
-              placeholder="e.g., tag:deprecated"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={setExcludeModels}
+              placeholder="e.g., my_model"
+              strict={true}
             />
+            <p className="mt-1 text-xs text-gray-500">Only configured models allowed.</p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Target
             </label>
-            <input
-              type="text"
+            <Autocomplete
+              options={availableTargets}
               value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              placeholder="e.g., dev, prod"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={setTarget}
+              placeholder="e.g., dev"
+              strict={true}
             />
+            <p className="mt-1 text-xs text-gray-500">Must match a scheduled environment target.</p>
           </div>
         </div>
 

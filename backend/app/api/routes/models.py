@@ -88,10 +88,22 @@ def list_models(
 
 @router.get("/models/{model_id}", response_model=ModelDetail)
 def get_model(model_id: str, service: ArtifactService = Depends(get_service)) -> ModelDetail:
+    # Check for git-only models
+    if model_id.startswith("git."):
+        name = model_id.removeprefix("git.")
+        return ModelDetail(
+            unique_id=model_id,
+            name=name,
+            resource_type="model",
+            source="git",
+            depends_on=[],
+            tags=[],
+            description="Model file from git repository (not yet compiled).",
+            columns={},
+            children=[]
+        )
+
     model = service.get_model_detail(model_id)
     if not model:
-        # TODO: If it's a git model (starts with git.), we could construct a skeletal detail
-        # But for now, we just return 404 if not in manifest, as per original logic.
-        # The user only asked to "show and list", getting details might be a bonus or next step.
         raise HTTPException(status_code=404, detail="Model not found")
     return ModelDetail(**model)
