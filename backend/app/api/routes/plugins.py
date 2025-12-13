@@ -18,6 +18,29 @@ from app.schemas.plugins import (
     PluginSummary,
     PluginToggleResponse,
 )
+from app.services.package_manager import PackageManager
+from app.api.routes.profiles import get_profiles_file
+from pydantic import BaseModel
+from pathlib import Path
+import yaml
+import logging
+
+logger = logging.getLogger(__name__)
+
+class AdapterSuggestion(BaseModel):
+    type: str
+    package: str
+    installed: bool
+    current_version: str | None
+    required_by_profile: bool
+
+class PackageOperationRequest(BaseModel):
+    package_name: str
+
+class PackageOperationResponse(BaseModel):
+    success: bool
+    message: str
+
 
 router = APIRouter(prefix="/plugins", tags=["plugins"])
 
@@ -222,3 +245,91 @@ def delete_plugin_config(
     db.delete(db_config)
     db.commit()
     return {"message": f"Configuration for plugin '{plugin_name}' deleted"}
+
+
+# --- Package Management / Adapter Suggestions ---
+
+@router.get("/adapters", response_model=List[AdapterSuggestion])
+def list_adapter_suggestions(
+    profiles_file: Path = Depends(get_profiles_file)
+):
+    installed_packages = {p['name'].lower(): p['version'] for p in PackageManager.list_installed_packages()}
+    
+    # 1. Identify used adapter types from profiles.yml
+    used_types = set()
+    if profiles_file.exists():
+        try:
+            content = profiles_file.read_text()
+            parsed = yaml.safe_load(content)
+            if isinstance(parsed, dict):
+                for config in parsed.values():
+                    if not isinstance(config, dict): continue
+                    outputs = config.get('outputs', {})
+                    for target in outputs.values():
+                        if 'type' in target:
+                            used_types.add(target['type'])
+        except Exception as e:
+            logger.error(f"Failed to parse profiles.yml for suggestions: {e}")
+
+    # 2. Known adapters map (type -> pypi package)
+    known_adapters = {
+        'postgres': 'dbt-postgres',
+        'redshift': 'dbt-redshift',
+        'snowflake': 'dbt-snowflake',
+        'bigquery': 'dbt-bigquery',
+        'spark': 'dbt-spark',
+        'databricks': 'dbt-databricks',
+        'trino': 'dbt-trino',
+        'presto': 'dbt-presto',
+        'oracle': 'dbt-oracle',
+        'sqlserver': 'dbt-sqlserver',
+    }
+
+    suggestions = []
+    
+    # Check used types
+    for adapter_type in used_types:
+        package = known_adapters.get(adapter_type, f"dbt-{adapter_type}")
+        installed = package.lower() in installed_packages
+        suggestions.append(AdapterSuggestion(
+            type=adapter_type,
+            package=package,
+            installed=installed,
+            current_version=installed_packages.get(package.lower()),
+            required_by_profile=True
+        ))
+
+    # Also list installed adapters that might not be in the profile (but are present)
+    for pkg_name, version in installed_packages.items():
+        if pkg_name.startswith("dbt-") and pkg_name != "dbt-core" and pkg_name not in [s.package for s in suggestions]:
+             adapter_type = pkg_name.replace("dbt-", "")
+             suggestions.append(AdapterSuggestion(
+                type=adapter_type,
+                package=pkg_name,
+                installed=True,
+                current_version=version,
+                required_by_profile=False
+             ))
+
+    return suggestions
+
+@router.post("/packages/install", response_model=PackageOperationResponse)
+def install_package_endpoint(
+    request: PackageOperationRequest,
+    # role check? Let's say developer or admin
+):
+    success = PackageManager.install_package(request.package_name)
+    if success:
+        return PackageOperationResponse(success=True, message=f"Successfully installed {request.package_name}")
+    else:
+        raise HTTPException(status_code=500, detail=f"Failed to install {request.package_name}")
+
+@router.post("/packages/upgrade", response_model=PackageOperationResponse)
+def upgrade_package_endpoint(
+    request: PackageOperationRequest,
+):
+    success = PackageManager.upgrade_package(request.package_name)
+    if success:
+        return PackageOperationResponse(success=True, message=f"Successfully upgraded {request.package_name}")
+    else:
+        raise HTTPException(status_code=500, detail=f"Failed to upgrade {request.package_name}")

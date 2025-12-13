@@ -1,0 +1,9 @@
+
+default:
+  outputs:
+    dev:
+      type: snowflake
+      account: blah
+    prod:
+      type: postgres
+      host: localhost

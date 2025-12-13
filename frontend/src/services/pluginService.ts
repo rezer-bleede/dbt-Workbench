@@ -1,23 +1,59 @@
-import { api } from '../api/client'
-import { PluginReloadResponse, PluginSummary, PluginToggleResponse } from '../types/plugins'
+import { api } from '../api/client';
 
-export async function listInstalledPlugins(): Promise<PluginSummary[]> {
-  const resp = await api.get<PluginSummary[]>('/plugins/installed')
-  return resp.data
+export interface PluginSummary {
+  name: string;
+  enabled: boolean;
+  version?: string;
+  description?: string;
+  author?: string;
 }
 
-export async function enablePlugin(pluginName: string): Promise<PluginToggleResponse> {
-  const resp = await api.post<PluginToggleResponse>(`/plugins/${pluginName}/enable`)
-  return resp.data
+export interface AdapterSuggestion {
+  type: string;
+  package: string;
+  installed: boolean;
+  current_version: string | null;
+  required_by_profile: boolean;
 }
 
-export async function disablePlugin(pluginName: string): Promise<PluginToggleResponse> {
-  const resp = await api.post<PluginToggleResponse>(`/plugins/${pluginName}/disable`)
-  return resp.data
+export interface PackageOperationResponse {
+  success: boolean;
+  message: string;
 }
 
-export async function reloadPlugins(pluginName?: string): Promise<PluginReloadResponse> {
-  const params = pluginName ? { plugin_name: pluginName } : undefined
-  const resp = await api.post<PluginReloadResponse>('/plugins/reload', null, { params })
-  return resp.data
-}
+export const PluginService = {
+  list: async (): Promise<PluginSummary[]> => {
+    const response = await api.get<PluginSummary[]>('/plugins/installed');
+    return response.data;
+  },
+
+  enable: async (name: string): Promise<PluginSummary> => {
+    const response = await api.post<{ plugin: PluginSummary }>(`/plugins/${name}/enable`);
+    return response.data.plugin;
+  },
+
+  disable: async (name: string): Promise<PluginSummary> => {
+    const response = await api.post<{ plugin: PluginSummary }>(`/plugins/${name}/disable`);
+    return response.data.plugin;
+  },
+
+  reload: async (name?: string): Promise<PluginSummary[]> => {
+    const response = await api.post<{ reloaded: PluginSummary[] }>('/plugins/reload', { params: { plugin_name: name } });
+    return response.data.reloaded;
+  },
+
+  getAdapterSuggestions: async (): Promise<AdapterSuggestion[]> => {
+    const response = await api.get<AdapterSuggestion[]>('/plugins/adapters');
+    return response.data;
+  },
+
+  installPackage: async (packageName: string): Promise<PackageOperationResponse> => {
+    const response = await api.post<PackageOperationResponse>('/plugins/packages/install', { package_name: packageName });
+    return response.data;
+  },
+
+  upgradePackage: async (packageName: string): Promise<PackageOperationResponse> => {
+    const response = await api.post<PackageOperationResponse>('/plugins/packages/upgrade', { package_name: packageName });
+    return response.data;
+  },
+};

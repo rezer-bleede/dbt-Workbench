@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PluginCard } from '../components/PluginCard'
-import { disablePlugin, enablePlugin, listInstalledPlugins } from '../services/pluginService'
+import { PluginService } from '../services/pluginService'
 import { PluginSummary } from '../types/plugins'
 
 export default function PluginMarketplacePage() {
@@ -9,7 +9,7 @@ export default function PluginMarketplacePage() {
 
   const loadPlugins = async () => {
     setIsLoading(true)
-    const installed = await listInstalledPlugins()
+    const installed = await PluginService.list()
     setPlugins(installed)
     setIsLoading(false)
   }
@@ -32,8 +32,8 @@ export default function PluginMarketplacePage() {
           <PluginCard
             key={plugin.name}
             plugin={plugin}
-            onEnable={enablePlugin}
-            onDisable={disablePlugin}
+            onEnable={PluginService.enable}
+            onDisable={PluginService.disable}
           />
         ))}
       </div>
