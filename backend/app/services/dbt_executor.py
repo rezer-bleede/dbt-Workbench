@@ -111,6 +111,11 @@ class DbtExecutor:
                 dest_file = Path(artifacts_dir) / filename
                 shutil.copy2(source_file, dest_file)
                 
+                # ALSO copy to the root artifacts directory (current state)
+                # allowing ArtifactService to serve the latest state
+                current_state_file = Path(self.settings.dbt_artifacts_path) / filename
+                shutil.copy2(source_file, current_state_file)
+
                 # Create artifact info
                 stat = dest_file.stat()
                 artifacts.append(ArtifactInfo(
