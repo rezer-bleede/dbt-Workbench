@@ -255,6 +255,11 @@ dbt-Workbench/
 | `SQL_WORKSPACE_TIMEOUT_SECONDS` | `60` | Query execution timeout |
 | `SQL_WORKSPACE_ALLOW_DESTRUCTIVE_DEFAULT` | `false` | Allow destructive queries by default |
 
+The SQL Workspace supports two execution modes:
+
+- **Custom SQL**: freeform queries against the selected environment, honoring destructive-query guardrails and row limits.
+- **dbt models**: dual-pane editor showing the model source next to the compiled SQL (read-only). The compiled SQL is refreshed per environment/target and is the only code sent to the warehouse for execution. Viewer roles can inspect compiled SQL, while Developers/Admins can execute it.
+
 ### Notifications
 
 | Variable | Default | Description |
@@ -320,9 +325,11 @@ dbt-Workbench/
 
 ### **Phase 7 — SQL Workspace (Complete)**
 - SQL editor with syntax highlighting
-- Query execution against configured database
-- Result profiling and statistics
-- Query history
+- Dual-pane dbt model view showing editable source alongside read-only compiled SQL
+- Query execution against configured database with dbt model runs using compiled SQL only
+- Environment-aware compilation and execution with role-based run restrictions
+- Result profiling and statistics shared across custom SQL and dbt model runs
+- Query history with execution mode, model references, and compiled SQL checksums
 
 ### **Phase 8 — Data Catalog Layer (Complete)**
 - Global fuzzy/prefix search across models, sources, exposures, macros, tests, tags, and columns

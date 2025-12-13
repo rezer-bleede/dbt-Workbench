@@ -1,12 +1,44 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import React from 'react'
 
 import VersionControlPage from './VersionControl'
 import { GitService } from '../services/gitService'
+import { UserSummary } from '../types'
 
 vi.mock('../services/gitService')
 
 const mockedService = vi.mocked(GitService)
+
+const authValue = {
+  isLoading: false,
+  isAuthEnabled: false,
+  user: {
+    id: 1,
+    username: 'tester',
+    role: 'admin',
+    full_name: null,
+    is_active: true,
+    workspaces: [],
+  } as UserSummary,
+  accessToken: null,
+  refreshToken: null,
+  activeWorkspace: {
+    id: 1,
+    key: 'default',
+    name: 'Default',
+    description: null,
+    artifacts_path: '/tmp',
+  },
+  login: vi.fn(),
+  logout: vi.fn(),
+  switchWorkspace: vi.fn(),
+}
+
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => authValue,
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
 
 describe('VersionControlPage', () => {
   beforeEach(() => {

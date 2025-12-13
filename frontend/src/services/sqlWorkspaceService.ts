@@ -1,5 +1,7 @@
 import { api } from '../api/client';
 import {
+  CompiledSqlResponse,
+  DbtModelExecuteRequest,
   ModelPreviewRequest,
   ModelPreviewResponse,
   SqlAutocompleteMetadata,
@@ -51,6 +53,22 @@ export class SqlWorkspaceService {
 
   static async previewModel(payload: ModelPreviewRequest): Promise<ModelPreviewResponse> {
     const response = await api.post<ModelPreviewResponse>('/sql/preview', payload);
+    return response.data;
+  }
+
+  static async getCompiledSql(
+    modelUniqueId: string,
+    params: { environment_id?: number },
+  ): Promise<CompiledSqlResponse> {
+    const response = await api.get<CompiledSqlResponse>(`/sql/models/${modelUniqueId}/compiled`, { params });
+    return response.data;
+  }
+
+  static async executeModel(payload: DbtModelExecuteRequest): Promise<SqlQueryResult> {
+    if (!payload.model_unique_id) {
+      throw new Error('model_unique_id is required to execute a dbt model');
+    }
+    const response = await api.post<SqlQueryResult>(`/sql/models/${payload.model_unique_id}/run`, payload);
     return response.data;
   }
 

@@ -6,6 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.core.auth import Role, WorkspaceContext, get_current_user, get_current_workspace, require_role
 from app.schemas.sql_workspace import (
     AutocompleteMetadataResponse,
+    CompiledSqlResponse,
+    DbtModelExecuteRequest,
     ModelPreviewRequest,
     ModelPreviewResponse,
     SqlErrorResponse,
@@ -107,12 +109,67 @@ def get_sql_history(
 @router.get(
     "/metadata",
     response_model=AutocompleteMetadataResponse,
-    dependencies=[Depends(require_role(Role.DEVELOPER))],
+    dependencies=[Depends(require_role(Role.VIEWER))],
 )
 def get_sql_metadata(
     service: SqlWorkspaceService = Depends(get_service),
 ) -> AutocompleteMetadataResponse:
     return service.get_autocomplete_metadata()
+
+
+@router.get(
+    "/models/{model_unique_id}/compiled",
+    response_model=CompiledSqlResponse,
+    dependencies=[Depends(require_role(Role.VIEWER))],
+)
+def get_compiled_model_sql(
+    model_unique_id: str,
+    environment_id: Optional[int] = Query(default=None),
+    service: SqlWorkspaceService = Depends(get_service),
+) -> CompiledSqlResponse:
+    try:
+        return service.get_compiled_sql(model_unique_id, environment_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={"message": str(exc), "code": "compile_error"},
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={"message": str(exc), "code": "compile_error"},
+        ) from exc
+
+
+@router.post(
+    "/models/{model_unique_id}/run",
+    response_model=SqlQueryResult,
+    responses={400: {"model": SqlErrorResponse}, 403: {"model": SqlErrorResponse}},
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
+def run_compiled_model(
+    model_unique_id: str,
+    request: DbtModelExecuteRequest,
+    service: SqlWorkspaceService = Depends(get_service),
+) -> SqlQueryResult:
+    try:
+        if request.model_unique_id and request.model_unique_id != model_unique_id:
+            raise HTTPException(
+                status_code=400,
+                detail={"message": "Model identifier mismatch", "code": "invalid_model"},
+            )
+        request.model_unique_id = model_unique_id
+        return service.execute_model(request)
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=403,
+            detail={"message": str(exc), "code": "forbidden"},
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={"message": str(exc), "code": "execution_error"},
+        ) from exc
 
 
 @router.post(

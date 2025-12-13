@@ -1,3 +1,4 @@
+import hashlib
 import threading
 import time
 from dataclasses import dataclass
@@ -13,6 +14,8 @@ from app.database.connection import SessionLocal
 from app.database.models import models as db_models
 from app.schemas.sql_workspace import (
     AutocompleteMetadataResponse,
+    CompiledSqlResponse,
+    DbtModelExecuteRequest,
     ModelPreviewRequest,
     ModelPreviewResponse,
     RelationColumn,
@@ -153,6 +156,9 @@ class SqlWorkspaceService:
         manifest = self.artifact_service.get_manifest() or {}
         catalog = self.artifact_service.get_catalog() or {}
         return manifest, catalog
+
+    def _compiled_checksum(self, sql: str) -> str:
+        return hashlib.sha256(sql.encode("utf-8")).hexdigest()
 
     def _merged_nodes(self, manifest: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         nodes = dict(manifest.get("nodes", {}))
@@ -356,6 +362,10 @@ class SqlWorkspaceService:
                 query_text=request.sql,
                 status="running",
                 model_ref=request.model_ref,
+                compiled_sql=request.compiled_sql,
+                compiled_sql_checksum=request.compiled_sql_checksum,
+                source_sql=request.source_sql,
+                execution_mode=request.mode or "sql",
             )
             db.add(db_query)
             db.commit()
@@ -406,6 +416,9 @@ class SqlWorkspaceService:
                 row_count=len(rows),
                 truncated=truncated,
                 profiling=profiling,
+                compiled_sql_checksum=request.compiled_sql_checksum,
+                model_ref=request.model_ref,
+                mode=request.mode or "sql",
             )
         except QueryCancelledError:
             db = SessionLocal()
@@ -444,6 +457,56 @@ class SqlWorkspaceService:
             finally:
                 db.close()
             raise
+
+    def get_compiled_sql(self, model_unique_id: str, environment_id: Optional[int] = None) -> CompiledSqlResponse:
+        manifest, _ = self._load_artifacts()
+        if not manifest:
+            raise ValueError("No manifest available. Refresh dbt artifacts.")
+
+        manifest_nodes = self._merged_nodes(manifest)
+        node = manifest_nodes.get(model_unique_id)
+        if not node or node.get("resource_type") != "model":
+            raise ValueError("Model not found in manifest")
+
+        target_name = manifest.get("metadata", {}).get("target", {}).get("name")
+        environment = self._get_environment(environment_id)
+        if environment and environment.dbt_target_name and target_name:
+            if environment.dbt_target_name != target_name:
+                raise ValueError(
+                    f"Manifest target '{target_name}' does not match environment target '{environment.dbt_target_name}'."
+                )
+
+        compiled_sql = node.get("compiled_code") or node.get("compiled_sql")
+        source_sql = node.get("raw_code") or node.get("raw_sql") or ""
+        if not compiled_sql:
+            raise ValueError("Compiled SQL not available for this model. Ensure dbt artifacts are built.")
+
+        checksum = self._compiled_checksum(compiled_sql)
+
+        return CompiledSqlResponse(
+            model_unique_id=model_unique_id,
+            environment_id=environment.id if environment else environment_id,
+            compiled_sql=compiled_sql,
+            source_sql=source_sql,
+            compiled_sql_checksum=checksum,
+            target_name=target_name,
+            original_file_path=node.get("original_file_path"),
+        )
+
+    def execute_model(self, request: DbtModelExecuteRequest) -> SqlQueryResult:
+        compiled = self.get_compiled_sql(request.model_unique_id, request.environment_id)
+        query_request = SqlQueryRequest(
+            sql=compiled.compiled_sql,
+            environment_id=compiled.environment_id,
+            row_limit=request.row_limit,
+            include_profiling=request.include_profiling,
+            mode="model",
+            model_ref=request.model_unique_id,
+            compiled_sql=compiled.compiled_sql,
+            compiled_sql_checksum=compiled.compiled_sql_checksum,
+            source_sql=compiled.source_sql,
+        )
+        return self.execute_query(query_request)
 
     def preview_model(self, request: ModelPreviewRequest) -> ModelPreviewResponse:
         manifest, catalog = self._load_artifacts()
@@ -558,6 +621,8 @@ class SqlWorkspaceService:
                         row_count=sql_query.row_count,
                         execution_time_ms=sql_query.execution_time_ms,
                         model_ref=sql_query.model_ref,
+                        compiled_sql_checksum=sql_query.compiled_sql_checksum,
+                        mode=sql_query.execution_mode,
                     )
                 )
 

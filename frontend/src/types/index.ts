@@ -544,6 +544,9 @@ export interface SqlQueryResult {
   row_count: number;
   truncated: boolean;
   profiling?: SqlQueryProfile | null;
+  compiled_sql_checksum?: string | null;
+  model_ref?: string | null;
+  mode?: 'sql' | 'preview' | 'model' | string | null;
 }
 
 export interface SqlQueryRequest {
@@ -551,8 +554,11 @@ export interface SqlQueryRequest {
   environment_id?: number | null;
   row_limit?: number | null;
   include_profiling?: boolean;
-  mode?: 'free' | 'preview';
+  mode?: 'sql' | 'preview' | 'model';
   model_ref?: string | null;
+  compiled_sql?: string | null;
+  compiled_sql_checksum?: string | null;
+  source_sql?: string | null;
 }
 
 export interface SqlErrorResponse {
@@ -571,6 +577,8 @@ export interface SqlQueryHistoryEntry {
   row_count?: number | null;
   execution_time_ms?: number | null;
   model_ref?: string | null;
+  compiled_sql_checksum?: string | null;
+  mode?: 'sql' | 'preview' | 'model' | string | null;
 }
 
 export interface SqlQueryHistoryResponse {
@@ -602,6 +610,23 @@ export interface SqlAutocompleteMetadata {
   models: SqlRelationInfo[];
   sources: SqlRelationInfo[];
   schemas: Record<string, SqlRelationInfo[]>;
+}
+
+export interface CompiledSqlResponse {
+  model_unique_id: string;
+  environment_id?: number | null;
+  compiled_sql: string;
+  source_sql: string;
+  compiled_sql_checksum: string;
+  target_name?: string | null;
+  original_file_path?: string | null;
+}
+
+export interface DbtModelExecuteRequest {
+  model_unique_id?: string | null;
+  environment_id?: number | null;
+  row_limit?: number | null;
+  include_profiling?: boolean;
 }
 
 export interface ModelPreviewRequest {

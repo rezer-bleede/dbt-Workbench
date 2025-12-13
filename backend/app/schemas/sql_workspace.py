@@ -17,8 +17,11 @@ class SqlQueryRequest(BaseModel):
     environment_id: Optional[int] = None
     row_limit: Optional[int] = None
     include_profiling: bool = False
-    mode: str = Field(default="free", description="free or preview")
+    mode: str = Field(default="sql", description="sql | preview | model")
     model_ref: Optional[str] = None
+    compiled_sql: Optional[str] = None
+    compiled_sql_checksum: Optional[str] = None
+    source_sql: Optional[str] = None
 
 
 class SqlQueryResult(BaseModel):
@@ -29,6 +32,9 @@ class SqlQueryResult(BaseModel):
     row_count: int
     truncated: bool = False
     profiling: Optional["SqlQueryProfile"] = None
+    compiled_sql_checksum: Optional[str] = None
+    model_ref: Optional[str] = None
+    mode: Optional[str] = None
 
 
 class SqlErrorResponse(BaseModel):
@@ -66,6 +72,8 @@ class SqlQueryHistoryEntry(BaseModel):
     row_count: Optional[int] = None
     execution_time_ms: Optional[int] = None
     model_ref: Optional[str] = None
+    compiled_sql_checksum: Optional[str] = None
+    mode: Optional[str] = None
 
 
 class SqlQueryHistoryResponse(BaseModel):
@@ -118,3 +126,22 @@ class ModelPreviewResponse(BaseModel):
     row_count: int
     truncated: bool = False
     profiling: Optional[SqlQueryProfile] = None
+
+
+class CompiledSqlResponse(BaseModel):
+    model_unique_id: str
+    environment_id: Optional[int] = None
+    compiled_sql: str
+    source_sql: str
+    compiled_sql_checksum: str
+    target_name: Optional[str] = None
+    original_file_path: Optional[str] = None
+
+
+class DbtModelExecuteRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
+    model_unique_id: Optional[str] = None
+    environment_id: Optional[int] = None
+    row_limit: Optional[int] = None
+    include_profiling: bool = False

@@ -349,6 +349,10 @@ class SqlQuery(Base):
     row_count = Column(Integer, nullable=True)
     truncated = Column(Boolean, default=False)
     model_ref = Column(String, nullable=True)
+    compiled_sql = Column(String, nullable=True)
+    compiled_sql_checksum = Column(String, nullable=True)
+    source_sql = Column(String, nullable=True)
+    execution_mode = Column(String, default="sql")
 
     environment = relationship("Environment", back_populates="sql_queries")
 
