@@ -31,7 +31,8 @@ class DbtExecutor:
     
     def _get_dbt_command(self, command: DbtCommand, parameters: Dict[str, Any]) -> List[str]:
         """Build the dbt command with parameters."""
-        cmd = ["dbt", command.value]
+        cmd = ["dbt"]
+        cmd.extend(command.value.split())
         
         # Add default profiles directory if not specified
         if "profiles_dir" not in parameters:
