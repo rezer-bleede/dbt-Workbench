@@ -14,14 +14,34 @@ class PackageManager:
         """
         try:
             # key is package name (lowercase), value is version
-            result = subprocess.check_output(
+            # key is package name (lowercase), value is version
+            # Use Popen to capture stdout/stderr separately
+            process = subprocess.Popen(
                 [sys.executable, "-m", "pip", "list", "--format=json"],
-                stderr=subprocess.STDOUT
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True 
             )
-            packages = json.loads(result)
-            return packages # list of {name, version}
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Failed to list packages: {e.output.decode()}")
+            stdout, stderr = process.communicate()
+            
+            if process.returncode != 0:
+                logger.error(f"Failed to list packages (exited {process.returncode}): {stderr}")
+                return []
+                
+            # Try to find the JSON array in stdout (sometimes pip prints warnings to stdout too)
+            try:
+                # Naive attempt: look for start of JSON array
+                json_start = stdout.find('[')
+                if json_start != -1:
+                    stdout = stdout[json_start:]
+                
+                packages = json.loads(stdout)
+                return packages
+            except json.JSONDecodeError as e:
+                 logger.error(f"Failed to parse pip list output: {e}. Output was: {stdout}")
+                 return []
+        except Exception as e:
+            logger.error(f"Error listing packages: {str(e)}")
             return []
         except Exception as e:
             logger.error(f"Error listing packages: {str(e)}")
