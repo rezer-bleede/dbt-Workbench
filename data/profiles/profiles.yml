@@ -3,5 +3,5 @@ test_project:
   outputs:
     dev:
       type: duckdb
-      path: ':memory:'
+      path: '/app/data/test_project.duckdb'
       threads: 1
