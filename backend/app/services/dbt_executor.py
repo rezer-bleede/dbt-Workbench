@@ -48,6 +48,8 @@ class DbtExecutor:
             cmd.extend(["--vars", json.dumps(parameters["vars"])])
         if "profiles_dir" in parameters:
             cmd.extend(["--profiles-dir", parameters["profiles_dir"]])
+        if "profile" in parameters:
+            cmd.extend(["--profile", parameters["profile"]])
         if "target" in parameters:
             cmd.extend(["--target", parameters["target"]])
         if "full_refresh" in parameters and parameters["full_refresh"]:

@@ -18,6 +18,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   // Suggestion data
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [availableTargets, setAvailableTargets] = useState<string[]>([]);
+  const [environments, setEnvironments] = useState<Environment[]>([]);
 
   // Parameter form state
   const [selectModels, setSelectModels] = useState('');
@@ -39,6 +40,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
     // Fetch environments for target autocomplete
     EnvironmentService.list()
       .then(envs => {
+        setEnvironments(envs);
         const targets = envs
           .map(e => e.dbt_target_name)
           .filter((t): t is string => !!t); // Filter out null/undefined
@@ -58,7 +60,16 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
       const params: Record<string, any> = {};
       if (selectModels) params.select = selectModels;
       if (excludeModels) params.exclude = excludeModels;
-      if (target) params.target = target;
+
+      if (target) {
+        params.target = target;
+        // Lookup profile from environment with this target
+        const matchingEnv = environments.find(e => e.dbt_target_name === target);
+        if (matchingEnv && matchingEnv.connection_profile_reference) {
+          params.profile = matchingEnv.connection_profile_reference;
+        }
+      }
+
       if (fullRefresh) params.full_refresh = true;
       if (failFast) params.fail_fast = true;
       if (storeFailures && command === 'test') params.store_failures = true;
@@ -113,8 +124,8 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
                 type="button"
                 onClick={() => setCommand(cmd.id)}
                 className={`flex-1 py-2 px-4 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${command === cmd.id
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 {cmd.label}
