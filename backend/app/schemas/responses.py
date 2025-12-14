@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -31,9 +31,19 @@ class ModelSummary(BaseModel):
     tags: List[str] = Field(default_factory=list)
 
 
+class ColumnInfo(BaseModel):
+    name: str = ""
+    description: Optional[str] = ""
+    type: Optional[str] = Field(default=None, alias="data_type")
+    meta: Dict[str, Any] = Field(default_factory=dict)
+    tags: List[str] = Field(default_factory=list)
+    quote: Optional[bool] = None
+    constraints: List[Any] = Field(default_factory=list)
+
+
 class ModelDetail(ModelSummary):
     description: Optional[str] = ""
-    columns: Dict[str, Dict[str, str]] = Field(default_factory=dict)
+    columns: Dict[str, ColumnInfo] = Field(default_factory=dict)
     children: List[str] = Field(default_factory=list)
 
 
