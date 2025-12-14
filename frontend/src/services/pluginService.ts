@@ -1,12 +1,7 @@
 import { api } from '../api/client';
+import type { PluginSummary } from '../types/plugins';
 
-export interface PluginSummary {
-  name: string;
-  enabled: boolean;
-  version?: string;
-  description?: string;
-  author?: string;
-}
+export type { PluginSummary };
 
 export interface AdapterSuggestion {
   type: string;
@@ -38,7 +33,9 @@ export const PluginService = {
   },
 
   reload: async (name?: string): Promise<PluginSummary[]> => {
-    const response = await api.post<{ reloaded: PluginSummary[] }>('/plugins/reload', { params: { plugin_name: name } });
+    const response = await api.post<{ reloaded: PluginSummary[] }>('/plugins/reload', null, {
+      params: { plugin_name: name },
+    });
     return response.data.reloaded;
   },
 
