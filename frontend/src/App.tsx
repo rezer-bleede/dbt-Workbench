@@ -65,6 +65,7 @@ function App() {
             <Route path="/run-history" element={<RunHistoryPage />} />
             <Route path="/schedules" element={<SchedulesPage />} />
             <Route path="/environments" element={<EnvironmentsPage />} />
+            <Route path="/plugins" element={<PluginsInstalledPage />} />
             <Route path="/plugins/installed" element={<PluginsInstalledPage />} />
             <Route path="/plugins/marketplace" element={<PluginMarketplacePage />} />
             <Route path="/version-control" element={<VersionControlPage />} />

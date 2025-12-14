@@ -3,15 +3,35 @@ import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import PluginsInstalledPage from '../PluginsInstalled'
 import PluginMarketplacePage from '../PluginMarketplace'
+import { PluginService } from '../../services/pluginService'
 
 vi.mock('../../services/pluginService', () => ({
-  listInstalledPlugins: vi.fn(),
-  enablePlugin: vi.fn(),
-  disablePlugin: vi.fn(),
-  reloadPlugins: vi.fn(),
+  PluginService: {
+    list: vi.fn(),
+    enable: vi.fn(),
+    disable: vi.fn(),
+    reload: vi.fn(),
+    getAdapterSuggestions: vi.fn(),
+    installPackage: vi.fn(),
+    upgradePackage: vi.fn(),
+  },
 }))
 
-const mockedService = await import('../../services/pluginService')
+vi.mock('../../context/AuthContext', () => ({
+  useAuth: () => ({
+    isLoading: false,
+    isAuthEnabled: false,
+    user: null,
+    accessToken: null,
+    refreshToken: null,
+    activeWorkspace: null,
+    login: vi.fn(),
+    logout: vi.fn(),
+    switchWorkspace: vi.fn(),
+  }),
+}))
+
+const mockedService = PluginService as any
 
 const samplePlugin = {
   name: 'demo',
@@ -29,26 +49,33 @@ const samplePlugin = {
 
 describe('Plugin pages', () => {
   beforeEach(() => {
-    mockedService.listInstalledPlugins.mockResolvedValue([samplePlugin])
-    mockedService.enablePlugin.mockResolvedValue({ plugin: samplePlugin, action: 'enabled' })
-    mockedService.disablePlugin.mockResolvedValue({ plugin: { ...samplePlugin, enabled: false }, action: 'disabled' })
-    mockedService.reloadPlugins.mockResolvedValue({ reloaded: [samplePlugin] })
+    mockedService.list.mockResolvedValue([samplePlugin])
+    mockedService.getAdapterSuggestions.mockResolvedValue([])
+    mockedService.enable.mockResolvedValue({ ...samplePlugin, enabled: true })
+    mockedService.disable.mockResolvedValue({ ...samplePlugin, enabled: false })
+    mockedService.reload.mockResolvedValue([samplePlugin])
   })
 
-  it('renders installed plugins and toggles state', async () => {
+  it('renders installed plugins and adapter suggestions', async () => {
     render(<PluginsInstalledPage />)
-    await waitFor(() => screen.getByText('Demo plugin'))
+
+    await waitFor(() => screen.getByText('Installed Plugins'))
+
+    expect(screen.getByText('Installed Plugins')).toBeInTheDocument()
+    expect(screen.getByText('dbt Adapters')).toBeInTheDocument()
     expect(screen.getByText('demo')).toBeInTheDocument()
+    expect(screen.getByText('Demo plugin')).toBeInTheDocument()
+  })
+
+  it('renders marketplace view and toggles plugin state', async () => {
+    render(<PluginMarketplacePage />)
+    await waitFor(() => screen.getByText(/Plugin Marketplace/))
+
+    expect(screen.getByText('Demo plugin')).toBeInTheDocument()
 
     const toggle = screen.getByRole('button', { name: /disable/i })
     await userEvent.click(toggle)
-    expect(mockedService.disablePlugin).toHaveBeenCalledWith('demo')
-  })
-
-  it('renders marketplace view', async () => {
-    render(<PluginMarketplacePage />)
-    await waitFor(() => screen.getByText(/Plugin Marketplace/))
-    expect(screen.getByText('Demo plugin')).toBeInTheDocument()
+    expect(mockedService.disable).toHaveBeenCalledWith('demo')
   })
 })
 
