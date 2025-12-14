@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { loadWorkspaceId } from '../storage/workspaceStorage'
 
 const apiBase =
   (import.meta.env?.VITE_API_BASE_URL) || (import.meta.env as any)?.VITE_API_BASE_URL || 'http://localhost:8000'
@@ -29,6 +30,13 @@ api.interceptors.request.use((config) => {
       config.headers = {
         ...config.headers,
         Authorization: `Bearer ${token}`,
+      }
+    }
+    const workspaceId = loadWorkspaceId()
+    if (workspaceId != null) {
+      config.headers = {
+        ...config.headers,
+        'X-Workspace-Id': workspaceId,
       }
     }
   } catch {

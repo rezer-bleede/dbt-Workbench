@@ -20,7 +20,7 @@ import VersionControlPage from './pages/VersionControl'
 import { useAuth } from './context/AuthContext'
 
 function App() {
-  const { isLoading, isAuthEnabled, user } = useAuth()
+  const { isLoading, isAuthEnabled, user, activeWorkspace } = useAuth()
 
   const handleRefreshNeeded = (updatedArtifacts: string[]) => {
     console.log('Artifacts updated:', updatedArtifacts)
@@ -54,8 +54,8 @@ function App() {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <TopBar />
-        <main className="p-6 space-y-6">
-          <Routes>
+        <main className="p-6 space-y-6" key={activeWorkspace?.id ?? 'none'}>
+          <Routes key={activeWorkspace?.id ?? 'routes-none'}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/models" element={<ModelsPage />} />
             <Route path="/models/:modelId" element={<ModelDetailPage />} />

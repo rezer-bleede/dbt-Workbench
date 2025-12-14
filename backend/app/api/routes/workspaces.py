@@ -40,18 +40,22 @@ def list_workspaces(
     db: Session = Depends(get_db),
     user_ctx=Depends(get_current_user),
 ):
-    if not settings.auth_enabled or settings.single_project_mode:
-        # In single-project mode, expose only the implicit default workspace
-        if current_workspace.id is None:
-            return [
-                WorkspaceSummary(
-                    id=0,
-                    key=current_workspace.key,
-                    name=current_workspace.name,
-                    description=None,
-                    artifacts_path=current_workspace.artifacts_path,
-                )
-            ]
+    if not settings.auth_enabled:
+        if settings.single_project_mode:
+            # In single-project mode, expose only the implicit default workspace
+            if current_workspace.id is None:
+                return [
+                    WorkspaceSummary(
+                        id=0,
+                        key=current_workspace.key,
+                        name=current_workspace.name,
+                        description=None,
+                        artifacts_path=current_workspace.artifacts_path,
+                    )
+                ]
+        else:
+            workspaces = auth_service.list_all_workspaces(db)
+            return [_to_summary(w) for w in workspaces]
 
     # When auth is enabled, restrict to workspaces assigned to the current user
     if not settings.auth_enabled or user_ctx.id is None:
