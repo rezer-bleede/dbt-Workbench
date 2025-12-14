@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
 import { RefreshIndicator } from './components/RefreshIndicator'
@@ -21,6 +22,13 @@ import { useAuth } from './context/AuthContext'
 
 function App() {
   const { isLoading, isAuthEnabled, user, activeWorkspace } = useAuth()
+
+  useEffect(() => {
+    // Key props on routes and main already force rerender; emit global event for listeners
+    if (activeWorkspace?.id) {
+      window.dispatchEvent(new CustomEvent('workspace-changed', { detail: { workspaceId: activeWorkspace.id } }))
+    }
+  }, [activeWorkspace?.id])
 
   const handleRefreshNeeded = (updatedArtifacts: string[]) => {
     console.log('Artifacts updated:', updatedArtifacts)

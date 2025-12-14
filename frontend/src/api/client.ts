@@ -20,7 +20,7 @@ api.interceptors.response.use(
   }
 )
 
-api.interceptors.request.use((config) =&gt; {
+api.interceptors.request.use((config) => {
   try {
     const storedRaw = window.localStorage.getItem('dbt_workbench_auth')
     if (storedRaw) {

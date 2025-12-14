@@ -162,13 +162,6 @@ export default function VersionControlPage() {
     reload().catch((err) => console.error(err))
   }, [workspaceId])
 
-  useEffect(() => {
-    const handler = () => reload().catch(() => {})
-    window.addEventListener('workspace-changed', handler)
-    return () => window.removeEventListener('workspace-changed', handler)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   const loadFile = async (path: string) => {
     const content = await GitService.readFile(path)
     setSelectedPath(path)
