@@ -162,6 +162,13 @@ export default function VersionControlPage() {
     reload().catch((err) => console.error(err))
   }, [workspaceId])
 
+  useEffect(() => {
+    const handler = () => reload().catch(() => {})
+    window.addEventListener('workspace-changed', handler)
+    return () => window.removeEventListener('workspace-changed', handler)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const loadFile = async (path: string) => {
     const content = await GitService.readFile(path)
     setSelectedPath(path)
@@ -191,13 +198,22 @@ export default function VersionControlPage() {
     const workspaceKey = slugify(nameToUse)
     const artifactsPath = `${projectRoot.replace(/[\\/]+$/, '')}/artifacts`
     try {
-      const payload: WorkspaceCreate = {
-        key: workspaceKey,
-        name: nameToUse,
-        artifacts_path: artifactsPath,
+      const payload: WorkspaceCreate = { key: workspaceKey, name: nameToUse, artifacts_path: artifactsPath }
+      let targetWorkspaceId: number
+
+      try {
+        const created = await WorkspaceService.createWorkspace(payload)
+        targetWorkspaceId = created.id
+      } catch (err: any) {
+        const detail = err?.response?.data?.detail
+        const isConflict = err?.response?.status === 409 || detail?.error === 'workspace_exists'
+        if (!isConflict) throw err
+        // Workspace already exists; reuse it
+        const existing = (await WorkspaceService.listWorkspaces()).find(w => w.key === workspaceKey)
+        if (!existing) throw err
+        targetWorkspaceId = existing.id
       }
-      const created = await WorkspaceService.createWorkspace(payload)
-      const targetWorkspaceId = created.id
+
       storeWorkspaceId(targetWorkspaceId)
       try {
         await switchWorkspace(targetWorkspaceId)
@@ -205,7 +221,7 @@ export default function VersionControlPage() {
         // If switch fails (e.g., unauthenticated), rely on stored workspace id
       }
       await GitService.connect({
-        workspace_id: created.id,
+        workspace_id: targetWorkspaceId,
         remote_url: remoteUrl,
         branch: branch || 'main',
         directory: projectRoot,

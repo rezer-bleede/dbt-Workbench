@@ -24,6 +24,17 @@ function DashboardPage() {
     api.get<GitRepository>('/git/repository').then((res) => setRepo(res.data)).catch(() => setRepo(null))
   }, [activeWorkspace?.id])
 
+  useEffect(() => {
+    const handler = () => {
+      api.get<ArtifactSummary>('/artifacts').then((res) => setArtifacts(res.data)).catch(() => setArtifacts(null))
+      api.get<ModelSummary[]>('/models').then((res) => setModels(res.data)).catch(() => setModels([]))
+      api.get<RunSummary[]>('/runs').then((res) => setRuns(res.data)).catch(() => setRuns([]))
+      api.get<GitRepository>('/git/repository').then((res) => setRepo(res.data)).catch(() => setRepo(null))
+    }
+    window.addEventListener('workspace-changed', handler)
+    return () => window.removeEventListener('workspace-changed', handler)
+  }, [])
+
   const lastRun = runs[0]
 
   const lastActivityByWorkspace = useMemo(() => {

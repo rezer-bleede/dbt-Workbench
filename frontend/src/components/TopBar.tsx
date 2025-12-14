@@ -28,10 +28,14 @@ export function TopBar({ projectName, environment }: TopBarProps) {
             <select
               className="bg-gray-900 border border-gray-700 text-xs text-gray-200 rounded px-2 py-1"
               value={selection}
-              onChange={e => {
+              onChange={async e => {
                 const id = Number(e.target.value)
                 if (!Number.isNaN(id)) {
-                  switchWorkspace(id)
+                  try {
+                    await switchWorkspace(id)
+                  } catch (err) {
+                    console.error('Failed to switch workspace', err)
+                  }
                 }
               }}
             >

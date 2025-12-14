@@ -159,6 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const switchWorkspace = async (workspaceId: number) => {
+    // Always refresh the list so dropdowns stay accurate and pages can react
     if (!state.isAuthEnabled) {
       const available = await WorkspaceService.listWorkspaces()
       const selected = available.find(w => w.id === workspaceId)
@@ -171,13 +172,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         activeWorkspace: selected,
         workspaces: available,
       }))
-      return
+    } else {
+      const res = await api.post<LoginResponse>('/auth/switch-workspace', null, {
+        params: { workspace_id: workspaceId },
+      })
+      storeWorkspaceId(workspaceId)
+      applyLogin(res.data)
+      try {
+        const available = await WorkspaceService.listWorkspaces()
+        const selected = available.find(w => w.id === workspaceId)
+        setState(prev => ({
+          ...prev,
+          activeWorkspace: selected ?? prev.activeWorkspace,
+          workspaces: available,
+        }))
+      } catch {
+        // Non-fatal; state already updated from switch response
+      }
     }
-    const res = await api.post<LoginResponse>('/auth/switch-workspace', null, {
-      params: { workspace_id: workspaceId },
-    })
-    storeWorkspaceId(workspaceId)
-    applyLogin(res.data)
+
+    // Notify listeners (if any) that workspace changed; components already observe activeWorkspace
+    window.dispatchEvent(new CustomEvent('workspace-changed', { detail: { workspaceId } }))
   }
 
   const value = useMemo<AuthContextValue>(
@@ -189,6 +204,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }),
     [state],
   )
+
+  useEffect(() => {
+    if (state.activeWorkspace?.id != null) {
+      window.dispatchEvent(
+        new CustomEvent('workspace-changed', { detail: { workspaceId: state.activeWorkspace.id } })
+      )
+    }
+  }, [state.activeWorkspace?.id])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
