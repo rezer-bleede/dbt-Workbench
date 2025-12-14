@@ -11,8 +11,10 @@ import {
   GitHistoryEntry,
   GitRepository,
   GitStatus,
+  WorkspaceCreate,
 } from '../types'
-import { loadWorkspaceId } from '../storage/workspaceStorage'
+import { WorkspaceService } from '../services/workspaceService'
+import { storeWorkspaceId } from '../storage/workspaceStorage'
 
 function FileTree({ nodes, onSelect }: { nodes: GitFileNode[]; onSelect: (path: string) => void }) {
   const sorted = useMemo(() => nodes.slice().sort((a, b) => a.path.localeCompare(b.path)), [nodes])
@@ -48,7 +50,27 @@ function ChangeList({ status }: { status: GitStatus | null }) {
 }
 
 export default function VersionControlPage() {
-  const { activeWorkspace } = useAuth()
+  const { activeWorkspace, switchWorkspace } = useAuth()
+
+  const extractRepoName = (url: string) => {
+    try {
+      const parts = url.split('/').filter(Boolean)
+      const last = parts[parts.length - 1] || ''
+      return last.replace(/\.git$/, '') || 'project'
+    } catch {
+      return 'project'
+    }
+  }
+
+  const slugify = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'workspace'
+
+  const defaultRemote = 'https://github.com/dbt-labs/jaffle-shop-classic.git'
+  const defaultRepoName = extractRepoName(defaultRemote)
+
   const [status, setStatus] = useState<GitStatus | null>(null)
   const [branches, setBranches] = useState<GitBranch[]>([])
   const [files, setFiles] = useState<GitFileNode[]>([])
@@ -63,10 +85,12 @@ export default function VersionControlPage() {
   const [repository, setRepository] = useState<GitRepository | null>(null)
   const [connectError, setConnectError] = useState<string | null>(null)
   const [connectSuccess, setConnectSuccess] = useState<string | null>(null)
-  const [remoteUrl, setRemoteUrl] = useState('https://github.com/dbt-labs/jaffle-shop-classic.git')
+  const [remoteUrl, setRemoteUrl] = useState(defaultRemote)
   const [branch, setBranch] = useState('main')
-  const [projectRoot, setProjectRoot] = useState('/app/data/jaffle-shop-classic')
+  const [projectRoot, setProjectRoot] = useState(`/app/data/${defaultRepoName}`)
   const [provider, setProvider] = useState('')
+  const [workspaceName, setWorkspaceName] = useState(defaultRepoName)
+  const [userEditedWorkspaceName, setUserEditedWorkspaceName] = useState(false)
   const [showCloneForm, setShowCloneForm] = useState(false)
   const workspaceId = activeWorkspace?.id ?? null
 
@@ -162,10 +186,26 @@ export default function VersionControlPage() {
     event.preventDefault()
     setConnectError(null)
     setConnectSuccess(null)
-    const targetWorkspaceId = workspaceId ?? loadWorkspaceId() ?? 0
+    const repoName = extractRepoName(remoteUrl)
+    const nameToUse = (workspaceName || repoName || 'project').trim()
+    const workspaceKey = slugify(nameToUse)
+    const artifactsPath = `${projectRoot.replace(/[\\/]+$/, '')}/artifacts`
     try {
+      const payload: WorkspaceCreate = {
+        key: workspaceKey,
+        name: nameToUse,
+        artifacts_path: artifactsPath,
+      }
+      const created = await WorkspaceService.createWorkspace(payload)
+      const targetWorkspaceId = created.id
+      storeWorkspaceId(targetWorkspaceId)
+      try {
+        await switchWorkspace(targetWorkspaceId)
+      } catch {
+        // If switch fails (e.g., unauthenticated), rely on stored workspace id
+      }
       await GitService.connect({
-        workspace_id: targetWorkspaceId,
+        workspace_id: created.id,
         remote_url: remoteUrl,
         branch: branch || 'main',
         directory: projectRoot,
@@ -283,13 +323,29 @@ export default function VersionControlPage() {
                 className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100"
                 value={remoteUrl}
                 onChange={(e) => {
-                  setRemoteUrl(e.target.value)
-                  // Auto-generate project root if it hasn't been manually edited (simple heuristic or always update)
-                  // For better UX, we only update if the user hasn't typed in projectRoot, but for now let's just update if it's empty or matches previous default
-                  const name = e.target.value.split('/').pop()?.replace('.git', '') || 'project'
+                  const newUrl = e.target.value
+                  setRemoteUrl(newUrl)
+                  const name = extractRepoName(newUrl)
                   setProjectRoot(`/app/data/${name}`)
+                  if (!userEditedWorkspaceName) {
+                    setWorkspaceName(name)
+                  }
                 }}
                 placeholder="https://github.com/org/project.git"
+                required
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs text-gray-400 mb-1">Workspace Name</label>
+              <input
+                type="text"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100"
+                value={workspaceName}
+                onChange={(e) => {
+                  setWorkspaceName(e.target.value)
+                  setUserEditedWorkspaceName(true)
+                }}
+                placeholder="Project workspace name"
                 required
               />
             </div>

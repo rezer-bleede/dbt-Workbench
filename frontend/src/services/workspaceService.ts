@@ -11,4 +11,14 @@ export class WorkspaceService {
     const res = await api.get<WorkspaceSummary>('/workspaces/active')
     return res.data
   }
+
+  static async createWorkspace(payload: {
+    key: string
+    name: string
+    description?: string
+    artifacts_path: string
+  }): Promise<WorkspaceSummary> {
+    const res = await api.post<WorkspaceSummary>('/workspaces', payload)
+    return res.data
+  }
 }

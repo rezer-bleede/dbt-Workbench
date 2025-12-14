@@ -14,6 +14,13 @@ export interface WorkspaceSummary {
   artifacts_path: string
 }
 
+export interface WorkspaceCreate {
+  key: string
+  name: string
+  description?: string | null
+  artifacts_path: string
+}
+
 export interface UserSummary {
   id: number
   username: string
