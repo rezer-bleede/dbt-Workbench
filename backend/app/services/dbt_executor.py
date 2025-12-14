@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Any, AsyncGenerator
 import hashlib
 
 from app.core.config import get_settings
+from app.core.watcher_manager import get_watcher
 from app.database.connection import SessionLocal
 from app.database.models import models as db_models
 from app.schemas.execution import (
@@ -115,6 +116,14 @@ class DbtExecutor:
                 # allowing ArtifactService to serve the latest state
                 current_state_file = Path(self.settings.dbt_artifacts_path) / filename
                 shutil.copy2(source_file, current_state_file)
+                
+                # Notify watcher to update cache immediately
+                try:
+                    watcher = get_watcher(self.settings.dbt_artifacts_path)
+                    watcher.on_file_changed(filename)
+                except Exception as e:
+                    # Don't fail the run if watcher update fails
+                    print(f"Failed to notify watcher: {e}")
 
                 # Create artifact info
                 stat = dest_file.stat()
