@@ -9,6 +9,7 @@ import yaml
 from fastapi import HTTPException, status
 from git import Repo
 from git.exc import GitCommandError, InvalidGitRepositoryError
+from gitdb.exc import BadName
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -162,10 +163,43 @@ def connect_repository(
 
     target_path.mkdir(parents=True, exist_ok=True)
 
+    # Clone if missing, tolerating a branch name that might not exist by falling back to default
+    repo: Repo
     if not (target_path / ".git").exists():
-        Repo.clone_from(remote_url, target_path, branch=branch)
-    repo = _ensure_repo(str(target_path))
-    repo.git.checkout(branch)
+        try:
+            repo = Repo.clone_from(remote_url, target_path, branch=branch)
+        except GitCommandError:
+            # Fall back to cloning the default branch when the requested branch is missing
+            repo = Repo.clone_from(remote_url, target_path)
+            try:
+                branch = repo.active_branch.name  # Use the branch that was actually checked out
+            except TypeError:
+                # Detached HEAD; pick the first local branch if available
+                branch = repo.heads[0].name if repo.heads else branch
+    else:
+        repo = _ensure_repo(str(target_path))
+
+    # Ensure the desired branch exists locally; otherwise create it from remote or fall back gracefully
+    local_branches = {h.name for h in repo.heads}
+    if branch in local_branches:
+        repo.git.checkout(branch)
+    else:
+        origin = repo.remotes.origin if repo.remotes else None
+        remote_branch_ref = None
+        if origin:
+            origin.fetch()
+            remote_branch_ref = next((ref for ref in origin.refs if ref.name.endswith(f"/{branch}")), None)
+
+        if remote_branch_ref:
+            repo.git.checkout("-b", branch, remote_branch_ref.name)
+        else:
+            # Fallback: stay on current active branch or first available local branch
+            try:
+                branch = repo.active_branch.name
+            except TypeError:
+                branch = repo.heads[0].name if repo.heads else branch
+            if branch:
+                repo.git.checkout(branch)
 
     record = _get_or_create_repo_record(
         db,
@@ -318,20 +352,29 @@ def get_status(db: Session, workspace_id: int) -> GitStatusResponse:
                 configured=False,
             )
         raise
-    branch_name = repo.active_branch.name
+    try:
+        branch_name = repo.active_branch.name
+    except Exception:
+        # Detached HEAD or no commits yet; fall back to recorded default branch or placeholder
+        branch_name = record.default_branch or "HEAD"
 
     ahead = behind = 0
     try:
-        ahead_output = repo.git.rev_list("--left-right", "--count", f"origin/{branch_name}...{branch_name}")
-        ahead, behind = [int(val) for val in ahead_output.split()]
+        if repo.head.is_valid():
+            ahead_output = repo.git.rev_list("--left-right", "--count", f"origin/{branch_name}...{branch_name}")
+            ahead, behind = [int(val) for val in ahead_output.split()]
     except Exception:
         ahead = behind = 0
 
     changes: List[FileChange] = []
     for diff in repo.index.diff(None):
         changes.append(FileChange(path=diff.a_path, change_type="modified", staged=False))
-    for diff in repo.index.diff("HEAD"):
-        changes.append(FileChange(path=diff.a_path, change_type="staged", staged=True))
+    try:
+        for diff in repo.index.diff("HEAD"):
+            changes.append(FileChange(path=diff.a_path, change_type="staged", staged=True))
+    except (BadName, ValueError):
+        # No HEAD yet (empty repo); skip staged comparison
+        pass
     for untracked in repo.untracked_files:
         changes.append(FileChange(path=untracked, change_type="untracked", staged=False))
 

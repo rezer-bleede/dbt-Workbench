@@ -12,6 +12,7 @@ import {
   GitRepository,
   GitStatus,
 } from '../types'
+import { loadWorkspaceId } from '../storage/workspaceStorage'
 
 function FileTree({ nodes, onSelect }: { nodes: GitFileNode[]; onSelect: (path: string) => void }) {
   const sorted = useMemo(() => nodes.slice().sort((a, b) => a.path.localeCompare(b.path)), [nodes])
@@ -161,13 +162,10 @@ export default function VersionControlPage() {
     event.preventDefault()
     setConnectError(null)
     setConnectSuccess(null)
-    if (workspaceId == null) {
-      setConnectError('Select a workspace before connecting a repository.')
-      return
-    }
+    const targetWorkspaceId = workspaceId ?? loadWorkspaceId() ?? 0
     try {
       await GitService.connect({
-        workspace_id: workspaceId,
+        workspace_id: targetWorkspaceId,
         remote_url: remoteUrl,
         branch: branch || 'main',
         directory: projectRoot,
@@ -329,7 +327,7 @@ export default function VersionControlPage() {
               <button
                 type="submit"
                 className="btn"
-                disabled={!remoteUrl || workspaceId == null || loading}
+                disabled={!remoteUrl || loading}
               >
                 {loading ? 'Connecting…' : repository ? 'Replace & Clone' : 'Clone & Connect'}
               </button>
