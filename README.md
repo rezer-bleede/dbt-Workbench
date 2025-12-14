@@ -44,6 +44,20 @@ The UI will load and display real metadata from your dbt project automatically.
 
 ---
 
+## 🧭 Multi-Project Workspaces
+
+dbt-Workbench can manage multiple isolated projects in a single instance. Each workspace gets its own repository folder under the configured `GIT_REPOS_BASE_PATH`, independent artifacts storage, and per-workspace settings. File operations are hard-scoped to the active workspace root to prevent cross-project access or path traversal, and switching workspaces refreshes the active project context across the UI and API.
+
+For local development, set a dedicated base path for repositories:
+
+```bash
+export GIT_REPOS_BASE_PATH=$(pwd)/data/repos
+```
+
+Each workspace will use a subdirectory under that path (e.g., `data/repos/<workspace-key>`), keeping source files, artifacts, and run history isolated by project.
+
+---
+
 ## 🔧 Local Development
 
 ### **Backend (FastAPI)**

@@ -43,7 +43,26 @@ CRITICAL_FILES = {
 }
 
 
+def _workspace_root(settings, workspace: db_models.Workspace) -> Path:
+    root = Path(settings.git_repos_base_path).joinpath(workspace.key).resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    return root
 
+
+def _assert_within_root(root: Path, candidate: Path) -> None:
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": "forbidden_path", "message": "Path must stay within the project workspace."},
+        ) from exc
+
+
+def _safe_path(root: Path, relative: str) -> Path:
+    target = (root / relative).resolve()
+    _assert_within_root(root, target)
+    return target
 
 
 def _resolve_workspace(db: Session, workspace_id: int | None) -> db_models.Workspace:
@@ -131,9 +150,10 @@ def connect_repository(
     resolved_workspace_id = workspace.id
 
     if directory:
-        target_path = Path(directory)
+        target_path = Path(directory).resolve()
+        _assert_within_root(_workspace_root(settings, workspace), target_path)
     else:
-        target_path = Path(settings.git_repos_base_path) / workspace.key
+        target_path = _workspace_root(settings, workspace)
 
     target_path.mkdir(parents=True, exist_ok=True)
 
@@ -168,6 +188,7 @@ def connect_repository(
 
 
 def _repo_record(db: Session, workspace_id: int) -> db_models.GitRepository:
+    settings = get_settings()
     record = (
         db.query(db_models.GitRepository)
         .filter(db_models.GitRepository.workspace_id == workspace_id)
@@ -178,6 +199,8 @@ def _repo_record(db: Session, workspace_id: int) -> db_models.GitRepository:
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"error": "git_not_configured", "message": "Repository connection not configured."},
         )
+    workspace = _resolve_workspace(db, workspace_id)
+    _assert_within_root(_workspace_root(settings, workspace), Path(record.directory).resolve())
     return record
 
 
@@ -219,7 +242,9 @@ def disconnect_repository(
 
     if delete_files and directory:
         import shutil
-        dir_path = Path(directory)
+        workspace = _resolve_workspace(db, workspace_id)
+        dir_path = Path(directory).resolve()
+        _assert_within_root(_workspace_root(get_settings(), workspace), dir_path)
         if dir_path.exists():
             shutil.rmtree(dir_path)
 
@@ -412,13 +437,20 @@ def switch_branch(db: Session, workspace_id: int, branch: str, *, user_id: int |
 
 def list_files(db: Session, workspace_id: int) -> List[FileNode]:
     record = _repo_record(db, workspace_id)
-    base_path = Path(record.directory)
-    return _build_tree(base_path)
+    workspace = _resolve_workspace(db, workspace_id)
+    workspace_root = _workspace_root(get_settings(), workspace)
+    repo_path = Path(record.directory).resolve()
+    _assert_within_root(workspace_root, repo_path)
+    return _build_tree(repo_path)
 
 
 def read_file(db: Session, workspace_id: int, path: str) -> FileContent:
     record = _repo_record(db, workspace_id)
-    full_path = Path(record.directory) / path
+    workspace = _resolve_workspace(db, workspace_id)
+    workspace_root = _workspace_root(get_settings(), workspace)
+    repo_path = Path(record.directory).resolve()
+    _assert_within_root(workspace_root, repo_path)
+    full_path = _safe_path(repo_path, path)
     if not full_path.exists():
         raise HTTPException(status_code=404, detail={"error": "file_not_found", "message": path})
     content = full_path.read_text(encoding="utf-8")
@@ -447,7 +479,11 @@ def write_file(
     username: str | None,
 ) -> ValidationResult:
     record = _repo_record(db, workspace_id)
-    full_path = Path(record.directory) / request.path
+    workspace = _resolve_workspace(db, workspace_id)
+    workspace_root = _workspace_root(get_settings(), workspace)
+    repo_path = Path(record.directory).resolve()
+    _assert_within_root(workspace_root, repo_path)
+    full_path = _safe_path(repo_path, request.path)
     validation = validate_file(full_path, request.content)
     if not validation.is_valid:
         return validation
@@ -493,7 +529,11 @@ def delete_file(
     username: str | None,
 ) -> None:
     record = _repo_record(db, workspace_id)
-    full_path = Path(record.directory) / request.path
+    workspace = _resolve_workspace(db, workspace_id)
+    workspace_root = _workspace_root(get_settings(), workspace)
+    repo_path = Path(record.directory).resolve()
+    _assert_within_root(workspace_root, repo_path)
+    full_path = _safe_path(repo_path, request.path)
     if full_path.name in CRITICAL_FILES:
         raise HTTPException(status_code=400, detail={"error": "protected_file", "message": "Cannot delete critical file."})
     if not full_path.exists():
