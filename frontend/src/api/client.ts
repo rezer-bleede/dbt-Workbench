@@ -20,18 +20,24 @@ api.interceptors.response.use(
   }
 )
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use((config) =&gt; {
   try {
     const storedRaw = window.localStorage.getItem('dbt_workbench_auth')
-    if (!storedRaw) return config
-    const stored = JSON.parse(storedRaw)
-    const token = stored?.accessToken
-    if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
+    if (storedRaw) {
+      try {
+        const stored = JSON.parse(storedRaw)
+        const token = stored?.accessToken
+        if (token) {
+          config.headers = {
+            ...config.headers,
+            Authorization: `Bearer ${token}`,
+          }
+        }
+      } catch {
+        // ignore malformed auth storage
       }
     }
+
     const workspaceId = loadWorkspaceId()
     if (workspaceId != null) {
       config.headers = {
