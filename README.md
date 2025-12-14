@@ -57,6 +57,17 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+### **Testing**
+
+Backend tests run against a local SQLite database by default (configured via
+`DATABASE_URL` in `tests/conftest.py`). This keeps the suite self contained and
+avoids requiring a running Postgres instance.
+
+```bash
+cd backend
+pytest
+```
+
 ---
 
 ### **Frontend (React + TypeScript + Vite)**

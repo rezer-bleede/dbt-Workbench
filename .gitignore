@@ -21,6 +21,7 @@ dbt_project/target/manifest.json
 dbt_project/target/partial_parse.msgpack
 dbt_project/target/run_results.json
 dbt_project/target/semantic_manifest.json
+backend/test.db
 dbt_project/logs/dbt.log
 dbt_project/target/graph.gpickle
 dbt_project/target/graph_summary.json
