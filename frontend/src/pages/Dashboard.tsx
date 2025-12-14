@@ -1,22 +1,37 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api/client'
 import { ArtifactSummary, HealthResponse, ModelSummary, RunRecord } from '../types'
 import { Card } from '../components/Card'
+import { useAuth } from '../context/AuthContext'
 
 function DashboardPage() {
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [artifacts, setArtifacts] = useState<ArtifactSummary | null>(null)
   const [models, setModels] = useState<ModelSummary[]>([])
   const [runs, setRuns] = useState<RunRecord[]>([])
+  const { activeWorkspace, workspaces, switchWorkspace } = useAuth()
 
   useEffect(() => {
+    setArtifacts(null)
+    setModels([])
+    setRuns([])
     api.get<HealthResponse>('/health').then((res) => setHealth(res.data)).catch(() => setHealth(null))
     api.get<ArtifactSummary>('/artifacts').then((res) => setArtifacts(res.data)).catch(() => setArtifacts(null))
     api.get<ModelSummary[]>('/models').then((res) => setModels(res.data)).catch(() => setModels([]))
     api.get<RunRecord[]>('/runs').then((res) => setRuns(res.data)).catch(() => setRuns([]))
-  }, [])
+  }, [activeWorkspace?.id])
 
   const lastRun = runs[0]
+
+  const lastActivityByWorkspace = useMemo(() => {
+    const map: Record<number, string> = {}
+    runs.forEach(run => {
+      const ts = run.start_time || run.timestamp
+      if (!ts || activeWorkspace?.id == null) return
+      map[activeWorkspace.id] = ts
+    })
+    return map
+  }, [runs, activeWorkspace?.id])
 
   const modelStats = models.reduce((acc, model) => {
     const type = model.resource_type
@@ -28,11 +43,14 @@ function DashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        {health && (
-          <span className={`px-2 py-1 rounded text-xs font-medium ${health.status === 'ok' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-            System: {health.status}
-          </span>
-        )}
+        <div className="flex items-center space-x-3">
+          <div className="text-sm text-gray-600">Projects: {workspaces.length}</div>
+          {health && (
+            <span className={`px-2 py-1 rounded text-xs font-medium ${health.status === 'ok' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              System: {health.status}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -48,6 +66,44 @@ function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-xs uppercase text-gray-500">Active Project</div>
+                <h3 className="text-xl font-semibold text-gray-900">{activeWorkspace?.name || 'No project selected'}</h3>
+                {activeWorkspace && (
+                  <p className="text-sm text-gray-500">Artifacts at {activeWorkspace.artifacts_path}</p>
+                )}
+              </div>
+              {workspaces.length > 1 && (
+                <select
+                  className="bg-gray-50 border border-gray-200 text-xs text-gray-800 rounded px-2 py-1"
+                  value={activeWorkspace?.id ?? ''}
+                  onChange={(e) => {
+                    const id = Number(e.target.value)
+                    if (!Number.isNaN(id)) switchWorkspace(id)
+                  }}
+                >
+                  {workspaces.map((ws) => (
+                    <option key={ws.id} value={ws.id}>
+                      {ws.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
+              <div>
+                <div className="text-gray-500">Project Root</div>
+                <div className="font-mono text-xs break-all">{activeWorkspace?.artifacts_path || 'Unknown'}</div>
+              </div>
+              <div>
+                <div className="text-gray-500">Last Activity</div>
+                <div>{activeWorkspace?.id ? (lastActivityByWorkspace[activeWorkspace.id] ? new Date(lastActivityByWorkspace[activeWorkspace.id]).toLocaleString() : 'No runs yet') : 'N/A'}</div>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white shadow rounded-lg p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
             <div className="flow-root">

@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { WorkspaceService } from '../services/workspaceService'
-import { WorkspaceSummary } from '../types'
 
 interface TopBarProps {
   projectName?: string
@@ -9,20 +7,13 @@ interface TopBarProps {
 }
 
 export function TopBar({ projectName, environment }: TopBarProps) {
-  const { activeWorkspace, user, logout, isAuthEnabled, switchWorkspace } = useAuth()
-  const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([])
+  const { activeWorkspace, user, logout, isAuthEnabled, switchWorkspace, workspaces } = useAuth()
+  
+  const [selection, setSelection] = useState<string>('')
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await WorkspaceService.listWorkspaces()
-        setWorkspaces(data)
-      } catch {
-        setWorkspaces([])
-      }
-    }
-    load()
-  }, [])
+    setSelection(String(activeWorkspace?.id ?? ''))
+  }, [activeWorkspace])
 
   const displayProject = projectName || activeWorkspace?.name || 'Default dbt Project'
   const displayEnv = environment || (user ? `${user.role} · ${user.username}` : 'Local')
@@ -33,10 +24,10 @@ export function TopBar({ projectName, environment }: TopBarProps) {
         <div className="text-sm uppercase text-gray-400">Workspace</div>
         <div className="flex items-center space-x-3">
           <div className="text-lg font-semibold text-white">{displayProject}</div>
-          {isAuthEnabled && user && workspaces.length > 1 && (
+          {workspaces.length > 1 && (
             <select
               className="bg-gray-900 border border-gray-700 text-xs text-gray-200 rounded px-2 py-1"
-              value={activeWorkspace?.id ?? ''}
+              value={selection}
               onChange={e => {
                 const id = Number(e.target.value)
                 if (!Number.isNaN(id)) {

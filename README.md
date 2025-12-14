@@ -56,6 +56,8 @@ export GIT_REPOS_BASE_PATH=$(pwd)/data/repos
 
 Each workspace will use a subdirectory under that path (e.g., `data/repos/<workspace-key>`), keeping source files, artifacts, and run history isolated by project.
 
+When authentication is disabled you can still switch the active project by sending the `X-Workspace-Id` header on any API call. The frontend persists the last-selected workspace locally so reloading the UI keeps the correct project context without leaking data between workspaces.
+
 ---
 
 ## 🔧 Local Development

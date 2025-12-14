@@ -42,7 +42,7 @@ class Settings(BaseSettings):
 
     # Authentication and RBAC
     auth_enabled: bool = Field(False, alias="AUTH_ENABLED")
-    single_project_mode: bool = Field(True, alias="SINGLE_PROJECT_MODE")
+    single_project_mode: bool = Field(False, alias="SINGLE_PROJECT_MODE")
 
     jwt_secret_key: str = Field("change_me", alias="JWT_SECRET_KEY")
     jwt_algorithm: str = Field("HS256", alias="JWT_ALGORITHM")

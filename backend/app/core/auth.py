@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -212,11 +212,12 @@ async def get_current_user(
 
 
 async def get_current_workspace(
+    request: Request,
     current_user: UserContext = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
     db: Session = Depends(get_db),
 ) -> WorkspaceContext:
-    if settings.single_project_mode or not settings.auth_enabled:
+    if settings.single_project_mode:
         workspace = (
             db.query(db_models.Workspace)
             .filter(db_models.Workspace.key == settings.default_workspace_key, db_models.Workspace.is_active.is_(True))
@@ -233,6 +234,53 @@ async def get_current_workspace(
             db.add(workspace)
             db.commit()
             db.refresh(workspace)
+
+        return WorkspaceContext(
+            id=workspace.id,
+            key=workspace.key,
+            name=workspace.name,
+            artifacts_path=workspace.artifacts_path,
+        )
+
+    if not settings.auth_enabled:
+        requested_id = request.headers.get("X-Workspace-Id") or request.query_params.get("workspace_id")
+        workspace: db_models.Workspace | None = None
+        if requested_id is not None:
+            try:
+                workspace_id = int(requested_id)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={"error": "invalid_workspace", "message": "Workspace id must be an integer."},
+                )
+            workspace = (
+                db.query(db_models.Workspace)
+                .filter(db_models.Workspace.id == workspace_id, db_models.Workspace.is_active.is_(True))
+                .first()
+            )
+            if not workspace:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail={"error": "workspace_not_found", "message": "Workspace not found."},
+                )
+
+        if workspace is None:
+            workspace = (
+                db.query(db_models.Workspace)
+                .filter(db_models.Workspace.key == settings.default_workspace_key, db_models.Workspace.is_active.is_(True))
+                .first()
+            )
+            if not workspace:
+                workspace = db_models.Workspace(
+                    key=settings.default_workspace_key,
+                    name=settings.default_workspace_name,
+                    description=settings.default_workspace_description,
+                    artifacts_path=settings.dbt_artifacts_path,
+                    is_active=True,
+                )
+                db.add(workspace)
+                db.commit()
+                db.refresh(workspace)
 
         return WorkspaceContext(
             id=workspace.id,

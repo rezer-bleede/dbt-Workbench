@@ -6,6 +6,7 @@ import {
   WorkspaceSummary,
 } from '../types'
 import { WorkspaceService } from '../services/workspaceService'
+import { loadWorkspaceId, storeWorkspaceId } from '../storage/workspaceStorage'
 
 interface AuthState {
   isLoading: boolean
@@ -14,6 +15,7 @@ interface AuthState {
   accessToken: string | null
   refreshToken: string | null
   activeWorkspace: WorkspaceSummary | null
+  workspaces: WorkspaceSummary[]
 }
 
 interface AuthContextValue extends AuthState {
@@ -41,6 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     accessToken: null,
     refreshToken: null,
     activeWorkspace: null,
+    workspaces: [],
   })
 
   useEffect(() => {
@@ -53,14 +56,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!isAuthEnabled) {
           // No auth; still try to get active workspace for display
           try {
-            const workspace = await WorkspaceService.getActiveWorkspace()
+            const available = await WorkspaceService.listWorkspaces()
+            const requestedId = loadWorkspaceId()
+            const selected = available.find(w => w.id === requestedId) || available[0] || null
+            if (selected) {
+              storeWorkspaceId(selected.id)
+            }
             setState({
               isLoading: false,
               isAuthEnabled: false,
               user: null,
               accessToken: null,
               refreshToken: null,
-              activeWorkspace: workspace,
+              activeWorkspace: selected,
+              workspaces: available,
             })
           } catch {
             setState({
@@ -70,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               accessToken: null,
               refreshToken: null,
               activeWorkspace: null,
+              workspaces: [],
             })
           }
           return
@@ -127,6 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
       activeWorkspace: active_workspace || null,
+      workspaces: user?.workspaces || [],
     })
   }
 
@@ -143,14 +154,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       accessToken: null,
       refreshToken: null,
       activeWorkspace: null,
+      workspaces: [],
     }))
   }
 
   const switchWorkspace = async (workspaceId: number) => {
-    if (!state.isAuthEnabled) return
+    if (!state.isAuthEnabled) {
+      const available = await WorkspaceService.listWorkspaces()
+      const selected = available.find(w => w.id === workspaceId)
+      if (!selected) {
+        throw new Error('Workspace not found')
+      }
+      storeWorkspaceId(selected.id)
+      setState(prev => ({
+        ...prev,
+        activeWorkspace: selected,
+        workspaces: available,
+      }))
+      return
+    }
     const res = await api.post<LoginResponse>('/auth/switch-workspace', null, {
       params: { workspace_id: workspaceId },
     })
+    storeWorkspaceId(workspaceId)
     applyLogin(res.data)
   }
 
