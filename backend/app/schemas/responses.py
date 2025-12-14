@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -9,8 +10,15 @@ class HealthResponse(BaseModel):
 
 
 class Project(BaseModel):
+    """Represents a logical dbt project (backed by a workspace)."""
+
     id: str
     name: str
+    key: Optional[str] = None
+    artifacts_path: Optional[str] = None
+    status: Optional[str] = None
+    last_activity: Optional[datetime] = None
+    is_active: Optional[bool] = None
 
 
 class ArtifactSummary(BaseModel):

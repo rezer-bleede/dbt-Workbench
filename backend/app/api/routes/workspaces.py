@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import List
+from pathlib import Path
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -110,12 +111,26 @@ def create_workspace(
             },
         )
 
+    # Enforce that artifacts_path stays within the configured artifacts root
+    root = Path(settings.dbt_artifacts_path).resolve()
+    requested_path = Path(payload.artifacts_path).resolve()
+    try:
+        requested_path.relative_to(root)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "invalid_artifacts_path",
+                "message": f"artifacts_path must be inside {root}",
+            },
+        )
+
     workspace = auth_service.create_workspace(
         db,
         key=payload.key,
         name=payload.name,
         description=payload.description,
-        artifacts_path=payload.artifacts_path,
+        artifacts_path=str(requested_path),
     )
     return _to_summary(workspace)
 
@@ -128,6 +143,7 @@ def create_workspace(
 def update_workspace(
     workspace_id: int,
     payload: WorkspaceUpdate,
+    settings: Settings = Depends(get_settings),
     db: Session = Depends(get_db),
 ) -> WorkspaceSummary:
     workspace = auth_service.get_workspace(db, workspace_id)
@@ -136,12 +152,29 @@ def update_workspace(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"error": "workspace_not_found", "message": "Workspace not found."},
         )
+
+    artifacts_path: Optional[str] = payload.artifacts_path
+    if artifacts_path is not None:
+        root = Path(settings.dbt_artifacts_path).resolve()
+        requested_path = Path(artifacts_path).resolve()
+        try:
+            requested_path.relative_to(root)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": "invalid_artifacts_path",
+                    "message": f"artifacts_path must be inside {root}",
+                },
+            )
+        artifacts_path = str(requested_path)
+
     workspace = auth_service.update_workspace(
         db,
         workspace,
         name=payload.name,
         description=payload.description,
-        artifacts_path=payload.artifacts_path,
+        artifacts_path=artifacts_path,
         is_active=payload.is_active,
     )
     return _to_summary(workspace)

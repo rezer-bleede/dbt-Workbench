@@ -677,11 +677,28 @@ class SchedulerService:
 
         dbt_command = DbtCommand(schedule.dbt_command)
 
+        # Resolve workspace for this scheduled run via its environment
+        workspace_id: Optional[int] = None
+        try:
+            environment_id = schedule.environment_id
+            if environment_id is not None:
+                env = (
+                    db.query(db_models.Environment)
+                    .filter(db_models.Environment.id == environment_id)
+                    .first()
+                )
+                if env:
+                    workspace_id = env.workspace_id
+        except Exception:
+            # If workspace resolution fails, fall back to default scoping
+            workspace_id = None
+
         try:
             run_id = await executor.start_run(
                 command=dbt_command,
                 parameters=parameters,
                 description=f"Scheduled run (schedule {schedule.id}, attempt {attempt_number})",
+                workspace_id=workspace_id,
             )
         except RuntimeError as exc:
             logger.warning("Max concurrent runs reached; cannot start scheduled run: %s", exc)

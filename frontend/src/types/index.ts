@@ -4,6 +4,16 @@ export interface HealthResponse {
   version: string
 }
 
+export interface ProjectInfo {
+  id: string
+  name: string
+  key?: string | null
+  artifacts_path?: string | null
+  status?: string | null
+  last_activity?: string | null
+  is_active?: boolean | null
+}
+
 export type UserRole = 'viewer' | 'developer' | 'admin'
 
 export interface WorkspaceSummary {

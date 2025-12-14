@@ -5,7 +5,14 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, R
 from fastapi.responses import StreamingResponse
 from sse_starlette.sse import EventSourceResponse
 
-from app.core.auth import Role, decode_token, get_current_user, require_role
+from app.core.auth import (
+    Role,
+    WorkspaceContext,
+    decode_token,
+    get_current_user,
+    get_current_workspace,
+    require_role,
+)
 from app.core.config import get_settings
 from app.schemas.execution import (
     RunRequest,
@@ -26,26 +33,32 @@ router = APIRouter(prefix="/execution", tags=["execution"])
     response_model=RunSummary,
     dependencies=[Depends(require_role(Role.DEVELOPER))],
 )
-async def start_run(run_request: RunRequest, background_tasks: BackgroundTasks):
-    """Start a new dbt run."""
+async def start_run(
+    run_request: RunRequest,
+    background_tasks: BackgroundTasks,
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+):
+    """Start a new dbt run scoped to the active workspace."""
     try:
         # Start the run
         run_id = await executor.start_run(
             command=run_request.command,
             parameters=run_request.parameters or {},
-            description=run_request.description
+            description=run_request.description,
+            workspace_id=workspace.id,
+            artifacts_path=workspace.artifacts_path,
         )
-        
+
         # Execute in background
         background_tasks.add_task(executor.execute_run, run_id)
-        
+
         # Return initial status
-        run_status = executor.get_run_status(run_id)
+        run_status = executor.get_run_status(run_id, workspace_id=workspace.id)
         if not run_status:
             raise HTTPException(status_code=500, detail="Failed to create run")
-        
+
         return run_status
-    
+
     except RuntimeError as e:
         raise HTTPException(status_code=429, detail=str(e))
     except Exception as e:
@@ -57,9 +70,12 @@ async def start_run(run_request: RunRequest, background_tasks: BackgroundTasks):
     response_model=RunSummary,
     dependencies=[Depends(get_current_user)],
 )
-async def get_run_status(run_id: str):
+async def get_run_status(
+    run_id: str,
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+):
     """Get the status of a specific run."""
-    run_status = executor.get_run_status(run_id)
+    run_status = executor.get_run_status(run_id, workspace_id=workspace.id)
     if not run_status:
         raise HTTPException(status_code=404, detail="Run not found")
     return run_status
@@ -70,9 +86,12 @@ async def get_run_status(run_id: str):
     response_model=RunDetail,
     dependencies=[Depends(get_current_user)],
 )
-async def get_run_detail(run_id: str):
+async def get_run_detail(
+    run_id: str,
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+):
     """Get detailed information about a run."""
-    run_detail = executor.get_run_detail(run_id)
+    run_detail = executor.get_run_detail(run_id, workspace_id=workspace.id)
     if not run_detail:
         raise HTTPException(status_code=404, detail="Run not found")
     return run_detail
@@ -86,10 +105,14 @@ async def get_run_detail(run_id: str):
 async def get_run_history(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
 ):
-    """Get paginated run history."""
-    runs = executor.get_run_history(page=page, page_size=page_size)
-    total_count = len(executor.run_history)
+    """Get paginated run history for the active workspace."""
+    runs, total_count = executor.get_run_history(
+        page=page,
+        page_size=page_size,
+        workspace_id=workspace.id,
+    )
 
     return RunHistoryResponse(
         runs=runs,
@@ -107,6 +130,8 @@ async def stream_run_logs(
 ):
     """Stream logs for a running dbt command using Server-Sent Events."""
     settings = get_settings()
+    workspace_id: Optional[int] = None
+
     if settings.auth_enabled:
         token = request.query_params.get("access_token")
         if not token:
@@ -117,10 +142,13 @@ async def stream_run_logs(
                     "message": "Access token is required to stream logs.",
                 },
             )
-        # Will raise if token is invalid or expired
-        decode_token(token, settings)
+        # Decode token (will raise if invalid or expired) and extract workspace
+        payload = decode_token(token, settings)
+        active_workspace = payload.get("active_workspace")
+        if isinstance(active_workspace, int):
+            workspace_id = active_workspace
 
-    run_status = executor.get_run_status(run_id)
+    run_status = executor.get_run_status(run_id, workspace_id=workspace_id)
     if not run_status:
         raise HTTPException(status_code=404, detail="Run not found")
 
@@ -150,9 +178,13 @@ async def stream_run_logs(
     response_model=RunArtifactsResponse,
     dependencies=[Depends(get_current_user)],
 )
-async def get_run_artifacts(run_id: str):
+async def get_run_artifacts(
+    run_id: str,
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+):
     """Get artifacts for a specific run."""
-    if run_id not in executor.run_history:
+    run_detail = executor.get_run_detail(run_id, workspace_id=workspace.id)
+    if not run_detail:
         raise HTTPException(status_code=404, detail="Run not found")
 
     artifacts = executor.get_run_artifacts(run_id)
@@ -169,15 +201,20 @@ async def get_run_artifacts(run_id: str):
     "/runs/{run_id}/cancel",
     dependencies=[Depends(require_role(Role.DEVELOPER))],
 )
-async def cancel_run(run_id: str):
+async def cancel_run(
+    run_id: str,
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+):
     """Cancel a running dbt command."""
-    if run_id not in executor.run_history:
+    # Ensure the run belongs to the active workspace
+    run_detail = executor.get_run_detail(run_id, workspace_id=workspace.id)
+    if not run_detail:
         raise HTTPException(status_code=404, detail="Run not found")
-    
+
     success = executor.cancel_run(run_id)
     if not success:
         raise HTTPException(status_code=400, detail="Run cannot be cancelled")
-    
+
     return {"message": "Run cancelled successfully"}
 
 

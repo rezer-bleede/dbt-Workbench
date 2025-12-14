@@ -19,7 +19,7 @@ import PluginMarketplacePage from './pages/PluginMarketplace'
 import VersionControlPage from './pages/VersionControl'
 import { useAuth } from './context/AuthContext'
 
-function App() {
+function AppInner() {
   const { isLoading, isAuthEnabled, user } = useAuth()
 
   const handleRefreshNeeded = (updatedArtifacts: string[]) => {
@@ -78,6 +78,12 @@ function App() {
       <RefreshIndicator onRefreshNeeded={handleRefreshNeeded} />
     </div>
   )
+}
+
+function App() {
+  const { activeWorkspace } = useAuth()
+  const key = activeWorkspace?.id ?? 'no-workspace'
+  return <AppInner key={key} />
 }
 
 export default App

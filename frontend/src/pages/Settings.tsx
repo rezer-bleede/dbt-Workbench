@@ -19,7 +19,7 @@ interface ConfigResponse {
 }
 
 function SettingsPage() {
-  const { user } = useAuth()
+  const { user, activeWorkspace } = useAuth()
   const [artifacts, setArtifacts] = useState<ArtifactSummary | null>(null)
   const [config, setConfig] = useState<ConfigResponse | null>(null)
 
@@ -48,7 +48,7 @@ function SettingsPage() {
             <div className="sm:col-span-2">
               <dt className="text-sm font-medium text-gray-500">Artifacts Path</dt>
               <dd className="mt-1 text-sm text-gray-900 font-mono bg-gray-50 p-1 rounded">
-                {config?.artifacts_path || 'Loading...'}
+                {activeWorkspace?.artifacts_path || config?.artifacts_path || 'Loading...'}
               </dd>
             </div>
             <div className="sm:col-span-2">

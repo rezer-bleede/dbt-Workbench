@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
-import { ArtifactSummary, HealthResponse, ModelSummary, RunRecord } from '../types'
+import { ArtifactSummary, HealthResponse, ModelSummary, RunRecord, ProjectInfo } from '../types'
 import { Card } from '../components/Card'
+import { useAuth } from '../context/AuthContext'
 
 function DashboardPage() {
+  const { activeWorkspace, isAuthEnabled, switchWorkspace } = useAuth()
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [artifacts, setArtifacts] = useState<ArtifactSummary | null>(null)
   const [models, setModels] = useState<ModelSummary[]>([])
   const [runs, setRuns] = useState<RunRecord[]>([])
+  const [projects, setProjects] = useState<ProjectInfo[]>([])
 
   useEffect(() => {
     api.get<HealthResponse>('/health').then((res) => setHealth(res.data)).catch(() => setHealth(null))
     api.get<ArtifactSummary>('/artifacts').then((res) => setArtifacts(res.data)).catch(() => setArtifacts(null))
     api.get<ModelSummary[]>('/models').then((res) => setModels(res.data)).catch(() => setModels([]))
     api.get<RunRecord[]>('/runs').then((res) => setRuns(res.data)).catch(() => setRuns([]))
+    api.get<ProjectInfo[]>('/projects').then((res) => setProjects(res.data)).catch(() => setProjects([]))
   }, [])
 
   const lastRun = runs[0]
@@ -40,7 +44,15 @@ function DashboardPage() {
         <Card title="Sources">{modelStats['source'] || 0}</Card>
         <Card title="Tests">{modelStats['test'] || 0}</Card>
         <Card title="Latest Run">
-          <span className={`${lastRun?.status === 'success' ? 'text-green-600' : lastRun?.status === 'failed' ? 'text-red-600' : 'text-gray-600'}`}>
+          <span
+            className={`${
+              lastRun?.status === 'success'
+                ? 'text-green-600'
+                : lastRun?.status === 'failed'
+                ? 'text-red-600'
+                : 'text-gray-600'
+            }`}
+          >
             {lastRun?.status || 'No runs yet'}
           </span>
         </Card>
@@ -90,7 +102,11 @@ function DashboardPage() {
             <h3 className="text-lg font-medium text-gray-900 mb-4">Project Overview</h3>
             <dl className="space-y-4">
               <div className="flex justify-between">
-                <dt className="text-sm text-gray-500">Models</dt>
+                <dt className="text-sm text-gray-500">Total Projects</dt>
+                <dd className="text-sm font-medium text-gray-900">{projects.length || 1}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-sm text-gray-500">Models (current project)</dt>
                 <dd className="text-sm font-medium text-gray-900">{modelStats['model'] || 0}</dd>
               </div>
               <div className="flex justify-between">
@@ -115,6 +131,51 @@ function DashboardPage() {
               </div>
             </dl>
           </div>
+
+          {projects.length > 0 && (
+            <div className="bg-white shadow rounded-lg p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Projects</h3>
+              <ul className="space-y-3 text-sm">
+                {projects.map((project) => {
+                  const isActive =
+                    project.is_active ?? project.id === String(activeWorkspace?.id ?? activeWorkspace?.key)
+                  return (
+                    <li key={project.id} className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {project.name}
+                          {isActive && <span className="ml-2 text-xs text-green-600">(active)</span>}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {project.status ? `Status: ${project.status}` : 'Status: unknown'}
+                          {project.last_activity && (
+                            <>
+                              {' • Last activity: '}
+                              {new Date(project.last_activity).toLocaleString()}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {isAuthEnabled && !isActive && project.id && (
+                        <button
+                          type="button"
+                          className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                          onClick={() => {
+                            const numericId = Number(project.id)
+                            if (!Number.isNaN(numericId)) {
+                              switchWorkspace(numericId)
+                            }
+                          }}
+                        >
+                          Switch
+                        </button>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>
