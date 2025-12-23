@@ -271,6 +271,7 @@ When to update docs:
 - Architecture changes → ARCHITECTURE.md
 - New features → ROADMAP.md (mark complete)
 - Plugin changes → PLUGIN_SYSTEM.md
+- Documentation screenshots → reuse existing UI snapshots in-repo (avoid adding new binary assets)
 
 ---
 
