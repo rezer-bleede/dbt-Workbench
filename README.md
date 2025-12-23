@@ -1,15 +1,58 @@
 # dbt-Workbench
 
-A lightweight, open-source UI for dbt that provides model browsing, lineage visualization, run orchestration, documentation previews, and environment management — without vendor lock-in.  
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](backend)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](frontend)
+
+A lightweight, open-source UI for dbt that provides model browsing, lineage visualization,
+run orchestration, documentation previews, and environment management — without vendor lock-in.
 Designed for local, on‑prem, and air‑gapped deployments.
+
+---
+
+## ✨ Highlights
+
+- **Unified dbt control plane** for artifacts, runs, and environments
+- **Interactive lineage** at model and column granularity
+- **Workspace-aware** multi-project setup with strict path scoping
+- **Secure by design** with optional JWT authentication + RBAC
+- **Extensible** plugin system and Git-integrated workspace
+
+---
+
+## 🧭 Table of Contents
+
+- [Screenshots](#-screenshots)
+- [Quickstart](#-quickstart)
+- [Run with Docker Compose](#-run-with-docker-compose)
+- [Multi-Project Workspaces](#-multi-project-workspaces)
+- [Local Development](#-local-development)
+- [Project Structure](#-project-structure)
+- [Authentication & RBAC](#-authentication--rbac)
+- [Environment Variables](#-environment-variables)
+- [Features Overview](#-features-overview)
+- [API Reference](#-api-reference)
+- [Testing](#-testing)
+- [Documentation](#-documentation)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
+
+## 📸 Screenshots
+
+### Run history & execution insights
+
+![Run history with execution status indicators](frontend/run-history.png)
 
 ---
 
 ## 🚀 Quickstart
 
 ### **Prerequisites**
-- Docker  
-- Docker Compose  
+- Docker
+- Docker Compose
 
 ---
 
@@ -22,8 +65,8 @@ docker compose up --build
 ```
 
 ### **Services**
-- **UI:** http://localhost:3000  
-- **API:** http://localhost:8000  
+- **UI:** http://localhost:3000
+- **API:** http://localhost:8000
 - **API Docs:** http://localhost:8000/docs (Swagger UI)
 
 ### **Mounting dbt Artifacts**
@@ -46,7 +89,11 @@ The UI will load and display real metadata from your dbt project automatically.
 
 ## 🧭 Multi-Project Workspaces
 
-dbt-Workbench can manage multiple isolated projects in a single instance. Each workspace gets its own repository folder under the configured `GIT_REPOS_BASE_PATH`, independent artifacts storage, and per-workspace settings. File operations are hard-scoped to the active workspace root to prevent cross-project access or path traversal, and switching workspaces refreshes the active project context across the UI and API.
+dbt-Workbench can manage multiple isolated projects in a single instance. Each workspace gets its own
+repository folder under the configured `GIT_REPOS_BASE_PATH`, independent artifacts storage, and
+per-workspace settings. File operations are hard-scoped to the active workspace root to prevent
+cross-project access or path traversal, and switching workspaces refreshes the active project context
+across the UI and API.
 
 For local development, set a dedicated base path for repositories:
 
@@ -54,9 +101,12 @@ For local development, set a dedicated base path for repositories:
 export GIT_REPOS_BASE_PATH=$(pwd)/data/repos
 ```
 
-Each workspace will use a subdirectory under that path (e.g., `data/repos/<workspace-key>`), keeping source files, artifacts, and run history isolated by project.
+Each workspace will use a subdirectory under that path (e.g., `data/repos/<workspace-key>`), keeping
+source files, artifacts, and run history isolated by project.
 
-When authentication is disabled you can still switch the active project by sending the `X-Workspace-Id` header on any API call. The frontend persists the last-selected workspace locally so reloading the UI keeps the correct project context without leaking data between workspaces.
+When authentication is disabled you can still switch the active project by sending the
+`X-Workspace-Id` header on any API call. The frontend persists the last-selected workspace locally so
+reloading the UI keeps the correct project context without leaking data between workspaces.
 
 ---
 
@@ -72,19 +122,6 @@ pip install -r requirements.txt
 
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
-
-### **Testing**
-
-Backend tests run against a local SQLite database by default (configured via
-`DATABASE_URL` in `tests/conftest.py`). This keeps the suite self contained and
-avoids requiring a running Postgres instance.
-
-```bash
-cd backend
-pytest
-```
-
----
 
 ### **Frontend (React + TypeScript + Vite)**
 
@@ -315,22 +352,22 @@ The SQL Workspace supports two execution modes:
 ## 🧩 Features Overview
 
 ### **Phase 1 — Artifact Viewer (Complete)**
-- Browse models, sources, tests  
-- Model details (columns, metadata)  
-- Basic lineage graph  
-- Runs list + statuses  
-- Dashboard overview  
+- Browse models, sources, tests
+- Model details (columns, metadata)
+- Basic lineage graph
+- Runs list + statuses
+- Dashboard overview
 
 ### **Phase 2 — Live Metadata Updates (Complete)**
-- Auto-detect changes to dbt artifacts  
-- Background watcher reloads metadata  
-- Frontend shows update indicators  
-- In-memory versioning  
+- Auto-detect changes to dbt artifacts
+- Background watcher reloads metadata
+- Frontend shows update indicators
+- In-memory versioning
 
 ### **Phase 3 — dbt Execution Engine (Complete)**
-- Run dbt commands from UI  
-- Real-time log streaming  
-- Persist artifacts per run  
+- Run dbt commands from UI
+- Real-time log streaming
+- Persist artifacts per run
 
 ### **Phase 4 — Metadata Persistence Layer (Complete)**
 - PostgreSQL backend
@@ -499,9 +536,18 @@ npm test
 
 ---
 
+## 📚 Documentation
+
+- **Architecture:** `ARCHITECTURE.md`
+- **Plugin system:** `PLUGIN_SYSTEM.md`
+- **Contributing:** `CONTRIBUTING.md`
+- **Roadmap:** `ROADMAP.md`
+
+---
+
 ## 🤝 Contributing
 
-Contributions are welcome!  
+Contributions are welcome!
 See **CONTRIBUTING.md** for style guidelines, workflows, and expectations.
 
 ---
