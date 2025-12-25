@@ -12,6 +12,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingCommand, setPendingCommand] = useState<DbtCommand | null>(null);
 
   // Suggestion data
   const [availableModels, setAvailableModels] = useState<string[]>([]);
@@ -48,10 +49,12 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
       .catch(err => console.error('Failed to fetch environments for autocomplete', err));
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent, activeCommand: DbtCommand = command) => {
+    e?.preventDefault();
     setIsLoading(true);
+    setPendingCommand(activeCommand);
     setError(null);
+    setCommand(activeCommand);
 
     try {
       // Build parameters object
@@ -70,11 +73,11 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
 
       if (fullRefresh) params.full_refresh = true;
       if (failFast) params.fail_fast = true;
-      if (storeFailures && command === 'test') params.store_failures = true;
-      if (noCompile && command === 'docs generate') params.no_compile = true;
+      if (storeFailures && activeCommand === 'test') params.store_failures = true;
+      if (noCompile && activeCommand === 'docs generate') params.no_compile = true;
 
       const request: RunRequest = {
-        command,
+        command: activeCommand,
         parameters: params,
         description: description || undefined,
         workspace_id: activeWorkspace?.id,
@@ -96,7 +99,12 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
       setError(err instanceof Error ? err.message : 'Failed to start run');
     } finally {
       setIsLoading(false);
+      setPendingCommand(null);
     }
+  };
+
+  const handleCommandButtonClick = (cmd: DbtCommand) => {
+    void handleSubmit(undefined, cmd);
   };
 
   const commands: { id: DbtCommand; label: string }[] = [
@@ -246,14 +254,21 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
           </div>
         )}
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? 'Starting...' : `Run ${command}`}
-        </button>
+        {/* Execute Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          {commands.map((cmd) => (
+            <button
+              key={cmd.id}
+              type="button"
+              data-testid={`${cmd.id}-execute`}
+              onClick={() => handleCommandButtonClick(cmd.id)}
+              disabled={isLoading}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading && pendingCommand === cmd.id ? 'Starting...' : cmd.label}
+            </button>
+          ))}
+        </div>
       </form>
     </div>
   );
