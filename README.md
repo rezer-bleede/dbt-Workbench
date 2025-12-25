@@ -340,6 +340,11 @@ The SQL Workspace supports two execution modes:
 - **Custom SQL**: freeform queries against the selected environment, honoring destructive-query guardrails and row limits.
 - **dbt models**: dual-pane editor showing the model source next to the compiled SQL (read-only). The compiled SQL is refreshed per environment/target and is the only code sent to the warehouse for execution. Viewer roles can inspect compiled SQL, while Developers/Admins can execute it.
 
+Additional behaviors:
+
+- Profiling is always enabled for executed queries so column statistics are consistently available alongside results.
+- Results are paginated in the UI to keep browsing responsive; server-side limits (such as `SQL_WORKSPACE_MAX_ROWS`) still cap the dataset returned from the warehouse.
+
 ### Notifications
 
 | Variable | Default | Description |

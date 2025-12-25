@@ -28,8 +28,6 @@ interface PersistedState {
   sqlText: string;
   environmentId: number | null;
   mode: WorkspaceMode;
-  rowLimit: number;
-  profilingEnabled: boolean;
   editorTheme: 'dark' | 'light';
   selectedModelId: string | null;
 }
@@ -66,8 +64,6 @@ function SqlWorkspacePage() {
   const [environments, setEnvironments] = useState<EnvironmentConfig[]>([]);
   const [mode, setMode] = useState<WorkspaceMode>('sql');
   const [selectedModelId, setSelectedModelId] = useState<string>('');
-  const [rowLimit, setRowLimit] = useState<number>(500);
-  const [profilingEnabled, setProfilingEnabled] = useState(false);
   const [editorTheme, setEditorTheme] = useState<'dark' | 'light'>('dark');
 
   const [metadata, setMetadata] = useState<SqlAutocompleteMetadata | null>(null);
@@ -81,6 +77,7 @@ function SqlWorkspacePage() {
   const [compileError, setCompileError] = useState<string | null>(null);
   const [isLoadingCompiled, setIsLoadingCompiled] = useState(false);
 
+  const profilingEnabled = true;
   const [resultsPage, setResultsPage] = useState(1);
   const rowsPerPage = 50;
 
@@ -275,8 +272,6 @@ function SqlWorkspacePage() {
       }
       const persistedMode = persisted.mode === 'preview' ? 'model' : persisted.mode;
       setMode(persistedMode || 'sql');
-      setRowLimit(persisted.rowLimit || 500);
-      setProfilingEnabled(!!persisted.profilingEnabled);
       setEditorTheme(persisted.editorTheme || 'dark');
       if (persisted.selectedModelId) {
         setSelectedModelId(persisted.selectedModelId);
@@ -293,12 +288,10 @@ function SqlWorkspacePage() {
       sqlText,
       environmentId: typeof environmentId === 'number' ? environmentId : null,
       mode,
-      rowLimit,
-      profilingEnabled,
       editorTheme,
       selectedModelId: selectedModelId || null,
     });
-  }, [editorTheme, environmentId, mode, profilingEnabled, rowLimit, selectedModelId, sqlText]);
+  }, [editorTheme, environmentId, mode, selectedModelId, sqlText]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -481,7 +474,6 @@ function SqlWorkspacePage() {
         const res = await SqlWorkspaceService.executeModel({
           model_unique_id: selectedModelId,
           environment_id: typeof environmentId === 'number' ? environmentId : undefined,
-          row_limit: rowLimit,
           include_profiling: profilingEnabled,
         });
         setResult(res);
@@ -490,7 +482,6 @@ function SqlWorkspacePage() {
         const request: SqlQueryRequest = {
           sql: sqlText,
           environment_id: typeof environmentId === 'number' ? environmentId : undefined,
-          row_limit: rowLimit,
           include_profiling: profilingEnabled,
           mode: 'sql',
         };
@@ -510,7 +501,7 @@ function SqlWorkspacePage() {
     } finally {
       setIsRunning(false);
     }
-  }, [compileError, compiledSql, environmentId, loadCompiledSqlForModel, loadHistory, mode, profilingEnabled, rowLimit, selectedModelId, sqlText]);
+  }, [compileError, compiledSql, environmentId, loadCompiledSqlForModel, loadHistory, mode, selectedModelId, sqlText]);
 
   const handleClearError = () => {
     setError(null);
@@ -594,14 +585,14 @@ function SqlWorkspacePage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">SQL Workspace</h1>
           <p className="text-sm text-gray-400">
             Run ad-hoc SQL or dbt models against your warehouse with compiled SQL visibility, metadata, and profiling.
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div>
             <label className="block text-xs text-gray-400">Environment</label>
             <select
@@ -666,47 +657,6 @@ function SqlWorkspacePage() {
               </button>
             </div>
           </div>
-          <div>
-            <label className="block text-xs text-gray-400">Row limit</label>
-            <input
-              type="number"
-              min={1}
-              className="mt-1 w-24 bg-gray-900 border border-gray-700 rounded-md px-2 py-1 text-sm text-gray-100"
-              value={rowLimit}
-              onChange={(e) => setRowLimit(Number(e.target.value) || 1)}
-            />
-          </div>
-          <div className="flex items-center space-x-2 mt-5">
-            <input
-              id="profiling-toggle"
-              type="checkbox"
-              className="h-4 w-4 text-accent border-gray-700 rounded"
-              checked={profilingEnabled}
-              onChange={(e) => setProfilingEnabled(e.target.checked)}
-            />
-            <label htmlFor="profiling-toggle" className="text-xs text-gray-300">
-              Enable profiling
-            </label>
-          </div>
-          <button
-            type="button"
-            onClick={handleRun}
-            disabled={
-              isRunning ||
-              !isDeveloperOrAdmin ||
-              (mode === 'model' && (isLoadingCompiled || !selectedModelId))
-            }
-            className="mt-5 inline-flex items-center px-4 py-2 rounded-md bg-accent text-white text-sm font-medium disabled:opacity-60"
-          >
-            {isRunning ? 'Running…' : 'Run (Ctrl/Cmd+Enter)'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsFullScreenEditor((prev) => !prev)}
-            className="mt-5 inline-flex items-center px-3 py-2 rounded-md border border-gray-700 text-xs text-gray-200 hover:bg-gray-800"
-          >
-            {isFullScreenEditor ? 'Exit full-screen' : 'Full-screen editor'}
-          </button>
         </div>
       </div>
 
@@ -725,7 +675,7 @@ function SqlWorkspacePage() {
 
       <div className={`grid grid-cols-1 gap-4 ${isFullScreenEditor ? '' : 'xl:grid-cols-3'}`}>
           <div className="xl:col-span-2 space-y-4">
-            <div className="bg-panel border border-gray-800 rounded-lg p-3">
+            <div className="bg-panel border border-gray-800 rounded-lg p-3 pb-14 relative">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xs text-gray-400 truncate">
                   {mode === 'model'
@@ -821,6 +771,31 @@ function SqlWorkspacePage() {
                   />
                 </div>
               )}
+
+              <div
+                className="absolute bottom-3 right-3 flex flex-wrap items-center justify-end gap-2"
+                data-testid="editor-action-bar"
+              >
+                <button
+                  type="button"
+                  onClick={handleRun}
+                  disabled={
+                    isRunning ||
+                    !isDeveloperOrAdmin ||
+                    (mode === 'model' && (isLoadingCompiled || !selectedModelId))
+                  }
+                  className="inline-flex items-center px-4 py-2 rounded-md bg-accent text-white text-sm font-medium shadow disabled:opacity-60"
+                >
+                  {isRunning ? 'Running…' : 'Run (Ctrl/Cmd+Enter)'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFullScreenEditor((prev) => !prev)}
+                  className="inline-flex items-center px-3 py-2 rounded-md border border-gray-700 text-xs text-gray-200 hover:bg-gray-800"
+                >
+                  {isFullScreenEditor ? 'Exit full-screen' : 'Full-screen editor'}
+                </button>
+              </div>
             </div>
 
             <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-3">
