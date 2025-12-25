@@ -46,9 +46,9 @@ function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-100">Dashboard</h1>
         <div className="flex items-center space-x-3">
-          <div className="text-sm text-gray-600">Projects: {workspaces.length}</div>
+          <div className="text-sm text-gray-300">Projects: {workspaces.length}</div>
           {health && (
             <span className={`px-2 py-1 rounded text-xs font-medium ${health.status === 'ok' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
               System: {health.status}

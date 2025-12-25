@@ -154,8 +154,8 @@ function EnvironmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Environments</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-100">Environments</h1>
+          <p className="text-sm text-gray-400">
             Manage your dbt environments.
           </p>
         </div>

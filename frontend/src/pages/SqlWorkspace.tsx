@@ -98,6 +98,7 @@ function SqlWorkspacePage() {
   const [fileValidationErrors, setFileValidationErrors] = useState<string[]>([]);
   const [isSavingFile, setIsSavingFile] = useState(false);
   const [gitLoadError, setGitLoadError] = useState<string | null>(null);
+  const [isFullScreenEditor, setIsFullScreenEditor] = useState(false);
 
   const aliasMap = useMemo(() => {
     if (!metadata) return {} as Record<string, string>;
@@ -587,6 +588,9 @@ function SqlWorkspacePage() {
   };
 
   const theme = editorTheme === 'dark' ? vscodeDark : vscodeLight;
+  const modelEditorHeight = isFullScreenEditor ? '480px' : '280px';
+  const compiledEditorHeight = isFullScreenEditor ? '480px' : '280px';
+  const sqlEditorHeight = isFullScreenEditor ? '480px' : '260px';
 
   return (
     <div className="space-y-4">
@@ -604,8 +608,8 @@ function SqlWorkspacePage() {
               className="mt-1 bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-sm text-gray-100"
               value={environmentId}
               onChange={(e) => {
-                const value = e.target.value;
-                setEnvironmentId(value ? Number(value) : '');
+                const value = e.target.value
+                setEnvironmentId(value ? Number(value) : '')
               }}
             >
               {environments.length === 0 && <option value="">Default</option>}
@@ -687,11 +691,22 @@ function SqlWorkspacePage() {
           <button
             type="button"
             onClick={handleRun}
-            disabled={isRunning || !isDeveloperOrAdmin || (mode === 'model' && (isLoadingCompiled || !selectedModelId))}
+            disabled={
+              isRunning ||
+              !isDeveloperOrAdmin ||
+              (mode === 'model' && (isLoadingCompiled || !selectedModelId))
+            }
             className="mt-5 inline-flex items-center px-4 py-2 rounded-md bg-accent text-white text-sm font-medium disabled:opacity-60"
           >
             {isRunning ? 'Running…' : 'Run (Ctrl/Cmd+Enter)'}
-        </button>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsFullScreenEditor((prev) => !prev)}
+            className="mt-5 inline-flex items-center px-3 py-2 rounded-md border border-gray-700 text-xs text-gray-200 hover:bg-gray-800"
+          >
+            {isFullScreenEditor ? 'Exit full-screen' : 'Full-screen editor'}
+          </button>
         </div>
       </div>
 
@@ -708,7 +723,7 @@ function SqlWorkspacePage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div className={`grid grid-cols-1 gap-4 ${isFullScreenEditor ? '' : 'xl:grid-cols-3'}`}>
           <div className="xl:col-span-2 space-y-4">
             <div className="bg-panel border border-gray-800 rounded-lg p-3">
               <div className="flex items-center justify-between mb-2">
@@ -763,7 +778,7 @@ function SqlWorkspacePage() {
                     <div className="border border-gray-800 rounded-md overflow-hidden">
                       <CodeMirror
                         value={sqlText}
-                        height="280px"
+                        height={modelEditorHeight}
                         theme={theme}
                         extensions={[sqlLang(), autocompletion({ override: [completionSource] })]}
                         basicSetup={{ lineNumbers: true, highlightActiveLine: true }}
@@ -782,7 +797,7 @@ function SqlWorkspacePage() {
                     <div className="border border-gray-800 rounded-md overflow-hidden bg-gray-950">
                       <CodeMirror
                         value={compiledSql || '-- Compiled SQL not available yet'}
-                        height="280px"
+                        height={compiledEditorHeight}
                         theme={theme}
                         extensions={[sqlLang()]}
                         editable={false}
@@ -798,7 +813,7 @@ function SqlWorkspacePage() {
                 <div className="border border-gray-800 rounded-md overflow-hidden">
                   <CodeMirror
                     value={sqlText}
-                    height="260px"
+                    height={sqlEditorHeight}
                     theme={theme}
                     extensions={[sqlLang(), autocompletion({ override: [completionSource] })]}
                     basicSetup={{ lineNumbers: true, highlightActiveLine: true }}
@@ -934,8 +949,9 @@ function SqlWorkspacePage() {
           )}
         </div>
 
-        <div className="space-y-4">
-          <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-3">
+        {!isFullScreenEditor && (
+          <div className="space-y-4">
+            <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-3">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-gray-100">Model files</div>
               <button
@@ -1107,8 +1123,8 @@ function SqlWorkspacePage() {
                     className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-gray-100"
                     value={historyStatusFilter}
                     onChange={(e) => {
-                      setHistoryStatusFilter(e.target.value);
-                      setHistoryPage(1);
+                      setHistoryStatusFilter(e.target.value)
+                      setHistoryPage(1)
                     }}
                   >
                     <option value="all">All</option>
@@ -1124,8 +1140,8 @@ function SqlWorkspacePage() {
                     className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-gray-100"
                     value={historyModelFilter}
                     onChange={(e) => {
-                      setHistoryModelFilter(e.target.value);
-                      setHistoryPage(1);
+                      setHistoryModelFilter(e.target.value)
+                      setHistoryPage(1)
                     }}
                   >
                     <option value="all">All</option>
@@ -1145,8 +1161,8 @@ function SqlWorkspacePage() {
                     className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-gray-100"
                     value={historyDateFrom}
                     onChange={(e) => {
-                      setHistoryDateFrom(e.target.value);
-                      setHistoryPage(1);
+                      setHistoryDateFrom(e.target.value)
+                      setHistoryPage(1)
                     }}
                   />
                 </div>
@@ -1157,8 +1173,8 @@ function SqlWorkspacePage() {
                     className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-gray-100"
                     value={historyDateTo}
                     onChange={(e) => {
-                      setHistoryDateTo(e.target.value);
-                      setHistoryPage(1);
+                      setHistoryDateTo(e.target.value)
+                      setHistoryPage(1)
                     }}
                   />
                 </div>
@@ -1228,12 +1244,12 @@ function SqlWorkspacePage() {
                   ))}
                   {history.length === 0 && (
                     <tr>
-                        <td
-                          className="px-3 py-3 text-center text-gray-500"
-                          colSpan={6}
-                        >
-                          No queries found.
-                        </td>
+                      <td
+                        className="px-3 py-3 text-center text-gray-500"
+                        colSpan={6}
+                      >
+                        No queries found.
+                      </td>
                     </tr>
                   )}
                 </tbody>
@@ -1266,6 +1282,7 @@ function SqlWorkspacePage() {
             )}
           </div>
         </div>
+      )}
       </div>
     </div>
   );

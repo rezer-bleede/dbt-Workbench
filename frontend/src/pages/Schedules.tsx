@@ -243,8 +243,8 @@ function SchedulesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Schedules</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-100">Schedules</h1>
+          <p className="text-sm text-gray-400">
             Configure automated dbt runs with cron schedules, retries, and notifications.
           </p>
         </div>
