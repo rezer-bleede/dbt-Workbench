@@ -403,6 +403,11 @@ The SQL Workspace supports two execution modes:
 - Retry policies with exponential backoff
 - Catch-up and overlap policies
 
+### **Profile management in Environments (New)**
+- View configured dbt profiles and their available targets directly from the Environments page
+- Add a new profile with a YAML snippet that is merged into `profiles.yml`
+- Edit the full `profiles.yml` file inline when you need advanced changes
+
 ### **Phase 7 — SQL Workspace (Complete)**
 - SQL editor with syntax highlighting
 - Dual-pane dbt model view showing editable source alongside read-only compiled SQL

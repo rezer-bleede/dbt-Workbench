@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import yaml from 'js-yaml';
 import { Environment, EnvironmentCreate, EnvironmentUpdate } from '../types';
 import { EnvironmentService } from '../services/environmentService';
 import { ProfileService, ProfileInfo } from '../services/profileService';
@@ -22,6 +23,10 @@ function EnvironmentsPage() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileContent, setProfileContent] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
+  const [profileEditorContent, setProfileEditorContent] = useState('');
+  const [profileEditorError, setProfileEditorError] = useState<string | null>(null);
+  const [editingProfileName, setEditingProfileName] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -40,6 +45,18 @@ function EnvironmentsPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const parsedProfiles = useMemo(() => {
+    try {
+      const parsed = yaml.load(profileContent) as Record<string, unknown> | undefined;
+      if (parsed && typeof parsed === 'object') {
+        return parsed as Record<string, unknown>;
+      }
+    } catch (err) {
+      console.error('Failed to parse profiles', err);
+    }
+    return {};
+  }, [profileContent]);
 
   const handleCreateClick = () => {
     if (!isDeveloperOrAdmin) return;
@@ -108,6 +125,53 @@ function EnvironmentsPage() {
     }
   };
 
+  const buildProfileTemplate = () => `new_profile:\n  target: dev\n  outputs:\n    dev:\n      type: postgres\n      host: localhost\n      user: user\n      password: pass\n      dbname: db\n      schema: public\n`;
+
+  const openProfileEditor = (profileName?: string) => {
+    setProfileEditorError(null);
+    const scopedProfile: Record<string, unknown> = {};
+
+    if (profileName && parsedProfiles[profileName]) {
+      scopedProfile[profileName] = parsedProfiles[profileName];
+      setEditingProfileName(profileName);
+      setProfileEditorContent(yaml.dump(scopedProfile, { lineWidth: 120 }));
+    } else {
+      setEditingProfileName(null);
+      setProfileEditorContent(buildProfileTemplate());
+    }
+    setIsProfileEditorOpen(true);
+  };
+
+  const handleSaveProfileEditor = async () => {
+    if (!isDeveloperOrAdmin) return;
+    setIsSavingProfile(true);
+    setProfileEditorError(null);
+    try {
+      const parsedSnippet = yaml.load(profileEditorContent);
+      if (!parsedSnippet || typeof parsedSnippet !== 'object' || Array.isArray(parsedSnippet)) {
+        throw new Error('Profile definition must be a YAML object');
+      }
+
+      const merged = { ...parsedProfiles } as Record<string, unknown>;
+      Object.entries(parsedSnippet as Record<string, unknown>).forEach(([key, value]) => {
+        if (key !== 'config') {
+          merged[key] = value;
+        }
+      });
+
+      const updatedContent = yaml.dump(merged, { lineWidth: 120 });
+      const response = await ProfileService.update(updatedContent);
+      setProfiles(response.profiles);
+      setProfileContent(response.content);
+      setIsProfileEditorOpen(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save profile';
+      setProfileEditorError(message);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   const handleDelete = async (id: number) => {
     if (!isDeveloperOrAdmin) return;
     if (!window.confirm('Delete this environment? This cannot be undone.')) {
@@ -162,6 +226,12 @@ function EnvironmentsPage() {
         {isDeveloperOrAdmin && (
           <div className="flex space-x-3">
             <button
+              onClick={() => openProfileEditor()}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              New Profile
+            </button>
+            <button
               onClick={handleManageProfiles}
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
@@ -182,6 +252,56 @@ function EnvironmentsPage() {
           {error}
         </div>
       )}
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold">Profiles</h2>
+            <p className="text-sm text-gray-500">View existing dbt profiles and targets.</p>
+          </div>
+          {isDeveloperOrAdmin && (
+            <button
+              onClick={handleManageProfiles}
+              className="text-sm text-accent hover:underline"
+            >
+              Edit full profiles.yml
+            </button>
+          )}
+        </div>
+        {profiles.length === 0 ? (
+          <p className="text-sm text-gray-500">No profiles configured yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {profiles.map(profile => (
+              <div key={profile.name} className="border border-gray-200 rounded-lg p-4 flex flex-col space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{profile.name}</p>
+                    <p className="text-xs text-gray-500">{profile.targets.length} target{profile.targets.length === 1 ? '' : 's'}</p>
+                  </div>
+                  {isDeveloperOrAdmin && (
+                    <button
+                      onClick={() => openProfileEditor(profile.name)}
+                      className="text-sm text-accent hover:underline"
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+                {profile.targets.length > 0 ? (
+                  <ul className="text-sm text-gray-700 list-disc list-inside space-y-1">
+                    {profile.targets.map(target => (
+                      <li key={target}>{target}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500">No targets defined.</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Editor Modal */}
       {isProfileModalOpen && (
@@ -208,6 +328,40 @@ function EnvironmentsPage() {
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
               >
                 {isSavingProfile ? 'Saving...' : 'Save Profiles'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isProfileEditorOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl h-[70vh] flex flex-col p-6">
+            <h2 className="text-xl font-bold mb-2">{editingProfileName ? `Edit ${editingProfileName}` : 'Add Profile'}</h2>
+            <p className="text-sm text-gray-600 mb-4">Provide a YAML snippet for a single profile. It will be merged into profiles.yml.</p>
+            {profileEditorError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded p-2 text-sm mb-3">{profileEditorError}</div>
+            )}
+            <div className="flex-1 mb-4">
+              <textarea
+                className="w-full h-full p-4 border border-gray-300 rounded font-mono text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                value={profileEditorContent}
+                onChange={(e) => setProfileEditorContent(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setIsProfileEditorOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfileEditor}
+                disabled={isSavingProfile}
+                className="px-4 py-2 bg-accent text-white rounded hover:bg-accent/90 disabled:opacity-50"
+              >
+                {isSavingProfile ? 'Saving...' : 'Save Profile'}
               </button>
             </div>
           </div>
