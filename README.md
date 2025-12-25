@@ -28,6 +28,7 @@ Designed for local, on‑prem, and air‑gapped deployments.
 - **Workspace-aware** multi-project setup with strict path scoping
 - **Secure by design** with optional JWT authentication + RBAC
 - **Extensible** plugin system and Git-integrated workspace
+- **Ready out-of-the-box** with a local demo project and git repo that persists your last active workspace
 
 ---
 
@@ -117,6 +118,11 @@ source files, artifacts, and run history isolated by project.
 When authentication is disabled you can still switch the active project by sending the
 `X-Workspace-Id` header on any API call. The frontend persists the last-selected workspace locally so
 reloading the UI keeps the correct project context without leaking data between workspaces.
+
+dbt-Workbench automatically bootstraps a local **Demo Project** with its own git repository on first
+launch so you can explore the UI immediately. The Projects & Version Control page lets you add
+local-only projects (each with their own repo) or connect remotes; on subsequent visits the UI loads
+whichever project you last activated.
 
 ---
 

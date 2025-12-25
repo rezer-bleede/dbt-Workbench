@@ -44,6 +44,67 @@ CRITICAL_FILES = {
 }
 
 
+def _ensure_git_identity(repo: Repo) -> None:
+    """Ensure commits succeed even in environments without global git config."""
+    writer = repo.config_writer()
+    try:
+        try:
+            writer.get_value("user", "name")
+        except Exception:
+            writer.set_value("user", "name", "dbt-workbench")
+        try:
+            writer.get_value("user", "email")
+        except Exception:
+            writer.set_value("user", "email", "noreply@example.com")
+    finally:
+        writer.release()
+
+
+def _write_default_project_files(base_path: Path) -> None:
+    """Seed a minimal dbt-style project if nothing exists yet."""
+    readme = base_path / "README.md"
+    if not readme.exists():
+        readme.write_text(
+            """# Demo Project\n\nThis starter project is ready for local development.\n""",
+            encoding="utf-8",
+        )
+
+    dbt_project = base_path / "dbt_project.yml"
+    if not dbt_project.exists():
+        dbt_project.write_text(
+            """name: demo_project\nversion: '1.0'\nprofile: user\nmodel-paths: ['models']\n\nmodels:\n  demo_project:\n    +materialized: view\n""",
+            encoding="utf-8",
+        )
+
+    models_dir = base_path / "models"
+    models_dir.mkdir(parents=True, exist_ok=True)
+    starter_model = models_dir / "welcome.sql"
+    if not starter_model.exists():
+        starter_model.write_text(
+            "-- Example model\nselect 1 as id, 'hello' as greeting\n",
+            encoding="utf-8",
+        )
+
+
+def _initialize_local_repo(target_path: Path, branch: str) -> Repo:
+    target_path.mkdir(parents=True, exist_ok=True)
+    try:
+        repo = Repo.init(target_path, initial_branch=branch)
+    except TypeError:  # pragma: no cover - fallback for older GitPython
+        repo = Repo.init(target_path)
+        try:
+            if branch:
+                repo.git.checkout("-b", branch)
+        except Exception:
+            pass
+    _write_default_project_files(target_path)
+    _ensure_git_identity(repo)
+    repo.git.add(A=True)
+    if not repo.head.is_valid():
+        repo.index.commit("Initial local project commit")
+    return repo
+
+
 def _workspace_root(settings, workspace: db_models.Workspace) -> Path:
     root = Path(settings.git_repos_base_path).joinpath(workspace.key).resolve()
     root.mkdir(parents=True, exist_ok=True)
@@ -113,7 +174,13 @@ def _ensure_repo(path: str) -> Repo:
 
 
 def _get_or_create_repo_record(
-    db: Session, workspace_id: int, *, remote_url: str, branch: str, directory: str, provider: Optional[str]
+    db: Session,
+    workspace_id: int,
+    *,
+    remote_url: Optional[str],
+    branch: str,
+    directory: str,
+    provider: Optional[str],
 ) -> db_models.GitRepository:
     record = (
         db.query(db_models.GitRepository)
@@ -143,7 +210,7 @@ def connect_repository(
     db: Session,
     *,
     workspace_id: int,
-    remote_url: str,
+    remote_url: Optional[str],
     branch: str,
     directory: Optional[str],
     provider: Optional[str],
@@ -163,21 +230,29 @@ def connect_repository(
 
     target_path.mkdir(parents=True, exist_ok=True)
 
-    # Clone if missing, tolerating a branch name that might not exist by falling back to default
+    # Clone remote or initialize a local-only repository
     repo: Repo
-    if not (target_path / ".git").exists():
-        try:
-            repo = Repo.clone_from(remote_url, target_path, branch=branch)
-        except GitCommandError:
-            # Fall back to cloning the default branch when the requested branch is missing
-            repo = Repo.clone_from(remote_url, target_path)
+    if remote_url:
+        if not (target_path / ".git").exists():
             try:
-                branch = repo.active_branch.name  # Use the branch that was actually checked out
-            except TypeError:
-                # Detached HEAD; pick the first local branch if available
-                branch = repo.heads[0].name if repo.heads else branch
+                repo = Repo.clone_from(remote_url, target_path, branch=branch)
+            except GitCommandError:
+                # Fall back to cloning the default branch when the requested branch is missing
+                repo = Repo.clone_from(remote_url, target_path)
+                try:
+                    branch = repo.active_branch.name  # Use the branch that was actually checked out
+                except TypeError:
+                    # Detached HEAD; pick the first local branch if available
+                    branch = repo.heads[0].name if repo.heads else branch
+        else:
+            repo = _ensure_repo(str(target_path))
     else:
-        repo = _ensure_repo(str(target_path))
+        if (target_path / ".git").exists():
+            repo = _ensure_repo(str(target_path))
+        else:
+            repo = _initialize_local_repo(target_path, branch)
+
+    _ensure_git_identity(repo)
 
     # Ensure the desired branch exists locally; otherwise create it from remote or fall back gracefully
     local_branches = {h.name for h in repo.heads}
@@ -220,7 +295,7 @@ def connect_repository(
         username=username,
         action="connect_repository",
         resource="git",
-        metadata={"remote_url": remote_url, "branch": branch},
+        metadata={"remote_url": remote_url, "branch": branch, "local_only": not bool(remote_url)},
     )
 
     return GitRepositorySummary.model_validate(record)
@@ -359,12 +434,15 @@ def get_status(db: Session, workspace_id: int) -> GitStatusResponse:
         branch_name = record.default_branch or "HEAD"
 
     ahead = behind = 0
-    try:
-        if repo.head.is_valid():
-            ahead_output = repo.git.rev_list("--left-right", "--count", f"origin/{branch_name}...{branch_name}")
-            ahead, behind = [int(val) for val in ahead_output.split()]
-    except Exception:
-        ahead = behind = 0
+    if repo.remotes:
+        try:
+            if repo.head.is_valid():
+                ahead_output = repo.git.rev_list(
+                    "--left-right", "--count", f"origin/{branch_name}...{branch_name}"
+                )
+                ahead, behind = [int(val) for val in ahead_output.split()]
+        except Exception:
+            ahead = behind = 0
 
     changes: List[FileChange] = []
     for diff in repo.index.diff(None):
@@ -394,16 +472,31 @@ def get_status(db: Session, workspace_id: int) -> GitStatusResponse:
 def list_branches(db: Session, workspace_id: int) -> List[BranchSummary]:
     record = _repo_record(db, workspace_id)
     repo = _ensure_repo(record.directory)
-    active = repo.active_branch.name
-    return [BranchSummary(name=branch.name, is_active=branch.name == active) for branch in repo.branches]
+    try:
+        active = repo.active_branch.name
+    except Exception:
+        active = record.default_branch or "HEAD"
+    branches = [BranchSummary(name=branch.name, is_active=branch.name == active) for branch in repo.branches]
+    if not branches:
+        branches.append(BranchSummary(name=active, is_active=True))
+    return branches
 
 
 def pull(db: Session, workspace_id: int, request: PullRequest, *, user_id: int | None, username: str | None) -> GitStatusResponse:
     record = _repo_record(db, workspace_id)
     repo = _ensure_repo(record.directory)
+    if not repo.remotes:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "remote_missing", "message": "No git remote is configured for this project."},
+        )
     remote = repo.remote(request.remote_name)
     try:
-        remote.pull(request.branch or repo.active_branch.name)
+        branch_name = request.branch or repo.active_branch.name
+    except Exception:
+        branch_name = request.branch or record.default_branch or "main"
+    try:
+        remote.pull(branch_name)
     except GitCommandError as exc:  # pragma: no cover - passthrough errors
         raise HTTPException(status_code=400, detail={"error": "pull_failed", "message": str(exc)})
     record.last_synced_at = datetime.now(timezone.utc)
@@ -424,8 +517,16 @@ def pull(db: Session, workspace_id: int, request: PullRequest, *, user_id: int |
 def push(db: Session, workspace_id: int, request: PushRequest, *, user_id: int | None, username: str | None) -> GitStatusResponse:
     record = _repo_record(db, workspace_id)
     repo = _ensure_repo(record.directory)
+    if not repo.remotes:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "remote_missing", "message": "No git remote is configured for this project."},
+        )
     remote = repo.remote(request.remote_name)
-    branch = request.branch or repo.active_branch.name
+    try:
+        branch = request.branch or repo.active_branch.name
+    except Exception:
+        branch = request.branch or record.default_branch or "main"
     try:
         remote.push(branch)
     except GitCommandError as exc:  # pragma: no cover
@@ -601,6 +702,8 @@ def history(db: Session, workspace_id: int, limit: int = 50) -> List[GitHistoryE
     record = _repo_record(db, workspace_id)
     repo = _ensure_repo(record.directory)
     entries: List[GitHistoryEntry] = []
+    if not repo.head.is_valid():
+        return entries
     for commit in repo.iter_commits(max_count=limit):
         entries.append(
             GitHistoryEntry(

@@ -65,7 +65,7 @@ class GitRepository(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False)
-    remote_url = Column(String, nullable=False)
+    remote_url = Column(String, nullable=True)
     provider = Column(String, nullable=True)
     default_branch = Column(String, nullable=False, default="main")
     directory = Column(String, nullable=False)

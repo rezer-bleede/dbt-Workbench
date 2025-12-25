@@ -11,7 +11,7 @@ class GitRepositorySummary(BaseModel):
 
     id: int
     workspace_id: int
-    remote_url: str
+    remote_url: Optional[str]
     provider: Optional[str]
     default_branch: str
     directory: str
@@ -20,7 +20,7 @@ class GitRepositorySummary(BaseModel):
 
 class ConnectRepositoryRequest(BaseModel):
     workspace_id: int
-    remote_url: str
+    remote_url: Optional[str] = None
     provider: Optional[str] = None
     branch: str = Field(default="main")
     directory: Optional[str] = None

@@ -250,7 +250,7 @@ export interface GitFileContent {
 export interface GitRepository {
   id: number
   workspace_id: number
-  remote_url: string
+  remote_url?: string | null
   provider?: string | null
   default_branch: string
   directory: string

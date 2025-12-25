@@ -146,3 +146,27 @@ def test_path_traversal_is_blocked(tmp_path, db_session):
         )
     assert excinfo.value.status_code == 400
     assert excinfo.value.detail["error"] == "forbidden_path"
+
+
+def test_local_repository_initialization(tmp_path, db_session):
+    project_root = Path(db_session.workspace_root) / "local_only"
+
+    summary = git_service.connect_repository(
+        db_session,
+        workspace_id=1,
+        remote_url=None,
+        branch="main",
+        directory=str(project_root),
+        provider="local",
+        user_id=None,
+        username=None,
+    )
+
+    assert summary.remote_url is None
+    assert (project_root / ".git").exists()
+    assert (project_root / "models" / "welcome.sql").exists()
+
+    status = git_service.get_status(db_session, 1)
+    assert status.configured is True
+    history = git_service.history(db_session, 1)
+    assert history

@@ -13,7 +13,7 @@ import {
 export class GitService {
   static async connect(payload: {
     workspace_id: number
-    remote_url: string
+    remote_url?: string
     branch: string
     directory?: string
     provider?: string
