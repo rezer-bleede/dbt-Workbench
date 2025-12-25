@@ -4,11 +4,14 @@ import React from 'react'
 
 import VersionControlPage from './VersionControl'
 import { GitService } from '../services/gitService'
+import { WorkspaceService } from '../services/workspaceService'
 import { UserSummary } from '../types'
 
 vi.mock('../services/gitService')
+vi.mock('../services/workspaceService')
 
 const mockedService = vi.mocked(GitService)
+const mockedWorkspace = vi.mocked(WorkspaceService)
 
 const authValue = {
   isLoading: false,
@@ -42,6 +45,7 @@ vi.mock('../context/AuthContext', () => ({
 
 describe('VersionControlPage', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     mockedService.status.mockResolvedValue({
       branch: 'main',
       is_clean: true,
@@ -58,6 +62,16 @@ describe('VersionControlPage', () => {
     mockedService.audit.mockResolvedValue([])
     mockedService.diff.mockResolvedValue([{ path: 'models/model.sql', diff: '' }])
     mockedService.readFile.mockResolvedValue({ path: 'models/model.sql', content: 'select 1', readonly: false })
+    mockedService.getRepository.mockResolvedValue({
+      id: 1,
+      workspace_id: 1,
+      remote_url: 'https://example.com/repo.git',
+      provider: 'github',
+      default_branch: 'main',
+      directory: '/app/data/demo-project',
+      last_synced_at: null,
+    })
+    mockedWorkspace.listWorkspaces.mockResolvedValue([])
   })
 
   it('renders git panels and file explorer', async () => {
@@ -69,5 +83,33 @@ describe('VersionControlPage', () => {
 
     expect(screen.getByText('Project files')).toBeInTheDocument()
     expect(await screen.findByText(/models\/model.sql/)).toBeInTheDocument()
+  })
+
+  it('shows branch metadata and recent history when repository is connected', async () => {
+    render(<VersionControlPage />)
+
+    const branchSelect = await screen.findByRole('combobox')
+
+    await waitFor(() => expect(branchSelect).toHaveValue('main'))
+    expect(screen.getByText(/Recent commits/)).toBeInTheDocument()
+    expect(screen.getByText('init')).toBeInTheDocument()
+  })
+
+  it('prompts for connection details when git is not configured', async () => {
+    mockedService.status.mockResolvedValueOnce({
+      branch: '',
+      is_clean: true,
+      ahead: 0,
+      behind: 0,
+      changes: [],
+      has_conflicts: false,
+      configured: false,
+    })
+
+    render(<VersionControlPage />)
+
+    expect(await screen.findByText('Create or connect a project')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Project workspace name')).toBeInTheDocument()
+    expect(screen.getByText('Connect a repository to browse files.')).toBeInTheDocument()
   })
 })

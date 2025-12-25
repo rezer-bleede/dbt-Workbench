@@ -419,13 +419,7 @@ export default function VersionControlPage() {
                     type="checkbox"
                     className="h-4 w-4"
                     checked={isLocalOnly}
-                    onChange={(e) => {
-                      const next = e.target.checked
-                      setIsLocalOnly(next)
-                      if (!next && !remoteUrl) {
-                        setRemoteUrl('https://github.com/dbt-labs/jaffle-shop-classic.git')
-                      }
-                    }}
+                    onChange={(e) => setIsLocalOnly(e.target.checked)}
                   />
                   <label htmlFor="local-only" className="text-sm text-gray-300">
                     Create a local-only project (no remote)
@@ -518,142 +512,141 @@ export default function VersionControlPage() {
           )}
         </div>
       </div>
-    </div>
 
-    <div className="flex items-start gap-4">
-      <div className="bg-panel border border-gray-800 rounded p-4 flex-1">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <div className="text-lg font-semibold text-white">Git status</div>
-            <div className="text-sm text-gray-400">Branch: {repoMissing ? 'not connected' : status?.branch || 'unknown'}</div>
+      <div className="flex items-start gap-4">
+        <div className="bg-panel border border-gray-800 rounded p-4 flex-1">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <div className="text-lg font-semibold text-white">Git status</div>
+              <div className="text-sm text-gray-400">Branch: {repoMissing ? 'not connected' : status?.branch || 'unknown'}</div>
+            </div>
+            <div className="flex gap-2">
+              <button className="btn" onClick={() => GitService.pull().then(reload)} disabled={actionsDisabled}>
+                Pull
+              </button>
+              <button className="btn" onClick={() => GitService.push().then(reload)} disabled={actionsDisabled}>
+                Push
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button className="btn" onClick={() => GitService.pull().then(reload)} disabled={actionsDisabled}>
-              Pull
-            </button>
-            <button className="btn" onClick={() => GitService.push().then(reload)} disabled={actionsDisabled}>
-              Push
-            </button>
+          <div className="flex items-center gap-2 text-sm text-gray-300">
+            <span>Ahead: {status?.ahead ?? 0}</span>
+            <span>Behind: {status?.behind ?? 0}</span>
+            {status?.has_conflicts && <span className="text-red-400">Conflicts detected</span>}
+          </div>
+          <div className="mt-3">
+            <ChangeList status={status} />
           </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-300">
-          <span>Ahead: {status?.ahead ?? 0}</span>
-          <span>Behind: {status?.behind ?? 0}</span>
-          {status?.has_conflicts && <span className="text-red-400">Conflicts detected</span>}
-        </div>
-        <div className="mt-3">
-          <ChangeList status={status} />
+        <div className="bg-panel border border-gray-800 rounded p-4 w-72">
+          <div className="text-lg text-white font-semibold mb-2">Branch</div>
+          <select
+            className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-2 text-sm"
+            value={branches.find((b) => b.is_active)?.name || ''}
+            onChange={(e) => handleBranchChange(e.target.value)}
+            disabled={actionsDisabled}
+          >
+            {branches.map((branch) => (
+              <option key={branch.name} value={branch.name}>
+                {branch.name} {branch.is_active ? '(current)' : ''}
+              </option>
+            ))}
+          </select>
+          <div className="mt-3 text-xs text-gray-400">
+            Recent commits
+            <ul className="space-y-1 mt-1">
+              {history.slice(0, 5).map((entry) => (
+                <li key={entry.commit_hash} className="truncate">
+                  <span className="font-semibold text-gray-200">{entry.message}</span>
+                  <div className="text-gray-400 text-[11px]">{entry.commit_hash.substring(0, 7)} – {entry.author}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
-      <div className="bg-panel border border-gray-800 rounded p-4 w-72">
-        <div className="text-lg text-white font-semibold mb-2">Branch</div>
-        <select
-          className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-2 text-sm"
-          value={branches.find((b) => b.is_active)?.name || ''}
-          onChange={(e) => handleBranchChange(e.target.value)}
-          disabled={actionsDisabled}
-        >
-          {branches.map((branch) => (
-            <option key={branch.name} value={branch.name}>
-              {branch.name} {branch.is_active ? '(current)' : ''}
-            </option>
-          ))}
-        </select>
-        <div className="mt-3 text-xs text-gray-400">
-          Recent commits
-          <ul className="space-y-1 mt-1">
-            {history.slice(0, 5).map((entry) => (
-              <li key={entry.commit_hash} className="truncate">
-                <span className="font-semibold text-gray-200">{entry.message}</span>
-                <div className="text-gray-400 text-[11px]">{entry.commit_hash.substring(0, 7)} – {entry.author}</div>
-              </li>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="bg-panel border border-gray-800 rounded p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="text-white font-semibold">Project files</div>
+              <div className="text-sm text-gray-400">Browse dbt models and configuration</div>
+            </div>
+          </div>
+          {repoMissing ? (
+            <div className="text-sm text-gray-500">Connect a repository to browse files.</div>
+          ) : (
+            <FileTree nodes={files} onSelect={loadFile} />
+          )}
+        </div>
+        <div className="bg-panel border border-gray-800 rounded p-4 col-span-2 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-white font-semibold">File preview</div>
+              <div className="text-sm text-gray-400">{selectedPath || 'Select a file to inspect'}</div>
+            </div>
+            <div className="flex gap-2 items-center">
+              <input
+                type="text"
+                className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
+                placeholder="Commit message"
+                value={commitMessage}
+                onChange={(e) => setCommitMessage(e.target.value)}
+              />
+              <button className="btn" onClick={handleCommit} disabled={!commitMessage.trim() || actionsDisabled}>
+                Commit
+              </button>
+            </div>
+          </div>
+          {fileContent && (
+            <div className="bg-black/40 border border-gray-800 rounded p-3 text-sm text-gray-200">
+              <pre className="whitespace-pre-wrap text-xs font-mono overflow-auto max-h-[320px]">
+                {fileContent.content || 'Empty file'}
+              </pre>
+            </div>
+          )}
+          <div className="bg-gray-900 border border-gray-800 rounded p-3 text-sm text-gray-200">
+            <div className="font-semibold mb-2">Diff preview</div>
+            {repoMissing ? (
+              <div className="text-sm text-gray-500">Connect a repository to view diffs.</div>
+            ) : (
+              diffs.map((diff) => (
+                <pre key={diff.path} className="text-xs whitespace-pre-wrap bg-black/40 p-2 rounded border border-gray-800 overflow-auto">
+                  {diff.diff || 'No changes'}
+                </pre>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-panel border border-gray-800 rounded p-4">
+          <div className="text-white font-semibold mb-2">Audit log</div>
+          <div className="space-y-2 max-h-64 overflow-auto text-sm text-gray-200">
+            {auditRecords.map((record) => (
+              <div key={record.id} className="border border-gray-800 rounded p-2">
+                <div className="flex items-center justify-between text-xs text-gray-400">
+                  <span>{record.action}</span>
+                  <span>{new Date(record.created_at).toLocaleString()}</span>
+                </div>
+                <div className="text-sm text-white">{record.resource}</div>
+                {record.commit_hash && <div className="text-xs text-accent">Commit {record.commit_hash.substring(0, 7)}</div>}
+              </div>
             ))}
+          </div>
+        </div>
+        <div className="bg-panel border border-gray-800 rounded p-4">
+          <div className="text-white font-semibold mb-2">Guidance</div>
+          <ul className="list-disc list-inside text-sm text-gray-300 space-y-1">
+            <li>Editing core configuration files will prompt for confirmation.</li>
+            <li>Use the Save button to persist changes without running dbt.</li>
+            <li>Review diffs before committing to keep branches clean.</li>
+            <li>Switch branches carefully when uncommitted changes exist.</li>
           </ul>
         </div>
       </div>
     </div>
-
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div className="bg-panel border border-gray-800 rounded p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <div className="text-white font-semibold">Project files</div>
-            <div className="text-sm text-gray-400">Browse dbt models and configuration</div>
-          </div>
-        </div>
-        {repoMissing ? (
-          <div className="text-sm text-gray-500">Connect a repository to browse files.</div>
-        ) : (
-          <FileTree nodes={files} onSelect={loadFile} />
-        )}
-      </div>
-      <div className="bg-panel border border-gray-800 rounded p-4 col-span-2 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-white font-semibold">File preview</div>
-            <div className="text-sm text-gray-400">{selectedPath || 'Select a file to inspect'}</div>
-          </div>
-          <div className="flex gap-2 items-center">
-            <input
-              type="text"
-              className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
-              placeholder="Commit message"
-              value={commitMessage}
-              onChange={(e) => setCommitMessage(e.target.value)}
-            />
-            <button className="btn" onClick={handleCommit} disabled={!commitMessage.trim() || actionsDisabled}>
-              Commit
-            </button>
-          </div>
-        </div>
-        {fileContent && (
-          <div className="bg-black/40 border border-gray-800 rounded p-3 text-sm text-gray-200">
-            <pre className="whitespace-pre-wrap text-xs font-mono overflow-auto max-h-[320px]">
-              {fileContent.content || 'Empty file'}
-            </pre>
-          </div>
-        )}
-        <div className="bg-gray-900 border border-gray-800 rounded p-3 text-sm text-gray-200">
-          <div className="font-semibold mb-2">Diff preview</div>
-          {repoMissing ? (
-            <div className="text-sm text-gray-500">Connect a repository to view diffs.</div>
-          ) : (
-            diffs.map((diff) => (
-              <pre key={diff.path} className="text-xs whitespace-pre-wrap bg-black/40 p-2 rounded border border-gray-800 overflow-auto">
-                {diff.diff || 'No changes'}
-              </pre>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div className="bg-panel border border-gray-800 rounded p-4">
-        <div className="text-white font-semibold mb-2">Audit log</div>
-        <div className="space-y-2 max-h-64 overflow-auto text-sm text-gray-200">
-          {auditRecords.map((record) => (
-            <div key={record.id} className="border border-gray-800 rounded p-2">
-              <div className="flex items-center justify-between text-xs text-gray-400">
-                <span>{record.action}</span>
-                <span>{new Date(record.created_at).toLocaleString()}</span>
-              </div>
-              <div className="text-sm text-white">{record.resource}</div>
-              {record.commit_hash && <div className="text-xs text-accent">Commit {record.commit_hash.substring(0, 7)}</div>}
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="bg-panel border border-gray-800 rounded p-4">
-        <div className="text-white font-semibold mb-2">Guidance</div>
-        <ul className="list-disc list-inside text-sm text-gray-300 space-y-1">
-          <li>Editing core configuration files will prompt for confirmation.</li>
-          <li>Use the Save button to persist changes without running dbt.</li>
-          <li>Review diffs before committing to keep branches clean.</li>
-          <li>Switch branches carefully when uncommitted changes exist.</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-)
+  )
 }

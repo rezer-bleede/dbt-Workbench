@@ -550,6 +550,13 @@ cd frontend
 npm test
 ```
 
+Unit and integration coverage uses **Vitest** with **React Testing Library** (jsdom). The suite exercises the Version Control workflows (connected vs. missing repositories), dashboard fallbacks, and plugin pages. End-to-end UI checks use Playwright:
+
+```bash
+cd frontend
+npm run test:e2e
+```
+
 ---
 
 ## 📚 Documentation
