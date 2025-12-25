@@ -387,7 +387,7 @@ Additional behaviors:
 
 ### **Phase 3 — dbt Execution Engine (Complete)**
 - Run dbt commands from UI
-- Quick-launch Run/Test/Seed/Docs actions directly from the dbt Execution page
+- Quick-launch Run/Test/Seed/Docs actions directly from the dbt Execution page via dedicated execution buttons (no separate command selector)
 - Real-time log streaming
 - Persist artifacts per run
 

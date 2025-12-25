@@ -8,7 +8,6 @@ import { Autocomplete } from './Autocomplete';
 
 export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   const { activeWorkspace } = useAuth();
-  const [command, setCommand] = useState<DbtCommand>('run');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,12 +48,11 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
       .catch(err => console.error('Failed to fetch environments for autocomplete', err));
   }, []);
 
-  const handleSubmit = async (e?: React.FormEvent, activeCommand: DbtCommand = command) => {
+  const handleSubmit = async (e?: React.FormEvent, activeCommand: DbtCommand = 'run') => {
     e?.preventDefault();
     setIsLoading(true);
     setPendingCommand(activeCommand);
     setError(null);
-    setCommand(activeCommand);
 
     try {
       // Build parameters object
@@ -103,10 +101,6 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
     }
   };
 
-  const handleCommandButtonClick = (cmd: DbtCommand) => {
-    void handleSubmit(undefined, cmd);
-  };
-
   const commands: { id: DbtCommand; label: string }[] = [
     { id: 'run', label: 'Run' },
     { id: 'test', label: 'Test' },
@@ -119,28 +113,6 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
       <h2 className="text-xl font-semibold mb-4">Run dbt Command</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Command Selection - Buttons */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Command
-          </label>
-          <div className="flex space-x-2">
-            {commands.map((cmd) => (
-              <button
-                key={cmd.id}
-                type="button"
-                onClick={() => setCommand(cmd.id)}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${command === cmd.id
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-              >
-                {cmd.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -222,29 +194,25 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
             <span className="text-sm text-gray-700">Fail Fast</span>
           </label>
 
-          {command === 'test' && (
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={storeFailures}
-                onChange={(e) => setStoreFailures(e.target.checked)}
-                className="mr-2"
-              />
-              <span className="text-sm text-gray-700">Store Failures</span>
-            </label>
-          )}
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={storeFailures}
+              onChange={(e) => setStoreFailures(e.target.checked)}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-700">Store Failures (dbt test only)</span>
+          </label>
 
-          {command === 'docs generate' && (
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={noCompile}
-                onChange={(e) => setNoCompile(e.target.checked)}
-                className="mr-2"
-              />
-              <span className="text-sm text-gray-700">No Compile</span>
-            </label>
-          )}
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={noCompile}
+              onChange={(e) => setNoCompile(e.target.checked)}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-700">No Compile (dbt docs generate only)</span>
+          </label>
         </div>
 
         {/* Error Display */}
@@ -261,7 +229,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               key={cmd.id}
               type="button"
               data-testid={`${cmd.id}-execute`}
-              onClick={() => handleCommandButtonClick(cmd.id)}
+              onClick={() => void handleSubmit(undefined, cmd.id)}
               disabled={isLoading}
               className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >

@@ -57,9 +57,7 @@ describe('RunCommand', () => {
   it('passes command-specific options with the executed command', async () => {
     render(<RunCommand />)
 
-    const [testSelection] = screen.getAllByRole('button', { name: 'Test' })
-    await userEvent.click(testSelection)
-    await userEvent.click(screen.getByLabelText('Store Failures'))
+    await userEvent.click(screen.getByLabelText('Store Failures (dbt test only)'))
     await userEvent.click(screen.getByTestId('test-execute'))
 
     await waitFor(() => expect(mockedExecutionService.startRun).toHaveBeenCalled())
@@ -68,18 +66,29 @@ describe('RunCommand', () => {
     expect(runRequest.parameters.store_failures).toBe(true)
   })
 
-  it('executes the command tied to the clicked action even after switching selection', async () => {
+  it('ignores incompatible options for other commands', async () => {
     render(<RunCommand />)
 
-    const [testSelection] = screen.getAllByRole('button', { name: 'Test' })
-    await userEvent.click(testSelection)
-    await userEvent.click(screen.getByLabelText('Store Failures'))
-
+    await userEvent.click(screen.getByLabelText('Store Failures (dbt test only)'))
+    await userEvent.click(screen.getByLabelText('No Compile (dbt docs generate only)'))
     await userEvent.click(screen.getByTestId('seed-execute'))
 
     await waitFor(() => expect(mockedExecutionService.startRun).toHaveBeenCalled())
     const runRequest = mockedExecutionService.startRun.mock.calls[0][0]
     expect(runRequest.command).toBe('seed')
     expect(runRequest.parameters).not.toHaveProperty('store_failures')
+    expect(runRequest.parameters).not.toHaveProperty('no_compile')
+  })
+
+  it('applies docs specific options only when docs are executed', async () => {
+    render(<RunCommand />)
+
+    await userEvent.click(screen.getByLabelText('No Compile (dbt docs generate only)'))
+    await userEvent.click(screen.getByTestId('docs generate-execute'))
+
+    await waitFor(() => expect(mockedExecutionService.startRun).toHaveBeenCalled())
+    const runRequest = mockedExecutionService.startRun.mock.calls[0][0]
+    expect(runRequest.command).toBe('docs generate')
+    expect(runRequest.parameters.no_compile).toBe(true)
   })
 })
