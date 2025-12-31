@@ -411,6 +411,7 @@ Additional behaviors:
 - Retry policies with exponential backoff
 - Catch-up and overlap policies
 - Historical run diagnostics with failure reasons, attempt timelines, and log/artifact links directly in the Schedules page
+- Workspace-aware execution paths so scheduled dbt commands use the connected Git repository instead of the default project folder
 
 ### **Profile management in Environments (New)**
 - View configured dbt profiles and their available targets directly from the Environments page

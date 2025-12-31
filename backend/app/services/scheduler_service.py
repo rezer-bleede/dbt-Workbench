@@ -41,6 +41,7 @@ from app.schemas.scheduler import (
     NotificationTrigger,
     NotificationChannelType,
 )
+from app.services import git_service
 from app.services.dbt_executor import executor
 from app.services.notification_service import notification_service
 
@@ -677,11 +678,14 @@ class SchedulerService:
 
         dbt_command = DbtCommand(schedule.dbt_command)
 
+        project_path = self._resolve_project_path(db, schedule)
+
         try:
             run_id = await executor.start_run(
                 command=dbt_command,
                 parameters=parameters,
                 description=f"Scheduled run (schedule {schedule.id}, attempt {attempt_number})",
+                project_path=project_path,
             )
         except RuntimeError as exc:
             logger.warning("Max concurrent runs reached; cannot start scheduled run: %s", exc)
@@ -829,6 +833,40 @@ class SchedulerService:
                         trigger,
                     )
                 )
+
+    def _resolve_project_path(
+        self, db: Session, schedule: db_models.Schedule
+    ) -> Optional[str]:
+        """Resolve the filesystem path for the schedule's workspace repository.
+
+        Scheduled runs should execute dbt commands from the workspace's checked-out
+        repository so they behave identically to manual runs triggered from the
+        Execution page. If no repository is configured, we fall back to the
+        default project path configured in settings.
+        """
+
+        try:
+            environment = schedule.environment
+            if environment is None:
+                environment = (
+                    db.query(db_models.Environment)
+                    .filter(db_models.Environment.id == schedule.environment_id)
+                    .first()
+                )
+
+            workspace_id = environment.workspace_id if environment else None
+            if not workspace_id:
+                return None
+
+            repo = git_service.get_repository(db, workspace_id)
+            if repo and repo.directory:
+                return repo.directory
+        except Exception as exc:  # pragma: no cover - defensive logging only
+            logger.warning(
+                "Failed to resolve project path for schedule %s: %s", schedule.id, exc
+            )
+
+        return None
 
     # --- Retry utilities ---
 
