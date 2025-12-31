@@ -499,6 +499,8 @@ Additional behaviors:
 | `/execution/runs/{run_id}/artifacts` | GET | Get run artifacts |
 | `/execution/runs/{run_id}/cancel` | POST | Cancel a running job |
 
+Run log streams now emit a terminal message even when the underlying dbt process fails before producing output. This ensures scheduler-triggered runs surface useful error context (for example, missing dbt installations) instead of showing an empty log window.
+
 ### Scheduler API
 
 | Endpoint | Method | Description |
