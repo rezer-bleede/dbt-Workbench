@@ -77,6 +77,12 @@ export default function VersionControlPage() {
   const [files, setFiles] = useState<GitFileNode[]>([])
   const [selectedPath, setSelectedPath] = useState<string>('')
   const [fileContent, setFileContent] = useState<GitFileContent | null>(null)
+  const [fileEditContent, setFileEditContent] = useState('')
+  const [fileSaveStatus, setFileSaveStatus] = useState<string | null>(null)
+  const [fileSaveError, setFileSaveError] = useState<string | null>(null)
+  const [newFilePath, setNewFilePath] = useState('')
+  const [newFileContent, setNewFileContent] = useState('')
+  const [newFileMessage, setNewFileMessage] = useState('')
   const [commitMessage, setCommitMessage] = useState('')
   const [diffs, setDiffs] = useState<GitDiff[]>([])
   const [history, setHistory] = useState<GitHistoryEntry[]>([])
@@ -190,6 +196,9 @@ export default function VersionControlPage() {
     const content = await GitService.readFile(path)
     setSelectedPath(path)
     setFileContent(content)
+    setFileEditContent(content.content)
+    setFileSaveError(null)
+    setFileSaveStatus(null)
     const diff = await GitService.diff(path)
     setDiffs(diff)
   }
@@ -204,6 +213,45 @@ export default function VersionControlPage() {
   const handleBranchChange = async (branch: string) => {
     await GitService.switchBranch(branch)
     await reload()
+  }
+
+  const handleSaveFile = async () => {
+    if (!selectedPath || !fileContent || fileContent.readonly) return
+    setFileSaveError(null)
+    setFileSaveStatus(null)
+    try {
+      await GitService.writeFile({ path: selectedPath, content: fileEditContent, message: commitMessage || undefined })
+      const updated = await GitService.readFile(selectedPath)
+      setFileContent(updated)
+      setFileEditContent(updated.content)
+      const diff = await GitService.diff(selectedPath)
+      setDiffs(diff)
+      setFileSaveStatus('File saved successfully.')
+    } catch (err: any) {
+      const message = err?.response?.data?.detail?.message || err?.message || 'Failed to save file'
+      setFileSaveError(message)
+    }
+  }
+
+  const handleCreateFile = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!newFilePath.trim()) {
+      setFileSaveError('Provide a file path before creating a file.')
+      return
+    }
+    setFileSaveError(null)
+    setFileSaveStatus(null)
+    try {
+      await GitService.createFile({ path: newFilePath, content: newFileContent, message: newFileMessage || undefined })
+      setNewFilePath('')
+      setNewFileContent('')
+      setNewFileMessage('')
+      await reload()
+      setFileSaveStatus('File created successfully.')
+    } catch (err: any) {
+      const message = err?.response?.data?.detail?.message || err?.message || 'Failed to create file'
+      setFileSaveError(message)
+    }
   }
 
   const handleProjectCreate = async (event: FormEvent) => {
@@ -579,6 +627,36 @@ export default function VersionControlPage() {
           ) : (
             <FileTree nodes={files} onSelect={loadFile} />
           )}
+          {!repoMissing && (
+            <form className="mt-4 space-y-2" onSubmit={handleCreateFile}>
+              <div className="text-white font-semibold">Create file</div>
+              <input
+                type="text"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
+                placeholder="models/new_file.sql"
+                value={newFilePath}
+                onChange={(e) => setNewFilePath(e.target.value)}
+              />
+              <textarea
+                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-2 text-xs font-mono text-gray-100 min-h-[120px]"
+                placeholder="File contents"
+                value={newFileContent}
+                onChange={(e) => setNewFileContent(e.target.value)}
+              />
+              <input
+                type="text"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
+                placeholder="Commit message (optional)"
+                value={newFileMessage}
+                onChange={(e) => setNewFileMessage(e.target.value)}
+              />
+              <button type="submit" className="btn btn-sm w-full" disabled={actionsDisabled}>
+                Create file
+              </button>
+              {fileSaveError && <div className="text-xs text-red-400">{fileSaveError}</div>}
+              {fileSaveStatus && <div className="text-xs text-green-400">{fileSaveStatus}</div>}
+            </form>
+          )}
         </div>
         <div className="bg-panel border border-gray-800 rounded p-4 col-span-2 space-y-3">
           <div className="flex items-center justify-between">
@@ -599,12 +677,31 @@ export default function VersionControlPage() {
               </button>
             </div>
           </div>
-          {fileContent && (
-            <div className="bg-black/40 border border-gray-800 rounded p-3 text-sm text-gray-200">
-              <pre className="whitespace-pre-wrap text-xs font-mono overflow-auto max-h-[320px]">
-                {fileContent.content || 'Empty file'}
-              </pre>
+          {fileContent ? (
+            <div className="space-y-2">
+              <textarea
+                className="w-full bg-black/40 border border-gray-800 rounded p-3 text-xs font-mono text-gray-100 min-h-[220px]"
+                value={fileEditContent}
+                onChange={(e) => setFileEditContent(e.target.value)}
+                readOnly={fileContent.readonly}
+                placeholder="File contents"
+              />
+              <div className="flex items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={handleSaveFile}
+                  disabled={actionsDisabled || fileContent.readonly}
+                >
+                  Save file
+                </button>
+                {fileContent.readonly && <span className="text-gray-400">Read-only file</span>}
+                {fileSaveStatus && <span className="text-green-400">{fileSaveStatus}</span>}
+                {fileSaveError && <span className="text-red-400">{fileSaveError}</span>}
+              </div>
             </div>
+          ) : (
+            <div className="text-sm text-gray-500">Select a file to inspect.</div>
           )}
           <div className="bg-gray-900 border border-gray-800 rounded p-3 text-sm text-gray-200">
             <div className="font-semibold mb-2">Diff preview</div>

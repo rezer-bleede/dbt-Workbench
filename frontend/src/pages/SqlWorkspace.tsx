@@ -55,6 +55,10 @@ function persistState(state: PersistedState) {
   }
 }
 
+function normalizePath(path: string): string {
+  return path.replace(/^\.\/?/, '').replace(/^\/+/, '');
+}
+
 function SqlWorkspacePage() {
   const { user, isAuthEnabled } = useAuth();
   const isDeveloperOrAdmin = !isAuthEnabled || user?.role === 'developer' || user?.role === 'admin';
@@ -133,6 +137,17 @@ function SqlWorkspacePage() {
 
     return map;
   }, [metadata, sqlText]);
+
+  const modelPathMap = useMemo(() => {
+    if (!metadata) return {} as Record<string, string>;
+    const map: Record<string, string> = {};
+    for (const model of metadata.models) {
+      if (model.unique_id && model.original_file_path) {
+        map[normalizePath(model.original_file_path)] = model.unique_id;
+      }
+    }
+    return map;
+  }, [metadata]);
 
   const modelFiles = useMemo(
     () =>
@@ -467,7 +482,10 @@ function SqlWorkspacePage() {
           );
         }
         if (!compiledText) {
-          setError(compileError || 'Compiled SQL is not available for the selected model.');
+          setError(
+            compileError ||
+              'Compiled SQL is not available for the selected model. Run "dbt compile" to generate artifacts, then try again.',
+          );
           setIsRunning(false);
           return;
         }
@@ -534,7 +552,16 @@ function SqlWorkspacePage() {
       setSelectedFilePath(path);
       setSelectedFileContent(content);
       setSqlText(content.content);
-      setMode('sql');
+      const normalized = normalizePath(path);
+      const modelIdFromPath = modelPathMap[normalized];
+      if (modelIdFromPath) {
+        setSelectedModelId(modelIdFromPath);
+        setMode('model');
+        await loadCompiledSqlForModel(modelIdFromPath, typeof environmentId === 'number' ? environmentId : undefined);
+      } else {
+        setMode('sql');
+        setSelectedModelId('');
+      }
       setFileValidationErrors([]);
       setError(null);
     } catch (err: any) {

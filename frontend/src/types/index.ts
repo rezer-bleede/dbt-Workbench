@@ -613,6 +613,7 @@ export interface SqlRelationInfo {
   columns: SqlRelationColumn[];
   tags: string[];
   meta: Record<string, any>;
+  original_file_path?: string | null;
 }
 
 export interface SqlAutocompleteMetadata {

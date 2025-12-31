@@ -101,6 +101,7 @@ class RelationInfo(BaseModel):
     columns: List[RelationColumn] = Field(default_factory=list)
     tags: List[str] = Field(default_factory=list)
     meta: Dict[str, Any] = Field(default_factory=dict)
+    original_file_path: Optional[str] = None
 
 
 class AutocompleteMetadataResponse(BaseModel):

@@ -230,6 +230,7 @@ class SqlWorkspaceService:
                 columns=cols,
                 tags=node.get("tags", []),
                 meta=node.get("meta", {}),
+                original_file_path=node.get("original_file_path"),
             )
 
             schema_key = ".".join([p for p in [database, schema] if p]) or "default"

@@ -419,10 +419,15 @@ Additional behaviors:
 ### **Phase 7 — SQL Workspace (Complete)**
 - SQL editor with syntax highlighting
 - Dual-pane dbt model view showing editable source alongside read-only compiled SQL
-- Query execution against configured database with dbt model runs using compiled SQL only
+- Query execution against configured database with dbt model runs using compiled SQL only, plus clear compile reminders when
+  compiled artifacts are missing
 - Environment-aware compilation and execution with role-based run restrictions
 - Result profiling and statistics shared across custom SQL and dbt model runs
 - Query history with execution mode, model references, and compiled SQL checksums
+
+### Projects & Version Control enhancements (New)
+- Edit tracked files inline with save/commit controls and inline validation messaging
+- Create new project files directly from the UI alongside the repository browser
 
 ### **Phase 8 — Data Catalog Layer (Complete)**
 - Global fuzzy/prefix search across models, sources, exposures, macros, tests, tags, and columns

@@ -34,6 +34,7 @@ def test_autocomplete_metadata_includes_models_and_sources(tmp_path: Path) -> No
                 "alias": "one",
                 "database": "db",
                 "schema": "analytics",
+                "original_file_path": "models/one.sql",
                 "columns": {"id": {"name": "id", "data_type": "integer"}},
                 "tags": ["core"],
             }
@@ -73,6 +74,7 @@ def test_autocomplete_metadata_includes_models_and_sources(tmp_path: Path) -> No
     metadata = service.get_autocomplete_metadata()
 
     assert any(m.unique_id == "model.test.one" for m in metadata.models)
+    assert any(m.original_file_path == "models/one.sql" for m in metadata.models)
     assert any(s.unique_id == "source.test.raw" for s in metadata.sources)
 
     schema_keys = list(metadata.schemas.keys())

@@ -50,6 +50,10 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
 
   const handleSubmit = async (e?: React.FormEvent, activeCommand: DbtCommand = 'run') => {
     e?.preventDefault();
+    if (!target) {
+      setError('Select a Target before running a dbt command.');
+      return;
+    }
     setIsLoading(true);
     setPendingCommand(activeCommand);
     setError(null);
@@ -164,7 +168,10 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
             <Autocomplete
               options={availableTargets}
               value={target}
-              onChange={setTarget}
+              onChange={(value) => {
+                setTarget(value);
+                setError(null);
+              }}
               placeholder="e.g., dev"
               strict={true}
             />
