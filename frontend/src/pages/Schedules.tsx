@@ -76,6 +76,7 @@ function SchedulesPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notificationResult, setNotificationResult] = useState<NotificationTestResponse | null>(null);
+  const [expandedRunId, setExpandedRunId] = useState<number | null>(null);
 
   const loadData = async () => {
     try {
@@ -237,6 +238,29 @@ function SchedulesPage() {
         {status === 'active' ? 'Active' : 'Paused'}
       </span>
     );
+  };
+
+  const getRunFailureReason = (run: ScheduledRun) => {
+    if (run.status !== 'failure') {
+      return '—';
+    }
+
+    const attempts = [...run.attempts].sort((a, b) => b.attempt_number - a.attempt_number);
+    const attemptWithMessage = attempts.find(attempt => attempt.error_message);
+
+    if (attemptWithMessage?.error_message) {
+      return attemptWithMessage.error_message;
+    }
+
+    if (attempts.length > 0) {
+      return 'No error message was returned for this run.';
+    }
+
+    if (run.log_links && Object.keys(run.log_links).length > 0) {
+      return 'Check the attached logs for diagnostic information.';
+    }
+
+    return 'No diagnostic information available.';
   };
 
   return (
@@ -670,6 +694,9 @@ function SchedulesPage() {
                           Attempts
                         </th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Failure reason
+                        </th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Scheduled
                         </th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -677,6 +704,9 @@ function SchedulesPage() {
                         </th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Finished
+                        </th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Details
                         </th>
                       </tr>
                     </thead>
@@ -695,6 +725,12 @@ function SchedulesPage() {
                           <td className="px-4 py-2 text-sm text-gray-900">
                             {run.attempts_total}
                           </td>
+                          <td
+                            className="px-4 py-2 text-sm text-gray-900 max-w-xs truncate"
+                            title={getRunFailureReason(run)}
+                          >
+                            {getRunFailureReason(run)}
+                          </td>
                           <td className="px-4 py-2 text-sm text-gray-900">
                             {new Date(run.scheduled_at).toLocaleString()}
                           </td>
@@ -704,12 +740,23 @@ function SchedulesPage() {
                           <td className="px-4 py-2 text-sm text-gray-900">
                             {run.finished_at ? new Date(run.finished_at).toLocaleString() : 'n/a'}
                           </td>
+                          <td className="px-4 py-2 text-sm text-gray-900">
+                            <button
+                              className="text-accent hover:underline"
+                              onClick={() =>
+                                setExpandedRunId(prev => (prev === run.id ? null : run.id))
+                              }
+                              aria-label={`View details for run ${run.id}`}
+                            >
+                              {expandedRunId === run.id ? 'Hide details' : 'View details'}
+                            </button>
+                          </td>
                         </tr>
                       ))}
                       {runs.length === 0 && (
                         <tr>
                           <td
-                            colSpan={7}
+                            colSpan={9}
                             className="px-4 py-6 text-center text-sm text-gray-500"
                           >
                             No runs found for this schedule.
@@ -718,6 +765,87 @@ function SchedulesPage() {
                       )}
                     </tbody>
                   </table>
+                  {runs.map(
+                    run =>
+                      expandedRunId === run.id && (
+                        <div key={`details-${run.id}`} className="border-t border-gray-200 px-6 py-4">
+                          <div className="space-y-3 text-sm text-gray-800">
+                            <div className="font-semibold text-gray-900">Attempts</div>
+                            {run.attempts.length === 0 && (
+                              <div className="text-gray-600">No attempts recorded for this run.</div>
+                            )}
+                            {run.attempts.length > 0 && (
+                              <ul className="space-y-2">
+                                {run.attempts
+                                  .slice()
+                                  .sort((a, b) => a.attempt_number - b.attempt_number)
+                                  .map(attempt => (
+                                    <li key={attempt.id} className="border border-gray-200 rounded-md p-3">
+                                      <div className="flex items-center justify-between">
+                                        <div className="font-medium">Attempt {attempt.attempt_number}</div>
+                                        <StatusBadge status={attempt.status} />
+                                      </div>
+                                      <div className="text-gray-700 mt-1">
+                                        {attempt.error_message || 'No error message provided.'}
+                                      </div>
+                                      <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-600">
+                                        <div>
+                                          <span className="font-semibold">Queued:</span>{' '}
+                                          {attempt.queued_at
+                                            ? new Date(attempt.queued_at).toLocaleString()
+                                            : 'n/a'}
+                                        </div>
+                                        <div>
+                                          <span className="font-semibold">Started:</span>{' '}
+                                          {attempt.started_at
+                                            ? new Date(attempt.started_at).toLocaleString()
+                                            : 'n/a'}
+                                        </div>
+                                        <div>
+                                          <span className="font-semibold">Finished:</span>{' '}
+                                          {attempt.finished_at
+                                            ? new Date(attempt.finished_at).toLocaleString()
+                                            : 'n/a'}
+                                        </div>
+                                      </div>
+                                    </li>
+                                  ))}
+                              </ul>
+                            )}
+
+                            <div className="font-semibold text-gray-900">Debug information</div>
+                            {Object.keys(run.log_links || {}).length === 0 &&
+                              Object.keys(run.artifact_links || {}).length === 0 && (
+                                <div className="text-gray-600">No debug links were provided for this run.</div>
+                              )}
+                            <div className="flex flex-wrap gap-2">
+                              {Object.entries(run.log_links || {}).map(([label, link]) => (
+                                <a
+                                  key={`log-${label}`}
+                                  href={link}
+                                  className="text-accent hover:underline"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  View {label} log
+                                </a>
+                              ))}
+                              {Object.entries(run.artifact_links || {}).map(([label, link]) => (
+                                <a
+                                  key={`artifact-${label}`}
+                                  href={link}
+                                  className="text-accent hover:underline"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  View {label}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ),
+                  )}
                 </div>
               </div>
             </div>
