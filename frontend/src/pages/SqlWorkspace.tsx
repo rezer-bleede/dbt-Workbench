@@ -7,10 +7,12 @@ import { vscodeDark, vscodeLight } from '@uiw/codemirror-theme-vscode';
 
 import { Table } from '../components/Table';
 import { StatusBadge } from '../components/StatusBadge';
+import { FileTreeView } from '../components/FileTreeView';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import { GitService } from '../services/gitService';
 import { SchedulerService } from '../services/schedulerService';
 import { SqlWorkspaceService } from '../services/sqlWorkspaceService';
+import { filterGitTree } from '../utils/fileTree';
 import {
   EnvironmentConfig,
   GitFileContent,
@@ -20,6 +22,7 @@ import {
   SqlQueryHistoryEntry,
   SqlQueryRequest,
   SqlQueryResult,
+  CompiledSqlResponse,
 } from '../types';
 
 type WorkspaceMode = 'sql' | 'model';
@@ -134,16 +137,13 @@ function SqlWorkspacePage() {
     return map;
   }, [metadata, sqlText]);
 
-  const modelFiles = useMemo(
+  const modelFileTree = useMemo(
     () =>
-      gitFiles
-        .filter(
-          (file) =>
-            file.type === 'file' &&
-            file.path.endsWith('.sql') &&
-            (file.category === 'models' || file.path.includes('/models/') || file.path.startsWith('models/')),
-        )
-        .sort((a, b) => a.path.localeCompare(b.path)),
+      filterGitTree(gitFiles, (file) =>
+        file.type === 'file' &&
+        file.path.endsWith('.sql') &&
+        (file.category === 'models' || file.path.includes('/models/') || file.path.startsWith('models/')),
+      ),
     [gitFiles],
   );
 
@@ -233,8 +233,8 @@ function SqlWorkspacePage() {
   }, []);
 
   const loadCompiledSqlForModel = useCallback(
-    async (modelId: string, envId?: number): Promise<string> => {
-      if (!modelId) return '';
+    async (modelId: string, envId?: number): Promise<CompiledSqlResponse | null> => {
+      if (!modelId) return null;
       setIsLoadingCompiled(true);
       setCompileError(null);
       try {
@@ -248,14 +248,14 @@ function SqlWorkspacePage() {
         if (compiled.original_file_path) {
           setSelectedFilePath(compiled.original_file_path);
         }
-        return compiled.compiled_sql;
+        return compiled;
       } catch (err: any) {
         const message =
           err?.response?.data?.detail?.message || err?.response?.data?.detail || err?.message || 'Failed to load compiled SQL';
         setCompileError(message);
         setCompiledSql('');
         setCompiledChecksum('');
-        return '';
+        return null;
       } finally {
         setIsLoadingCompiled(false);
       }
@@ -459,22 +459,42 @@ function SqlWorkspacePage() {
     setResultsPage(1);
     try {
       if (mode === 'model' && selectedModelId) {
-        let compiledText = compiledSql;
-        if (!compiledText) {
-          compiledText = await loadCompiledSqlForModel(
+        let compiled: CompiledSqlResponse | null = compiledSql
+          ? {
+              model_unique_id: selectedModelId,
+              environment_id: typeof environmentId === 'number' ? environmentId : undefined,
+              compiled_sql: compiledSql,
+              compiled_sql_checksum: compiledChecksum,
+              source_sql: sqlText,
+              target_name: compiledTarget,
+            }
+          : null;
+
+        if (!compiled || !compiled.compiled_sql) {
+          compiled = await loadCompiledSqlForModel(
             selectedModelId,
             typeof environmentId === 'number' ? environmentId : undefined,
           );
         }
-        if (!compiledText) {
-          setError(compileError || 'Compiled SQL is not available for the selected model.');
+
+        if (!compiled || !compiled.compiled_sql) {
+          setError(
+            compileError || 'Compiled SQL is not available for the selected model. Run dbt compile/build first.',
+          );
           setIsRunning(false);
           return;
         }
-        const res = await SqlWorkspaceService.executeModel({
-          model_unique_id: selectedModelId,
-          environment_id: typeof environmentId === 'number' ? environmentId : undefined,
+
+        const res = await SqlWorkspaceService.executeQuery({
+          sql: compiled.compiled_sql,
+          environment_id:
+            compiled.environment_id ?? (typeof environmentId === 'number' ? environmentId : undefined),
           include_profiling: profilingEnabled,
+          mode: 'model',
+          model_ref: selectedModelId,
+          compiled_sql: compiled.compiled_sql,
+          compiled_sql_checksum: (compiled.compiled_sql_checksum ?? compiledChecksum) || undefined,
+          source_sql: compiled.source_sql || sqlText,
         });
         setResult(res);
         setPreviewResult(null);
@@ -501,7 +521,19 @@ function SqlWorkspacePage() {
     } finally {
       setIsRunning(false);
     }
-  }, [compileError, compiledSql, environmentId, loadCompiledSqlForModel, loadHistory, mode, selectedModelId, sqlText]);
+  }, [
+    compileError,
+    compiledChecksum,
+    compiledSql,
+    compiledTarget,
+    environmentId,
+    loadCompiledSqlForModel,
+    loadHistory,
+    mode,
+    profilingEnabled,
+    selectedModelId,
+    sqlText,
+  ]);
 
   const handleClearError = () => {
     setError(null);
@@ -942,22 +974,13 @@ function SqlWorkspacePage() {
             ) : (
               <div className="space-y-2 text-xs text-gray-300">
                 <div className="text-gray-400">Select a dbt model to load into the SQL editor.</div>
-                <div className="max-h-52 overflow-y-auto space-y-1">
-                  {modelFiles.map((file) => (
-                    <button
-                      key={file.path}
-                      type="button"
-                      className={`w-full text-left px-2 py-1 rounded border border-gray-800 hover:border-gray-600 ${
-                        selectedFilePath === file.path ? 'bg-gray-800 text-white' : 'bg-gray-900 text-gray-200'
-                      }`}
-                      onClick={() => handleSelectFile(file.path)}
-                    >
-                      <span className="font-mono">{file.path}</span>
-                    </button>
-                  ))}
-                  {modelFiles.length === 0 && (
-                    <div className="text-gray-500">No model files found.</div>
-                  )}
+                <div className="max-h-52 overflow-y-auto space-y-1 pr-1">
+                  <FileTreeView
+                    nodes={modelFileTree}
+                    selectedPath={selectedFilePath}
+                    onSelect={(path) => handleSelectFile(path)}
+                    emptyMessage="No model files found."
+                  />
                 </div>
               </div>
             )}

@@ -124,7 +124,8 @@ reloading the UI keeps the correct project context without leaking data between 
 dbt-Workbench automatically bootstraps a local **Demo Project** with its own git repository on first
 launch so you can explore the UI immediately. The Projects & Version Control page lets you add
 local-only projects (each with their own repo) or connect remotes; on subsequent visits the UI loads
-whichever project you last activated.
+whichever project you last activated. The Project Files browser now renders an IDE-style hierarchy and
+supports in-place editing or creating new files so you can keep dbt assets tidy without leaving the UI.
 
 ---
 
@@ -346,6 +347,8 @@ Additional behaviors:
 
 - Profiling is always enabled for executed queries so column statistics are consistently available alongside results.
 - Results are paginated in the UI to keep browsing responsive; server-side limits (such as `SQL_WORKSPACE_MAX_ROWS`) still cap the dataset returned from the warehouse.
+- Running dbt models executes the compiled SQL artifact; if compiled code is missing the UI prompts you to compile/build first.
+- The model file picker mirrors an IDE tree so large dbt projects remain navigable.
 
 ### Notifications
 

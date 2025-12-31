@@ -82,7 +82,7 @@ describe('VersionControlPage', () => {
     })
 
     expect(screen.getByText('Project files')).toBeInTheDocument()
-    expect(await screen.findByText(/models\/model.sql/)).toBeInTheDocument()
+    expect(await screen.findByText(/model\.sql/)).toBeInTheDocument()
   })
 
   it('shows branch metadata and recent history when repository is connected', async () => {

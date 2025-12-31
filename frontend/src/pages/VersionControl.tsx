@@ -1,6 +1,7 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react'
 
 import { useAuth } from '../context/AuthContext'
+import { FileTreeView } from '../components/FileTreeView'
 import { GitService } from '../services/gitService'
 import {
   AuditRecord,
@@ -16,24 +17,7 @@ import {
 } from '../types'
 import { WorkspaceService } from '../services/workspaceService'
 import { storeWorkspaceId } from '../storage/workspaceStorage'
-
-function FileTree({ nodes, onSelect }: { nodes: GitFileNode[]; onSelect: (path: string) => void }) {
-  const sorted = useMemo(() => nodes.slice().sort((a, b) => a.path.localeCompare(b.path)), [nodes])
-  return (
-    <div className="space-y-1">
-      {sorted.map((node) => (
-        <button
-          key={node.path}
-          onClick={() => onSelect(node.path)}
-          className="w-full text-left px-2 py-1 rounded hover:bg-gray-800 text-gray-200 border border-gray-800"
-        >
-          <span className="font-mono text-xs text-gray-400">{node.category ? `[${node.category}] ` : ''}</span>
-          {node.path}
-        </button>
-      ))}
-    </div>
-  )
-}
+import { sortGitNodes } from '../utils/fileTree'
 
 function ChangeList({ status }: { status: GitStatus | null }) {
   if (!status) return null
@@ -77,6 +61,13 @@ export default function VersionControlPage() {
   const [files, setFiles] = useState<GitFileNode[]>([])
   const [selectedPath, setSelectedPath] = useState<string>('')
   const [fileContent, setFileContent] = useState<GitFileContent | null>(null)
+  const [editableContent, setEditableContent] = useState('')
+  const [fileMessage, setFileMessage] = useState('')
+  const [fileError, setFileError] = useState<string | null>(null)
+  const [fileSuccess, setFileSuccess] = useState<string | null>(null)
+  const [newFilePath, setNewFilePath] = useState('')
+  const [newFileContent, setNewFileContent] = useState('')
+  const [newFileMessage, setNewFileMessage] = useState('')
   const [commitMessage, setCommitMessage] = useState('')
   const [diffs, setDiffs] = useState<GitDiff[]>([])
   const [history, setHistory] = useState<GitHistoryEntry[]>([])
@@ -99,6 +90,8 @@ export default function VersionControlPage() {
   const [userEditedProjectRoot, setUserEditedProjectRoot] = useState(false)
   const [showCloneForm, setShowCloneForm] = useState(false)
   const workspaceId = activeWorkspace?.id ?? null
+
+  const sortedFiles = useMemo(() => sortGitNodes(files), [files])
 
   const reload = async () => {
     setLoading(true)
@@ -168,6 +161,13 @@ export default function VersionControlPage() {
     setDiffs([])
     setSelectedPath('')
     setFileContent(null)
+    setEditableContent('')
+    setFileMessage('')
+    setFileError(null)
+    setFileSuccess(null)
+    setNewFilePath('')
+    setNewFileContent('')
+    setNewFileMessage('')
     setRepoMissing(false)
     setRepository(null)
     setConnectError(null)
@@ -187,11 +187,71 @@ export default function VersionControlPage() {
   }, [activeWorkspace?.id])
 
   const loadFile = async (path: string) => {
+    setFileError(null)
+    setFileSuccess(null)
+    setFileMessage('')
     const content = await GitService.readFile(path)
     setSelectedPath(path)
     setFileContent(content)
+    setEditableContent(content.content)
     const diff = await GitService.diff(path)
     setDiffs(diff)
+  }
+
+  const handleSaveFile = async () => {
+    if (!selectedPath || actionsDisabled || fileContent?.readonly) return
+    try {
+      setFileError(null)
+      setFileSuccess(null)
+      const result = await GitService.writeFile({
+        path: selectedPath,
+        content: editableContent,
+        message: fileMessage || undefined,
+      })
+      if (!result.is_valid) {
+        setFileError(result.errors?.join(', ') || 'Validation failed')
+        return
+      }
+      const refreshed = await GitService.readFile(selectedPath)
+      setFileContent(refreshed)
+      setEditableContent(refreshed.content)
+      setFileSuccess('File saved to repository working tree.')
+      await reload()
+    } catch (err: any) {
+      const message = err?.response?.data?.detail?.message || err?.message || 'Failed to save file'
+      setFileError(message)
+    }
+  }
+
+  const handleCreateFile = async () => {
+    if (actionsDisabled) return
+    if (!newFilePath.trim()) {
+      setFileError('File path is required to create a file.')
+      return
+    }
+    try {
+      setFileError(null)
+      setFileSuccess(null)
+      const result = await GitService.createFile({
+        path: newFilePath,
+        content: newFileContent,
+        message: newFileMessage || undefined,
+      })
+      if (!result.is_valid) {
+        setFileError(result.errors?.join(', ') || 'Validation failed')
+        return
+      }
+      const createdPath = newFilePath
+      setNewFilePath('')
+      setNewFileContent('')
+      setNewFileMessage('')
+      await reload()
+      await loadFile(createdPath)
+      setFileSuccess('File created successfully.')
+    } catch (err: any) {
+      const message = err?.response?.data?.detail?.message || err?.message || 'Failed to create file'
+      setFileError(message)
+    }
   }
 
   const handleCommit = async () => {
@@ -577,7 +637,49 @@ export default function VersionControlPage() {
           {repoMissing ? (
             <div className="text-sm text-gray-500">Connect a repository to browse files.</div>
           ) : (
-            <FileTree nodes={files} onSelect={loadFile} />
+            <FileTreeView
+              nodes={sortedFiles}
+              selectedPath={selectedPath}
+              onSelect={loadFile}
+              showCategory
+              emptyMessage="No project files found."
+            />
+          )}
+          {!repoMissing && (
+            <div className="mt-4 border-t border-gray-800 pt-3 space-y-2">
+              <div className="text-sm font-semibold text-gray-200">Create a new file</div>
+              <input
+                type="text"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-gray-100"
+                placeholder="models/example.sql"
+                value={newFilePath}
+                onChange={(e) => setNewFilePath(e.target.value)}
+                disabled={actionsDisabled}
+              />
+              <textarea
+                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-gray-100 min-h-[100px]"
+                placeholder="Optional initial content"
+                value={newFileContent}
+                onChange={(e) => setNewFileContent(e.target.value)}
+                disabled={actionsDisabled}
+              />
+              <input
+                type="text"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-gray-100"
+                placeholder="Optional commit message"
+                value={newFileMessage}
+                onChange={(e) => setNewFileMessage(e.target.value)}
+                disabled={actionsDisabled}
+              />
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={handleCreateFile}
+                disabled={actionsDisabled}
+              >
+                Create file
+              </button>
+            </div>
           )}
         </div>
         <div className="bg-panel border border-gray-800 rounded p-4 col-span-2 space-y-3">
@@ -599,12 +701,43 @@ export default function VersionControlPage() {
               </button>
             </div>
           </div>
-          {fileContent && (
-            <div className="bg-black/40 border border-gray-800 rounded p-3 text-sm text-gray-200">
-              <pre className="whitespace-pre-wrap text-xs font-mono overflow-auto max-h-[320px]">
-                {fileContent.content || 'Empty file'}
-              </pre>
+          {fileError && <div className="bg-red-900/40 border border-red-700 rounded p-2 text-red-100 text-sm">{fileError}</div>}
+          {fileSuccess && (
+            <div className="bg-green-900/30 border border-green-700 rounded p-2 text-green-100 text-sm">{fileSuccess}</div>
+          )}
+          {fileContent ? (
+            <div className="space-y-2">
+              <label className="block text-xs text-gray-400">Edit file content</label>
+              <textarea
+                className="w-full bg-black/40 border border-gray-800 rounded p-3 text-sm text-gray-200 font-mono min-h-[220px]"
+                value={editableContent}
+                onChange={(e) => setEditableContent(e.target.value)}
+                disabled={actionsDisabled || fileContent.readonly}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
+                  placeholder="Optional commit message"
+                  value={fileMessage}
+                  onChange={(e) => setFileMessage(e.target.value)}
+                  disabled={actionsDisabled || fileContent.readonly}
+                />
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={handleSaveFile}
+                  disabled={actionsDisabled || fileContent.readonly}
+                >
+                  Save file
+                </button>
+              </div>
+              {fileContent.readonly && (
+                <div className="text-xs text-yellow-400">File is read-only; saving is disabled.</div>
+              )}
             </div>
+          ) : (
+            <div className="text-sm text-gray-400">Select a file to inspect or edit.</div>
           )}
           <div className="bg-gray-900 border border-gray-800 rounded p-3 text-sm text-gray-200">
             <div className="font-semibold mb-2">Diff preview</div>
