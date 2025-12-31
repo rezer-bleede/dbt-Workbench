@@ -50,15 +50,9 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
 
   const handleSubmit = async (e?: React.FormEvent, activeCommand: DbtCommand = 'run') => {
     e?.preventDefault();
-    setError(null);
-
-    if (!target) {
-      setError('Please select a Target before executing a dbt command.');
-      return;
-    }
-
     setIsLoading(true);
     setPendingCommand(activeCommand);
+    setError(null);
 
     try {
       // Build parameters object

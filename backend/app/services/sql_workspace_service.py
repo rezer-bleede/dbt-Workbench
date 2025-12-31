@@ -479,9 +479,7 @@ class SqlWorkspaceService:
         compiled_sql = node.get("compiled_code") or node.get("compiled_sql")
         source_sql = node.get("raw_code") or node.get("raw_sql") or ""
         if not compiled_sql:
-            raise ValueError(
-                "Compiled SQL not available for this model. Run `dbt compile` or `dbt build` before executing."
-            )
+            raise ValueError("Compiled SQL not available for this model. Ensure dbt artifacts are built.")
 
         checksum = self._compiled_checksum(compiled_sql)
 

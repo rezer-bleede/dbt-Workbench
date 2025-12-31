@@ -1,64 +1,94 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { vi } from 'vitest'
 import { RunCommand } from './RunCommand'
+import { api } from '../api/client'
+import { ExecutionService } from '../services/executionService'
+import { EnvironmentService } from '../services/environmentService'
 
-const startRunMock = vi.fn().mockResolvedValue({ run_id: 'run-1' })
+vi.mock('../api/client', () => ({ api: { get: vi.fn() } }))
+vi.mock('../services/executionService', () => ({ ExecutionService: { startRun: vi.fn() } }))
+vi.mock('../services/environmentService', () => ({ EnvironmentService: { list: vi.fn() } }))
+
+const mockedApi = api as { get: ReturnType<typeof vi.fn> }
+const mockedExecutionService = ExecutionService as { startRun: ReturnType<typeof vi.fn> }
+const mockedEnvironmentService = EnvironmentService as { list: ReturnType<typeof vi.fn> }
+
+const authValue = {
+  isLoading: false,
+  isAuthEnabled: false,
+  user: { id: 1, username: 'tester', role: 'admin' },
+  activeWorkspace: { id: 1, key: 'default', name: 'Default', artifacts_path: '/tmp' },
+  workspaces: [{ id: 1, key: 'default', name: 'Default', artifacts_path: '/tmp' }],
+  accessToken: null,
+  refreshToken: null,
+  login: vi.fn(),
+  logout: vi.fn(),
+  switchWorkspace: vi.fn(),
+}
 
 vi.mock('../context/AuthContext', () => ({
-  useAuth: () => ({ activeWorkspace: { id: 1 } }),
-}))
-
-vi.mock('../services/executionService', () => ({
-  ExecutionService: {
-    startRun: (...args: unknown[]) => startRunMock(...args),
-  },
-}))
-
-vi.mock('../api/client', () => ({
-  api: {
-    get: vi.fn().mockResolvedValue({ data: [] }),
-  },
-}))
-
-vi.mock('../services/environmentService', () => ({
-  EnvironmentService: {
-    list: vi.fn().mockResolvedValue([{ id: 1, name: 'dev env', dbt_target_name: 'dev' }]),
-  },
-}))
-
-vi.mock('./Autocomplete', () => ({
-  Autocomplete: ({ value, onChange, placeholder }: any) => (
-    <input
-      aria-label={placeholder}
-      placeholder={placeholder}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
-  ),
+  useAuth: () => authValue,
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
 describe('RunCommand', () => {
   beforeEach(() => {
-    startRunMock.mockClear()
+    vi.clearAllMocks()
+    mockedApi.get.mockResolvedValue({ data: [] })
+    mockedEnvironmentService.list.mockResolvedValue([])
+    mockedExecutionService.startRun.mockResolvedValue({ run_id: '123' })
   })
 
-  it('shows a prompt when no target is selected', async () => {
-    render(<RunCommand />)
+  it('starts the selected command when an action button is clicked', async () => {
+    const onRunStarted = vi.fn()
+    render(<RunCommand onRunStarted={onRunStarted} />)
 
-    fireEvent.click(screen.getByText('Run'))
+    await userEvent.click(screen.getByTestId('run-execute'))
 
-    expect(await screen.findByText(/select a Target/i)).toBeInTheDocument()
-    expect(startRunMock).not.toHaveBeenCalled()
+    await waitFor(() => expect(mockedExecutionService.startRun).toHaveBeenCalled())
+    expect(mockedExecutionService.startRun).toHaveBeenCalledWith(
+      expect.objectContaining({ command: 'run' })
+    )
+    expect(onRunStarted).toHaveBeenCalledWith('123')
   })
 
-  it('starts a run after selecting a target', async () => {
+  it('passes command-specific options with the executed command', async () => {
     render(<RunCommand />)
 
-    fireEvent.change(screen.getByPlaceholderText('e.g., dev'), { target: { value: 'dev' } })
-    fireEvent.click(screen.getByText('Run'))
+    await userEvent.click(screen.getByLabelText('Store Failures (dbt test only)'))
+    await userEvent.click(screen.getByTestId('test-execute'))
 
-    await waitFor(() => expect(startRunMock).toHaveBeenCalled())
+    await waitFor(() => expect(mockedExecutionService.startRun).toHaveBeenCalled())
+    const runRequest = mockedExecutionService.startRun.mock.calls[0][0]
+    expect(runRequest.command).toBe('test')
+    expect(runRequest.parameters.store_failures).toBe(true)
+  })
+
+  it('ignores incompatible options for other commands', async () => {
+    render(<RunCommand />)
+
+    await userEvent.click(screen.getByLabelText('Store Failures (dbt test only)'))
+    await userEvent.click(screen.getByLabelText('No Compile (dbt docs generate only)'))
+    await userEvent.click(screen.getByTestId('seed-execute'))
+
+    await waitFor(() => expect(mockedExecutionService.startRun).toHaveBeenCalled())
+    const runRequest = mockedExecutionService.startRun.mock.calls[0][0]
+    expect(runRequest.command).toBe('seed')
+    expect(runRequest.parameters).not.toHaveProperty('store_failures')
+    expect(runRequest.parameters).not.toHaveProperty('no_compile')
+  })
+
+  it('applies docs specific options only when docs are executed', async () => {
+    render(<RunCommand />)
+
+    await userEvent.click(screen.getByLabelText('No Compile (dbt docs generate only)'))
+    await userEvent.click(screen.getByTestId('docs generate-execute'))
+
+    await waitFor(() => expect(mockedExecutionService.startRun).toHaveBeenCalled())
+    const runRequest = mockedExecutionService.startRun.mock.calls[0][0]
+    expect(runRequest.command).toBe('docs generate')
+    expect(runRequest.parameters.no_compile).toBe(true)
   })
 })
-
