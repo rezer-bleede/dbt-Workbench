@@ -233,7 +233,9 @@ class DbtExecutor:
             else:
                 run_detail.status = RunStatus.FAILED
                 run_detail.error_message = f"dbt command failed with exit code {return_code}"
-        
+                if not run_detail.log_lines:
+                    run_detail.log_lines.append(run_detail.error_message)
+
         except Exception as e:
             run_detail.status = RunStatus.FAILED
             run_detail.error_message = str(e)
@@ -242,7 +244,10 @@ class DbtExecutor:
                 run_detail.duration_seconds = (
                     run_detail.end_time - run_detail.start_time
                 ).total_seconds()
-        
+            # Ensure the error is visible in log streams even if no subprocess output exists
+            if not run_detail.log_lines:
+                run_detail.log_lines.append(run_detail.error_message)
+
         finally:
             # Persist run summary to database run history
             try:
@@ -290,7 +295,8 @@ class DbtExecutor:
         
         run_detail = self.run_history[run_id]
         last_line = 0
-        
+        emitted_final = False
+
         while True:
             # Yield new log lines
             current_lines = len(run_detail.log_lines)
@@ -304,11 +310,22 @@ class DbtExecutor:
                         line_number=i + 1
                     )
                 last_line = current_lines
-            
+
             # Check if run is complete
             if run_detail.status in [RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELLED]:
+                if not emitted_final and last_line == current_lines:
+                    message = run_detail.error_message or f"Run finished with status {run_detail.status.value}"
+                    level = "ERROR" if run_detail.error_message else "INFO"
+                    yield LogMessage(
+                        run_id=run_id,
+                        timestamp=datetime.now(),
+                        level=level,
+                        message=message,
+                        line_number=last_line + 1,
+                    )
+                    emitted_final = True
                 break
-            
+
             # Wait before checking again
             await asyncio.sleep(0.1)
     
