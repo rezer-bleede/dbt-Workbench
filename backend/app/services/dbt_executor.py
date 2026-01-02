@@ -186,6 +186,8 @@ class DbtExecutor:
             
             # Determine working directory: prefer run-specific project path, fallback to default
             cwd = run_detail.project_path if run_detail.project_path else self.settings.dbt_project_path
+            if not os.path.isabs(cwd):
+                cwd = os.path.abspath(cwd)
             
             # Start subprocess
             process = subprocess.Popen(
