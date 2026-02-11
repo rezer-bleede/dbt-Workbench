@@ -44,11 +44,15 @@ def test_active_workspace_can_be_switched_without_auth_headers():
     assert body["name"] == ws2.name
 
 
-def test_missing_workspace_header_errors():
+def test_missing_workspace_header_falls_back_to_default():
     ws1 = _workspace("one", "/tmp/one")
     _workspace("two", "/tmp/two")
 
     client = TestClient(app)
+    # When a non-existent workspace ID is provided, it should fallback to the default workspace instead of 404ing
     res = client.get("/workspaces/active", headers={"X-Workspace-Id": str(ws1.id + 10)})
-    assert res.status_code == 404
-    assert res.json()["detail"]["error"] == "workspace_not_found"
+    assert res.status_code == 200
+    body = res.json()
+    assert body["id"] != ws1.id + 10
+    # It should be the default workspace (created on the fly if needed)
+    assert body["key"] == "default"

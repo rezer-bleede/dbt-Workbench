@@ -35,27 +35,24 @@ def _to_summary(workspace: db_models.Workspace) -> WorkspaceSummary:
 
 @router.get("", response_model=List[WorkspaceSummary])
 def list_workspaces(
-    current_workspace: WorkspaceContext = Depends(get_current_workspace),
     settings: Settings = Depends(get_settings),
     db: Session = Depends(get_db),
     user_ctx=Depends(get_current_user),
 ):
     if not settings.auth_enabled:
-        if settings.single_project_mode:
-            # In single-project mode, expose only the implicit default workspace
-            if current_workspace.id is None:
-                return [
-                    WorkspaceSummary(
-                        id=0,
-                        key=current_workspace.key,
-                        name=current_workspace.name,
-                        description=None,
-                        artifacts_path=current_workspace.artifacts_path,
-                    )
-                ]
-        else:
-            workspaces = auth_service.list_all_workspaces(db)
-            return [_to_summary(w) for w in workspaces]
+        workspaces = auth_service.list_all_workspaces(db)
+        if not workspaces and settings.single_project_mode:
+            # In single-project mode, expose the implicit default workspace if none exists in DB
+            return [
+                WorkspaceSummary(
+                    id=0,
+                    key=settings.default_workspace_key,
+                    name=settings.default_workspace_name,
+                    description=settings.default_workspace_description,
+                    artifacts_path=settings.dbt_artifacts_path,
+                )
+            ]
+        return [_to_summary(w) for w in workspaces]
 
     # When auth is enabled, restrict to workspaces assigned to the current user
     if not settings.auth_enabled or user_ctx.id is None:
