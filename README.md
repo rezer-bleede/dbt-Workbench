@@ -41,8 +41,7 @@ It is designed for local, on-prem, and air-gapped deployments where teams need f
 ---
 
 ## 📸 Screenshots
-<img width="1511" height="731" alt="dbt-Workbench lineage graph screenshot" src="assets/screenshots/lineage-readme.png" />
-<img width="1499" height="752" alt="dbt-Workbench run and catalog screenshot" src="assets/screenshots/catalog-readme.png" />
+<img width="1400" height="687" alt="image" src="https://github.com/user-attachments/assets/123ae905-7193-4d75-b0b6-c390e6278945" />
 
 ---
 ## 🚀 Quickstart
