@@ -64,14 +64,18 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Ensure GitHub Pages uses workflow deployments
+        id: pages
         uses: actions/github-script@v7
         with:
           script: |
             const {owner, repo} = context.repo;
+            const setCanDeploy = (value) => core.setOutput('can_deploy', value ? 'true' : 'false');
+
             try {
               const {data: pages} = await github.rest.repos.getPages({owner, repo});
               if (pages.build_type === 'workflow') {
                 core.info('GitHub Pages already uses workflow deployments.');
+                setCanDeploy(true);
               } else {
                 core.info('Switching GitHub Pages to workflow deployments.');
                 await github.rest.repos.updateInformationAboutPagesSite({
@@ -79,19 +83,43 @@ jobs:
                   repo,
                   build_type: 'workflow',
                 });
+                setCanDeploy(true);
               }
             } catch (error) {
-              if (error.status !== 404) {
-                throw error;
+              if (error.status === 404) {
+                core.info('Enabling GitHub Pages for workflow deployments.');
+                try {
+                  await github.rest.repos.createPagesSite({
+                    owner,
+                    repo,
+                    build_type: 'workflow',
+                  });
+                  setCanDeploy(true);
+                  return;
+                } catch (createError) {
+                  if (createError.status === 401 || createError.status === 403) {
+                    core.warning(`Unable to enable Pages automatically: token lacks permission (${createError.status}). Skipping deploy.`);
+                    setCanDeploy(false);
+                    return;
+                  }
+                  throw createError;
+                }
               }
-              core.info('Enabling GitHub Pages for workflow deployments.');
-              await github.rest.repos.createPagesSite({
-                owner,
-                repo,
-                build_type: 'workflow',
-              });
+
+              if (error.status === 401 || error.status === 403) {
+                core.warning(`Skipping deploy: token lacks permission to manage Pages (${error.status}).`);
+                setCanDeploy(false);
+                return;
+              }
+
+              throw error;
             }
 
       - name: Deploy to GitHub Pages
+        if: steps.pages.outputs.can_deploy == 'true'
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Skip deploy when Pages permissions are unavailable
+        if: steps.pages.outputs.can_deploy != 'true'
+        run: echo "Skipping Pages deploy because this workflow token cannot manage repository Pages settings."

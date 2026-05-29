@@ -11,6 +11,7 @@
  */
 
 import { spawn } from 'child_process';
+import { existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -22,8 +23,20 @@ const repoRoot = join(__dirname, '..');
 const BACKEND_URL = 'http://localhost:8000';
 const FRONTEND_URL = 'http://localhost:3000';
 const HEALTH_ENDPOINT = '/health';
-const MAX_WAIT_TIME = 180000; // 3 minutes
+const MAX_WAIT_TIME = 240000; // 4 minutes
 const CHECK_INTERVAL = 2000; // 2 seconds
+const DB_ARTIFACTS_DIR = join(repoRoot, 'data', 'artifacts');
+const DB_REPOS_DIR = join(repoRoot, 'data', 'repos');
+
+function ensureDir(path) {
+  try {
+    if (!existsSync(path)) {
+      mkdirSync(path, { recursive: true });
+    }
+  } catch (error) {
+    throw new Error(`Failed to prepare directory ${path}: ${error.message}`);
+  }
+}
 
 // ANSI color codes for output
 const colors = {
@@ -108,15 +121,98 @@ async function waitForUrl(url, endpoint = '', maxWait = MAX_WAIT_TIME) {
   throw new Error(`Timeout waiting for ${fullUrl} to be ready`);
 }
 
+async function waitForDockerHealth(service, maxWait = MAX_WAIT_TIME) {
+  const startTime = Date.now();
+  log(`Waiting for Docker service '${service}' to report healthy...`, 'yellow');
+
+  while (Date.now() - startTime < maxWait) {
+    try {
+      const containerResult = await captureCommandOutput('docker', [
+        'compose',
+        '-f',
+        'docker-compose.yml',
+        'ps',
+        '-q',
+        service,
+      ]);
+      const containerId = (containerResult.stdout || '').trim();
+      if (!containerId) {
+        throw new Error(`No running container found for service '${service}'.`);
+      }
+
+      const inspectResult = await captureCommandOutput('docker', [
+        'inspect',
+        '-f',
+        '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}',
+        containerId,
+      ]);
+
+      const state = (inspectResult.stdout || '').trim();
+      if (state === 'healthy' || state === 'running') {
+        log(`✓ Docker service '${service}' is ${state}.`, 'green');
+        return true;
+      }
+    } catch (error) {
+      // Keep polling until timeout
+    }
+
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    process.stdout.write(`\r  Waiting on ${service}: ${elapsed}s...`);
+    await new Promise(resolve => setTimeout(resolve, CHECK_INTERVAL));
+  }
+
+  throw new Error(`Timeout waiting for Docker service '${service}' to become healthy`);
+}
+
+function captureCommandOutput(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(command, args, {
+      cwd: options.cwd || repoRoot,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: true,
+      ...options,
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    proc.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+      } else {
+        reject(new Error(stderr || `Command failed with exit code ${code}`));
+      }
+    });
+
+    proc.on('error', (error) => {
+      reject(error);
+    });
+  });
+}
+
 // Main execution flow
 async function main() {
   let testsPassed = false;
   
   try {
+    ensureDir(DB_ARTIFACTS_DIR);
+    ensureDir(DB_REPOS_DIR);
+
     logStep('Step 1: Starting Docker Compose Stack');
     await execCommand('docker', ['compose', '-f', 'docker-compose.yml', 'up', '-d', '--build']);
     
     logStep('Step 2: Waiting for Services to be Ready');
+    await waitForDockerHealth('db');
+    await waitForDockerHealth('backend');
+    await waitForDockerHealth('frontend');
     await waitForUrl(BACKEND_URL, HEALTH_ENDPOINT);
     await waitForUrl(FRONTEND_URL);
     

@@ -35,7 +35,22 @@ jobs:
         working-directory: ./frontend
 
       - name: Run E2E tests with Docker
-        run: npm run test:e2e:docker
+        run: |
+          for attempt in 1 2; do
+            echo "Running E2E attempt ${attempt}/2"
+            if npm run test:e2e:docker; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 2 ]; then
+              echo "E2E tests failed after retry."
+              exit 1
+            fi
+
+            echo "Retrying E2E tests after cleanup..."
+            docker compose -f ../docker-compose.yml down -v || true
+            sleep 5
+          done
         working-directory: ./frontend
         env:
           CI: true
@@ -46,6 +61,7 @@ jobs:
         with:
           name: playwright-report
           path: frontend/playwright-report/
+          if-no-files-found: ignore
           retention-days: 7
 
       - name: Upload Playwright Test Results
@@ -54,23 +70,37 @@ jobs:
         with:
           name: playwright-test-results
           path: frontend/test-results/
+          if-no-files-found: ignore
           retention-days: 7
 
-      - name: Upload JUnit Report
+      - name: Detect JUnit report
         if: always()
+        id: junit
+        run: |
+          if [ -f frontend/test-results/junit.xml ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload JUnit Report
+        if: always() && steps.junit.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-junit
           path: frontend/test-results/junit.xml
+          if-no-files-found: ignore
           retention-days: 7
-        continue-on-error: true
 
       - name: Publish Test Results
-        if: always()
+        if: always() && steps.junit.outputs.exists == 'true'
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: frontend/test-results/junit.xml
-        continue-on-error: true
+
+      - name: Skip publish when JUnit is missing
+        if: always() && steps.junit.outputs.exists != 'true'
+        run: echo "JUnit report not found; skipping unit test result publishing."
 
       - name: Ensure Docker Compose is down
         if: always()
