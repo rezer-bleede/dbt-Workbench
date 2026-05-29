@@ -1,147 +1,135 @@
-<img src="assets/brand.svg" width="340" height="90" alt="dbt-Workbench - Open Source dbt UI for Lineage, Runs, and Documentation">
+<img src="assets/brand.svg" width="340" height="90" alt="dbt-Workbench">
 
 # dbt-Workbench: Open Source dbt UI
 
-dbt-Workbench is an **open source dbt UI** for lineage visualization, run orchestration,
-catalog and docs workflows, and environment management without vendor lock-in.
+dbt-Workbench is an open source, self-hosted UI for dbt lineage visualization, run orchestration,
+catalog and docs workflows, SQL exploration, and workspace management.
 It is designed for local, on-prem, and air-gapped deployments where teams need full control.
 
-**Keywords:** dbt UI, open source dbt, dbt lineage, data lineage tool, dbt catalog, dbt scheduler, self-hosted dbt, air-gapped dbt
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/rezer-bleede/dbt-Workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/rezer-bleede/dbt-Workbench/actions/workflows/ci.yml)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](backend)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](frontend)
+[![GitHub stars](https://img.shields.io/github/stars/rezer-bleede/dbt-Workbench?style=social)](https://github.com/rezer-bleede/dbt-Workbench/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/rezer-bleede/dbt-Workbench?style=social)](https://github.com/rezer-bleede/dbt-Workbench/network/members)
 
-**Documentation:** [https://rezer-bleede.github.io/dbt-Workbench/](https://rezer-bleede.github.io/dbt-Workbench/)
+Documentation: [https://rezer-bleede.github.io/dbt-Workbench/](https://rezer-bleede.github.io/dbt-Workbench/)
 
----
-## ✨ Highlights
+If dbt-Workbench helps your team, please star the repository.
 
-- **Unified dbt control plane** for artifacts, runs, and environments
-- **Interactive lineage** at model and column granularity with a deterministic D3/dagre layout, pan/zoom, and grouping controls
-- **Workspace-aware** multi-project setup with strict path scoping
-- **Secure by design** with optional JWT authentication + RBAC
-- **Extensible** plugin system and Git-integrated workspace
+## Product Preview
 
----
-## 🧭 Table of Contents
-- [Screenshots](#-screenshots)
-- [Quickstart](#-quickstart)
-- [Run with Docker Compose](#-run-with-docker-compose)
-- [Multi-Project Workspaces](#-multi-project-workspaces)
-- [Local Development](#-local-development)
-- [Project Structure](#-project-structure)
-- [Authentication & RBAC](#-authentication--rbac)
-- [Environment Variables](#-environment-variables)
-- [Features Overview](#-features-overview)
-- [API Reference](#-api-reference)
-- [Testing](#-testing)
-- [Documentation](#-documentation)
----
+<p align="center">
+  <img src="assets/screenshots/lineage-readme.png" width="49%" alt="Lineage view in dbt-Workbench">
+  <img src="assets/screenshots/catalog-readme.png" width="49%" alt="Catalog view in dbt-Workbench">
+</p>
 
-## 📸 Screenshots
-<img width="1400" height="687" alt="image" src="https://github.com/user-attachments/assets/123ae905-7193-4d75-b0b6-c390e6278945" />
+## Try It in About a Minute
 
----
-## 🚀 Quickstart
-
-### **Prerequisites**
+Prerequisites:
 - Docker
 - Docker Compose
 
----
-## 🐳 Run with Docker Compose
-
 ```bash
-docker-compose up --build
-# or
 docker compose up --build
 ```
 
-### Demo dbt Project
+Open:
+- UI: `http://localhost:3000`
+- API: `http://localhost:8000`
+- API Docs: `http://localhost:8000/docs`
 
-The repository includes a ready-to-run demo project in `./dbt_project` with raw, staging, and mart
-models so `dbt run` succeeds immediately against DuckDB. The default workspace that the backend
-bootstraps uses the same model layout, giving you consistent sample data for lineage, runs, and
-catalog exploration.
+The repository includes a ready-to-run demo dbt project in `./dbt_project` so you can run models,
+inspect lineage, and explore catalog metadata immediately.
 
-### **Services**
-- **UI:** http://localhost:3000
-- **API:** http://localhost:8000
-- **API Docs:** http://localhost:8000/docs (Swagger UI)
+## dbt Cloud vs dbt-Workbench (At a Glance)
 
-### **Mounting dbt Artifacts**
+| Area | dbt-Workbench | dbt Cloud |
+|------|---------------|-----------|
+| Operating model | Self-hosted (local, on-prem, air-gapped) | Managed cloud service |
+| License model | MIT open source | Commercial SaaS |
+| Data and infra control | Stays in your environment | Managed by vendor environment |
+| Lineage and docs | Model and column lineage + docs viewer | Available |
+| Run orchestration | Built-in run controls and history | Available |
+| Scheduling | Cron scheduler with notifications | Available |
+| SQL workspace | Built-in SQL editor and execution controls | Available |
+| Auth and RBAC | Optional JWT auth + Viewer/Developer/Admin roles | Available |
+| Extensibility | Open plugin system with source access | Vendor extension model |
 
-The backend mounts:
+Detailed comparison: [dbt Cloud vs dbt-Workbench](https://rezer-bleede.github.io/dbt-Workbench/docs/comparisons/dbt-cloud-vs-dbt-workbench/)
 
+## Who Uses dbt-Workbench?
+
+Are you running dbt-Workbench in your team? Open an issue with "Adopter" in the title and we can add you here.
+
+## Why Teams Choose dbt-Workbench
+
+- Full control of deployment and data boundaries
+- No per-seat or per-run pricing model
+- Interactive model and column-level lineage
+- Built-in run orchestration with logs and history
+- Catalog workflows with search, metadata, and validation
+- Workspace-aware Git integration for dbt project workflows
+- Optional authentication and role-based access control
+- Plugin system and AI copilot support
+
+## Core Feature Areas
+
+- **Lineage:** Deterministic DAG layout, grouping, expand/collapse, upstream/downstream impact analysis
+- **Execution:** Run dbt commands from the UI with real-time logs and artifact capture
+- **Scheduler:** Cron-style runs, environment-specific configs, retries, notifications
+- **Catalog:** Search across dbt entities with enriched metadata and validation reports
+- **SQL Workspace:** Custom SQL and compiled dbt SQL execution with query history
+- **Workspaces and RBAC:** Optional JWT auth, roles, workspace isolation, and switching
+- **Plugins and AI:** Hot-reloadable plugin system and workspace-aware AI copilot flows
+
+## Project Structure
+
+```text
+dbt-Workbench/
+|- backend/                # FastAPI API and execution services
+|- frontend/               # React + TypeScript + Vite UI
+|- website/                # Docusaurus documentation source
+|- dbt_project/            # Demo dbt project for local quickstart
+|- sample_artifacts/       # Sample dbt artifacts
+|- docker-compose.yml      # Local full stack setup
+|- ARCHITECTURE.md         # Architecture and system design
+|- ROADMAP.md              # Completed and planned milestones
+`- CONTRIBUTING.md         # Contribution guidelines
 ```
-./sample_artifacts → /app/dbt_artifacts
-```
 
-Replace `sample_artifacts` with your dbt `target/` directory containing:
+## Documentation
 
-- `manifest.json`
-- `run_results.json`
-- `catalog.json`
+- Quickstart: [Quickstart with Docker Compose](https://rezer-bleede.github.io/dbt-Workbench/docs/quickstart-docker/)
+- Lineage: [Lineage Overview](https://rezer-bleede.github.io/dbt-Workbench/docs/lineage-overview/)
+- Run orchestration: [Run Orchestration](https://rezer-bleede.github.io/dbt-Workbench/docs/run-orchestration/)
+- Scheduler: [Scheduler](https://rezer-bleede.github.io/dbt-Workbench/docs/scheduler/)
+- SQL workspace: [SQL Workspace](https://rezer-bleede.github.io/dbt-Workbench/docs/sql-workspace/)
+- Authentication: [Auth and RBAC](https://rezer-bleede.github.io/dbt-Workbench/docs/auth-rbac/)
+- Air-gapped and on-prem: [Deployment Guide](https://rezer-bleede.github.io/dbt-Workbench/docs/air-gapped-on-prem/)
+- Plugin system: [Plugin System](PLUGIN_SYSTEM.md)
+- Architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
+- Roadmap: [ROADMAP.md](ROADMAP.md)
 
-For the in-app **Docs** page, include the full contents from `dbt docs generate` (the `index.html` and accompanying assets)
-inside your mounted `target/` directory. The viewer will automatically serve that site from the latest artifacts so you can
-browse the complete dbt documentation without leaving the UI.
+## API and Configuration
 
-The UI will load and display real metadata from your dbt project automatically.
+Use these references for full endpoint and environment variable details:
+- API reference: `http://localhost:8000/docs` when running locally
+- Architecture and deployment guidance: [Documentation site](https://rezer-bleede.github.io/dbt-Workbench/)
+- Runtime settings reference: [backend/app/core/config.py](backend/app/core/config.py)
 
----
+## Local Development
 
-## 🧭 Multi-Project Workspaces
-
-dbt-Workbench can manage multiple isolated projects in a single instance. Each workspace gets its own
-repository folder under the configured `GIT_REPOS_BASE_PATH`, independent artifacts storage, and
-per-workspace settings. File operations are hard-scoped to the active workspace root to prevent
-cross-project access or path traversal, and switching workspaces refreshes the active project context
-across the UI and API.
-
-For local development, set a dedicated base path for repositories:
-
-```bash
-export GIT_REPOS_BASE_PATH=$(pwd)/data/repos
-```
-
-Each workspace will use a subdirectory under that path (e.g., `data/repos/<workspace-key>`), keeping
-source files, artifacts, and run history isolated by project.
-
-When authentication is disabled you can still switch the active project by sending the
-`X-Workspace-Id` header on any API call. The frontend persists the last-selected workspace locally so
-reloading the UI keeps the correct project context without leaking data between workspaces.
-
-dbt-Workbench automatically bootstraps a local **Demo Project** with its own git repository on first
-launch so you can explore the UI immediately. The Projects & Version Control page lets you add
-local-only projects (each with their own repo) or connect remotes; on subsequent visits the UI loads
-whichever project you last activated.
-
----
-
-## 🔧 Local Development
-
-### **Backend (FastAPI)**
+Backend:
 
 ```bash
 cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### **Database Schema Compatibility**
-
-On startup, the backend runs lightweight schema checks to keep legacy databases
-compatible with new features. For example, it will add the `runs.logs` column if
-it is missing so existing installations can keep serving run history without a
-manual migration step.
-
-### **Frontend (React + TypeScript + Vite)**
+Frontend:
 
 ```bash
 cd frontend
@@ -149,582 +137,51 @@ npm install
 npm run dev -- --host --port 3000
 ```
 
-Set the API base URL if needed:
+Docs site:
 
-```
-VITE_API_BASE_URL = http://localhost:8000
-```
-
----
-
-## 📁 Project Structure
-
-```
-dbt-Workbench/
-│
-├── backend/               # FastAPI service for metadata + execution engine
-│   ├── app/
-│   │   ├── api/routes/    # API endpoint handlers
-│   │   ├── core/          # Config, auth, plugins
-│   │   ├── database/      # SQLAlchemy models and services
-│   │   ├── schemas/       # Pydantic request/response models
-│   │   ├── services/      # Business logic services
-│   │   └── main.py        # FastAPI application entry
-│   └── requirements.txt
-├── frontend/              # React + TS + Vite UI
-│   ├── src/
-│   │   ├── components/    # Reusable UI components
-│   │   ├── context/       # React contexts (Auth, etc.)
-│   │   ├── pages/         # Page components
-│   │   └── services/      # API service clients
-│   └── package.json
-├── plugins/               # Plugin directory (manifest + backend/frontend assets)
-├── sample_artifacts/      # Demo dbt artifacts
-├── docker-compose.yml     # Full stack orchestration
-├── ARCHITECTURE.md        # System architecture documentation
-├── PLUGIN_SYSTEM.md       # Plugin system specification
-├── CONTRIBUTING.md        # Contribution guidelines
-├── ROADMAP.md             # Development roadmap
-└── README.md
+```bash
+cd website
+npm install
+npm run start
 ```
 
----
+## Testing
 
-## 🔐 Authentication & RBAC
+Backend:
 
-### Authentication Modes
-
-| Setting | Behavior |
-|---------|----------|
-| `AUTH_ENABLED=false` (default) | No login required, all users have Admin access |
-| `AUTH_ENABLED=true` | JWT-based authentication with username/password |
-
-### Authentication Endpoints (when enabled)
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/auth/login` | POST | Login with username/password, returns JWT tokens |
-| `/auth/refresh` | POST | Refresh access token using refresh token |
-| `/auth/logout` | POST | Logout (client discards tokens) |
-| `/auth/me` | GET | Get current user information |
-| `/auth/switch-workspace` | POST | Switch active workspace |
-
-### Roles & Permissions
-
-| Role | Level | Permissions |
-|------|-------|-------------|
-| **Viewer** | 0 | Read-only access to all data |
-| **Developer** | 1 | + Create/edit environments, schedules, run dbt commands |
-| **Admin** | 2 | + Manage users, plugins, workspaces, global settings |
-
-### RBAC by Feature
-
-| Feature | Viewer | Developer | Admin |
-|---------|--------|-----------|-------|
-| View models, lineage, catalog | ✅ | ✅ | ✅ |
-| View runs and history | ✅ | ✅ | ✅ |
-| Execute dbt commands | ❌ | ✅ | ✅ |
-| Create/edit environments | ❌ | ✅ | ✅ |
-| Create/edit schedules | ❌ | ✅ | ✅ |
-| Enable/disable plugins | ❌ | ❌ | ✅ |
-| Manage users | ❌ | ❌ | ✅ |
-| Manage workspaces | ❌ | ❌ | ✅ |
-
----
-
-## ⚙️ Environment Variables
-
-### Database Settings
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `POSTGRES_HOST` | `localhost` | PostgreSQL server hostname |
-| `POSTGRES_PORT` | `5432` | PostgreSQL server port |
-| `POSTGRES_USER` | `user` | PostgreSQL username |
-| `POSTGRES_PASSWORD` | `password` | PostgreSQL password |
-| `POSTGRES_DB` | `dbt_workbench` | PostgreSQL database name |
-| `DATABASE_URL` | - | Override full database URL (optional) |
-
-### Core Application
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `BACKEND_PORT` | `8000` | Backend API server port |
-| `DBT_ARTIFACTS_PATH` | `./dbt_artifacts` | Path to dbt artifacts directory |
-| `DBT_PROJECT_PATH` | `./dbt_project` | Path to dbt project for execution |
-| `GIT_REPOS_BASE_PATH` | `./data/repos` | Base path for cloned Git repositories |
-
-### Authentication & Security
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AUTH_ENABLED` | `false` | Enable JWT authentication |
-| `SINGLE_PROJECT_MODE` | `true` | Single workspace mode (no workspace switching) |
-| `JWT_SECRET_KEY` | `change_me` | **CHANGE IN PRODUCTION** - Secret key for JWT signing |
-| `JWT_ALGORITHM` | `HS256` | JWT signing algorithm |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Access token expiration time |
-| `REFRESH_TOKEN_EXPIRE_MINUTES` | `43200` | Refresh token expiration (30 days) |
-
-### Password Policy
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PASSWORD_MIN_LENGTH` | `12` | Minimum password length |
-| `PASSWORD_REQUIRE_UPPERCASE` | `true` | Require uppercase letter |
-| `PASSWORD_REQUIRE_LOWERCASE` | `true` | Require lowercase letter |
-| `PASSWORD_REQUIRE_NUMBER` | `true` | Require number |
-| `PASSWORD_REQUIRE_SPECIAL` | `false` | Require special character |
-
-### Default Workspace
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DEFAULT_WORKSPACE_KEY` | `default` | Default workspace key identifier |
-| `DEFAULT_WORKSPACE_NAME` | `Default dbt Project` | Default workspace display name |
-| `DEFAULT_WORKSPACE_DESCRIPTION` | `Default workspace` | Default workspace description |
-
-### Artifact Watcher
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ARTIFACT_POLLING_INTERVAL` | `5` | Polling interval in seconds |
-| `MAX_ARTIFACT_VERSIONS` | `10` | Maximum artifact versions to retain |
-| `MONITORED_ARTIFACT_FILES` | `manifest.json,run_results.json,catalog.json` | Files to monitor for changes |
-
-### Lineage Configuration
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DEFAULT_GROUPING_MODE` | `none` | Default graph grouping (`none`, `schema`, `tag`) |
-| `MAX_INITIAL_LINEAGE_DEPTH` | `4` | Maximum initial graph depth |
-| `LOAD_COLUMN_LINEAGE_BY_DEFAULT` | `false` | Load column-level lineage by default |
-| `LINEAGE_PERFORMANCE_MODE` | `balanced` | Performance mode (`fast`, `balanced`, `detailed`) |
-
-### dbt Execution
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MAX_CONCURRENT_RUNS` | `1` | Maximum concurrent dbt runs |
-| `MAX_RUN_HISTORY` | `100` | Maximum runs to keep in history |
-| `MAX_ARTIFACT_SETS` | `50` | Maximum artifact sets to retain |
-| `LOG_BUFFER_SIZE` | `1000` | Log buffer size in lines |
-
-### Data Catalog
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ALLOW_METADATA_EDITS` | `true` | Allow editing catalog metadata |
-| `SEARCH_INDEXING_FREQUENCY_SECONDS` | `30` | Search index refresh interval |
-| `FRESHNESS_THRESHOLD_OVERRIDE_MINUTES` | - | Override source freshness threshold |
-| `VALIDATION_SEVERITY` | `warning` | Default validation severity |
-| `STATISTICS_REFRESH_POLICY` | `on_artifact_change` | When to refresh column statistics |
-
-### Scheduler
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SCHEDULER_ENABLED` | `true` | Enable the scheduler background process |
-| `SCHEDULER_POLL_INTERVAL_SECONDS` | `30` | Scheduler polling interval |
-| `SCHEDULER_MAX_CATCHUP_RUNS` | `10` | Maximum catch-up runs on restart |
-| `SCHEDULER_DEFAULT_TIMEZONE` | `UTC` | Default timezone for schedules |
-
-The scheduler normalizes all persisted timestamps to UTC before evaluating due
-runs. This prevents timezone-aware/naive comparison errors and keeps cron
-calculations consistent when databases return naive datetimes.
-
-Scheduled runs inherit the dbt profile and target from their selected
-environment, ensuring the scheduled execution matches the active environment
-settings.
-
-### SQL Workspace
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SQL_WORKSPACE_DEFAULT_CONNECTION_URL` | - | **Required** - Database URL for SQL queries |
-| `SQL_WORKSPACE_MAX_ROWS` | `5000` | Maximum rows returned per query |
-| `SQL_WORKSPACE_TIMEOUT_SECONDS` | `60` | Query execution timeout |
-| `SQL_WORKSPACE_ALLOW_DESTRUCTIVE_DEFAULT` | `false` | Allow destructive queries by default |
-
-The SQL Workspace supports two execution modes:
-
-- **Custom SQL**: freeform queries against the selected environment, honoring destructive-query guardrails and row limits.
-- **dbt models**: dual-pane editor showing the model source next to the compiled SQL (read-only). The compiled SQL is refreshed per environment/target and is the only code sent to the warehouse for execution. Viewer roles can inspect compiled SQL, while Developers/Admins can execute it.
-
-Additional behaviors:
-
-- Profiling is always enabled for executed queries so column statistics are consistently available alongside results.
-- Results are paginated in the UI to keep browsing responsive; server-side limits (such as `SQL_WORKSPACE_MAX_ROWS`) still cap the dataset returned from the warehouse.
-
-### Notifications
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NOTIFICATIONS_SLACK_TIMEOUT_SECONDS` | `10` | Slack notification timeout |
-| `NOTIFICATIONS_WEBHOOK_TIMEOUT_SECONDS` | `10` | Webhook notification timeout |
-| `NOTIFICATIONS_EMAIL_FROM` | `dbt-workbench@example.com` | Email sender address |
-| `NOTIFICATIONS_EMAIL_SMTP_HOST` | `localhost` | SMTP server host |
-| `NOTIFICATIONS_EMAIL_SMTP_PORT` | `25` | SMTP server port |
-| `NOTIFICATIONS_EMAIL_USE_TLS` | `false` | Use TLS for SMTP |
-| `NOTIFICATIONS_EMAIL_USERNAME` | - | SMTP username |
-| `NOTIFICATIONS_EMAIL_PASSWORD` | - | SMTP password |
-
-### Plugin System
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PLUGIN_SYSTEM_ENABLED` | `true` | Enable the plugin system |
-| `PLUGINS_DIRECTORY` | `./plugins` | Plugin discovery directory |
-| `PLUGIN_HOT_RELOAD_ENABLED` | `true` | Enable hot-reload on file changes |
-| `PLUGIN_API_VERSION` | `1.0.0` | Plugin API version |
-| `PLUGIN_ALLOWED_ENV_PREFIXES` | `DBT_,DBT_WORKBENCH_` | Allowed environment variable prefixes for plugins |
-
-### AI Copilot
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AI_ENABLED` | `true` | Enable AI Copilot endpoints and UI |
-| `AI_SECRETS_MASTER_KEY` | - | Master key used to encrypt workspace AI secrets at rest |
-| `AI_DEFAULT_MODE` | `direct` | Default provider mode (`direct` or `mcp`) |
-| `AI_DEFAULT_DIRECT_PROVIDER` | `openai` | Default direct provider (`openai`, `anthropic`, `gemini`) |
-| `AI_DEFAULT_DIRECT_MODEL_OPENAI` | - | Default OpenAI model override |
-| `AI_DEFAULT_DIRECT_MODEL_ANTHROPIC` | - | Default Anthropic model override |
-| `AI_DEFAULT_DIRECT_MODEL_GEMINI` | - | Default Gemini model override |
-| `AI_ALLOW_SESSION_PROVIDER_OVERRIDE` | `true` | Allow per-session provider override in UI |
-| `AI_MCP_LOCAL_ALLOWLIST_JSON` | `{}` | JSON allowlist for local MCP stdio templates |
-| `AI_MCP_PROCESS_IDLE_TTL_SECONDS` | `300` | Idle timeout for local MCP processes |
-| `AI_MCP_CONNECT_TIMEOUT_SECONDS` | `20` | Connection timeout for MCP calls |
-| `AI_MAX_INPUT_TOKENS` | - | Optional soft max input tokens (no hard enforcement by default) |
-| `AI_MAX_OUTPUT_TOKENS` | - | Optional soft max output tokens (no hard enforcement by default) |
-| `AI_AUDIT_RETENTION_DAYS` | - | Optional AI audit retention window |
-
----
-
-## 🧩 Features Overview
-
-### **Phase 1 — Artifact Viewer (Complete)**
-- Browse models, sources, tests
-- Model details (columns, metadata)
-- Basic lineage graph
-- Runs list + statuses
-- Dashboard overview
-
-### **Phase 2 — Live Metadata Updates (Complete)**
-- Auto-detect changes to dbt artifacts
-- Background watcher reloads metadata
-- Frontend shows update indicators
-- In-memory versioning
-
-### **Phase 3 — dbt Execution Engine (Complete)**
-- Run dbt commands from UI
-- Quick-launch Run/Test/Seed/Docs actions directly from the dbt Execution page via dedicated execution buttons (no separate command selector)
-- Real-time log streaming
-- Persist artifacts per run
-- Dashboard surfaces the latest run status from execution history for consistency with the Run History page
-- Seed-aware execution guardrails warn when seeds are required before running downstream models
-
-### **Phase 4 — Metadata Persistence Layer (Complete)**
-- PostgreSQL backend
-- Historical model snapshots
-
-### **Phase 5 — Advanced Lineage (Complete)**
-- Column-level lineage derived from manifest and catalog artifacts
-- Grouping by schema, resource type, and tags with collapsible aggregates
-- Interactive expand/collapse of subgraphs to simplify large projects
-- Upstream and downstream impact highlighting at model and column granularity
-- Configurable defaults for grouping mode, graph depth, and column-level loading
-
-### **Phase 6 — Scheduler (Complete)**
-- Cron-style scheduled runs with timezone support
-- Email, Slack, and webhook notifications
-- Environment-specific configurations
-- Retry policies with exponential backoff
-- Catch-up and overlap policies
-- Historical run diagnostics with failure reasons, attempt timelines, and log/artifact links directly in the Schedules page
-- Manual and cron-triggered runs expose queued/in-progress status with log links immediately after dispatch so "Run now" is easy
-  to trace without waiting for completion
-- Workspace-aware execution paths so scheduled dbt commands use the connected Git repository instead of the default project folder
-
-### **Profile management in Environments (New)**
-- View configured dbt profiles and their available targets directly from the Environments page
-- Add a new profile with a YAML snippet that is merged into `profiles.yml`
-- Edit the full `profiles.yml` file inline when you need advanced changes
-
-### **Phase 7 — SQL Workspace (Complete)**
-- SQL editor with syntax highlighting
-- Dual-pane dbt model view showing editable source alongside read-only compiled SQL
-- Query execution against configured database with dbt model runs using compiled SQL only, plus clear compile reminders when
-  compiled artifacts are missing
-- Environment-aware compilation and execution with role-based run restrictions
-- Result profiling and statistics shared across custom SQL and dbt model runs
-- Query history with execution mode, model references, and compiled SQL checksums
-
-### Projects & Version Control enhancements (New)
-- Edit tracked files inline with save/commit controls and inline validation messaging
-- Create new project files directly from the UI alongside the repository browser
-- Browse project files in a hierarchical tree with folder expand/collapse and name filtering in Version Control and SQL Workspace
-
-### **Phase 8 — Data Catalog Layer (Complete)**
-- Global fuzzy/prefix search across models, sources, exposures, macros, tests, tags, and columns
-- Rich entity detail pages with dbt metadata, owners, tags, documentation, lineage previews, and column statistics
-- Test health indicators surfaced in search, detail pages, and validation reports
-- Source freshness visibility (max loaded timestamp, age, thresholds, status, last check)
-- Persistent metadata enrichment for owners/tags/descriptions with optional edit controls
-- Column-level descriptions, data types, nullability, and statistics synced from `catalog.json`
-- Validation of missing documentation, owners/tags, failing tests, freshness gaps, and stale sources
-
-### **Phase 9 — RBAC & Multi-Project (Complete)**
-- JWT-based authentication (optional)
-- Role-based access control (Viewer, Developer, Admin)
-- Multiple workspaces with independent data
-- Workspace switching and per-user defaults
-
-### **Phase 10 — Plugin Ecosystem (Complete)**
-- Backend plugin manager with manifest validation, capability/permission checks, and lifecycle events
-- Hot-reloadable plugins discovered from the configurable `PLUGINS_DIRECTORY` (default `./plugins`)
-- Admin APIs to list, enable, disable, and reload plugins without restarting the server
-- **Workspace-scoped plugin configuration API** for per-workspace settings
-- Frontend marketplace and installed-plugins views with dynamic enable/disable controls
-- Standardized plugin layout (`/plugins/<name>/manifest.json`, `backend/`, `frontend/`, `static/`)
-- Safe opt-out via `PLUGIN_SYSTEM_ENABLED=false` for minimal installations
-
-### **Phase 11 — Git-Integrated dbt Workspace (Complete)**
-- Workspace-scoped Git connections with branch switching, pull, push, and commit workflows
-- In-app file tree with SQL/Jinja editor for models and YAML editor support for dbt configs
-- Git-aware commit diffing, status, and history panels plus audit log visibility
-- Role-aware editing controls for protected configuration files and conflict handling cues
-- Model diff viewer
-- Historical lineage browser
-
-### **Phase 12 — AI Copilot (Complete)**
-- Global AI assistant panel with workspace-aware conversations
-- Runtime provider switching between direct LLM APIs and MCP servers
-- SQL copilot actions in SQL Workspace (explain/generate/optimize/fix prompts)
-- Lineage Q&A and run troubleshooting context actions
-- Admin-configurable AI defaults, secrets, and MCP server registry
-- Proposal-based execution flow for SQL/dbt actions with explicit confirmation
-- Full AI prompt/response/tool/action audit persistence per workspace
-
----
-
-## 🔗 API Reference
-
-### Lineage API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/lineage/graph` | GET | Model-level lineage with grouping metadata |
-| `/lineage/columns` | GET | Column-level lineage graph |
-| `/lineage/model/{unique_id}` | GET | Parents, children, and columns for a model |
-| `/lineage/upstream/{id}` | GET | Upstream impact analysis |
-| `/lineage/downstream/{id}` | GET | Downstream impact analysis |
-| `/lineage/groups` | GET | Grouping metadata for schemas, types, tags |
-
-### Catalog API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/catalog/entities` | GET | List all catalog entities |
-| `/catalog/entities/{unique_id}` | GET | Full entity detail with columns and tests |
-| `/catalog/search` | GET | Fuzzy/prefix search across all entities |
-| `/catalog/validation` | GET | Validation issues report |
-| `/catalog/entities/{unique_id}` | PATCH | Update entity metadata (owner, tags, description) |
-| `/catalog/entities/{unique_id}/columns/{column_name}` | PATCH | Update column-level metadata |
-
-### Execution API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/execution/run` | POST | Start a new dbt run |
-| `/execution/runs` | GET | List run history |
-| `/execution/runs/{run_id}` | GET | Get run details |
-| `/execution/runs/{run_id}/logs` | GET | Stream run logs |
-| `/execution/runs/{run_id}/artifacts` | GET | Get run artifacts |
-| `/execution/runs/{run_id}/cancel` | POST | Cancel a running job |
-
-Run log streams now emit a terminal message even when the underlying dbt process fails before producing output. This ensures scheduler-triggered runs surface useful error context (for example, missing dbt installations) instead of showing an empty log window.
-
-### Scheduler API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/schedules` | GET | List all schedules |
-| `/schedules` | POST | Create a new schedule |
-| `/schedules/{id}` | GET | Get schedule details |
-| `/schedules/{id}` | PUT | Update schedule |
-| `/schedules/{id}` | DELETE | Delete schedule |
-| `/schedules/{id}/pause` | POST | Pause schedule |
-| `/schedules/{id}/resume` | POST | Resume schedule |
-| `/schedules/{id}/run` | POST | Trigger immediate run |
-| `/schedules/environments` | GET | List environments |
-| `/schedules/environments` | POST | Create environment |
-
-### Plugin API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/plugins/installed` | GET | List installed plugins |
-| `/plugins/{name}/enable` | POST | Enable a plugin (Admin) |
-| `/plugins/{name}/disable` | POST | Disable a plugin (Admin) |
-| `/plugins/reload` | POST | Hot-reload plugins (Admin) |
-| `/plugins/config` | GET | List workspace plugin configs |
-| `/plugins/config/{name}` | GET | Get plugin config |
-| `/plugins/config` | POST | Create plugin config (Admin) |
-| `/plugins/config/{name}` | PUT | Update plugin config (Admin) |
-| `/plugins/config/{name}` | DELETE | Delete plugin config (Admin) |
-
-### AI API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/ai/settings` | GET | Get effective AI workspace settings (sanitized) |
-| `/ai/settings` | PUT | Update AI workspace defaults (Admin) |
-| `/ai/settings/secrets` | PUT | Upsert encrypted AI secrets (Admin) |
-| `/ai/mcp/templates` | GET | List local MCP allowlist templates (Admin) |
-| `/ai/mcp/servers` | GET | List workspace MCP servers |
-| `/ai/mcp/servers` | POST | Create MCP server config (Admin) |
-| `/ai/mcp/servers/{id}` | PUT | Update MCP server config (Admin) |
-| `/ai/mcp/servers/{id}` | DELETE | Delete MCP server config (Admin) |
-| `/ai/conversations` | GET | List AI conversations in current workspace |
-| `/ai/conversations` | POST | Create AI conversation |
-| `/ai/conversations/{id}/messages` | GET | List conversation messages |
-| `/ai/chat/stream` | POST | Stream AI response via SSE |
-| `/ai/actions/{proposal_id}` | GET | Get proposal details |
-| `/ai/actions/{proposal_id}/confirm` | POST | Confirm and execute proposal (Developer/Admin) |
-| `/ai/actions/{proposal_id}/reject` | POST | Reject proposal |
-
-### Git API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/git/connect` | POST | Clone and connect a repository |
-| `/git/status` | GET | Get repository status |
-| `/git/branches` | GET | List branches |
-| `/git/checkout` | POST | Switch branch |
-| `/git/pull` | POST | Pull latest changes |
-| `/git/push` | POST | Push commits |
-| `/git/commit` | POST | Create a commit |
-| `/git/history` | GET | Get commit history |
-| `/git/diff` | GET | Get file diff |
-| `/git/files` | GET | List repository files |
-| `/git/files/{path}` | GET | Read file content |
-| `/git/files/{path}` | PUT | Write file content |
-
-### Configuration API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/config` | GET | Get application configuration |
-| `/workspaces/active` | GET | Get active workspace |
-| `/workspaces` | GET | List workspaces (when auth enabled) |
-
----
-
-## 🧪 Testing
-
-### Backend
 ```bash
 cd backend
 pytest
 ```
 
-### Frontend
+Frontend:
+
 ```bash
 cd frontend
 npm test
+npm run test:e2e
 ```
 
-### Documentation Site (Docusaurus)
+Docs site:
+
 ```bash
 cd website
 npm test
 ```
 
-> **Frontend CI note:** GitHub Actions caches npm dependencies from `frontend/package-lock.json`. If you add or update
-> UI dependencies, commit the updated lockfile in `frontend/` so the `actions/setup-node` step can restore the cache
-> and avoid lockfile-missing failures.
+## Contributing
 
-> **Docs CI note:** The GitHub Pages workflow caches npm dependencies from `website/package-lock.json`. If you update
-> docs site dependencies, commit the updated lockfile in `website/` so the Pages build can restore the cache and run
-> `npm ci` successfully.
+Contributions are welcome.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for workflow, style, and PR expectations.
 
-Unit and integration coverage uses **Vitest** with **React Testing Library** (jsdom). The suite exercises the Version Control workflows (connected vs. missing repositories), dashboard fallbacks, and plugin pages. End-to-end UI checks use Playwright:
+## Security
 
-```bash
-cd frontend
-npm run test:e2e
-```
+Please review [SECURITY.md](SECURITY.md) for responsible vulnerability reporting.
 
----
+## License
 
-## 📚 Documentation
+MIT License. See [LICENSE](LICENSE).
 
-- **Architecture:** `ARCHITECTURE.md`
-- **Plugin system:** `PLUGIN_SYSTEM.md`
-- **Contributing:** `CONTRIBUTING.md`
-- **Roadmap:** `ROADMAP.md`
-- **Docs website:** `website/` (Docusaurus source + build scripts)
-
----
-
-## 🌐 Why Choose dbt-Workbench?
-
-### For dbt Lineage & Visualization
-- **Interactive DAGs:** Explore model dependencies with deterministic D3/dagre layouts
-- **Column-Level Lineage:** Trace data flow from sources to marts at column granularity
-- **Impact Analysis:** Instantly see upstream and downstream impacts of changes
-- **Open Source:** No vendor lock-in, full customization capability
-
-### For dbt Run Orchestration
-- **Web-Based Execution:** Run dbt commands directly from the browser
-- **Real-Time Logs:** Stream logs as commands execute
-- **Run History:** Track all executions with full context
-- **Cron Scheduling:** Automate runs with timezone-aware scheduling
-
-### For Data Teams
-- **Self-Hosted:** Keep all data within your infrastructure
-- **Air-Gapped Support:** Run completely offline in secure environments
-- **Multi-Project:** Manage multiple dbt projects in isolated workspaces
-- **RBAC:** Role-based access control (Viewer, Developer, Admin)
-
-### For Organizations
-- **Cost Effective:** No per-seat or per-run pricing
-- **Compliance Ready:** Audit logging, encryption, access controls
-- **Extensible:** Plugin system for custom integrations
-- **Enterprise Features:** JWT auth, workspace isolation, Git integration
-
-## 🔍 SEO Keywords
-
-dbt-Workbench is designed for teams searching for:
-- **Open source dbt UI alternatives** to dbt Cloud
-- **Self-hosted dbt lineage tools** for data governance
-- **Air-gapped dbt deployment** options for regulated industries
-- **dbt catalog and documentation** viewers for data discovery
-- **SQL workspace for dbt projects** for analytics engineering
-- **Data lineage visualization tools** for impact analysis
-
-## 🤝 Contributing
-
-Contributions are welcome!
-See **CONTRIBUTING.md** for style guidelines, workflows, and expectations.
-
----
-
-## 📜 License
-
-MIT License — fully permissive for commercial and open-source use.
-
----
-
-## ⭐ Star History
+## Star History
 
 [![Stargazers over time](https://starchart.cc/rezer-bleede/dbt-Workbench.svg)](https://starchart.cc/rezer-bleede/dbt-Workbench)
-
-
-## ⭐ Support
-
-If dbt-Workbench helps you, please star the repository to support the project.
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](backend)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](frontend)
