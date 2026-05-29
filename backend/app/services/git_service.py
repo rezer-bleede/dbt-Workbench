@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
@@ -58,6 +59,43 @@ def _ensure_git_identity(repo: Repo) -> None:
             writer.set_value("user", "email", "noreply@example.com")
     finally:
         writer.release()
+
+
+def _is_dubious_ownership_error(exc: GitCommandError) -> bool:
+    parts = [getattr(exc, "stderr", ""), getattr(exc, "stdout", ""), str(exc)]
+    message = "\n".join(part for part in parts if part).lower()
+    return "detected dubious ownership" in message
+
+
+def _ensure_safe_directory(repo: Repo) -> None:
+    try:
+        repo.git.rev_parse("--is-inside-work-tree")
+        return
+    except GitCommandError as exc:
+        if not _is_dubious_ownership_error(exc):
+            return
+
+    working_tree_dir = repo.working_tree_dir
+    if not working_tree_dir:
+        return
+
+    safe_path = str(Path(working_tree_dir).resolve())
+    existing = subprocess.run(
+        ["git", "config", "--global", "--get-all", "safe.directory"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    configured = {line.strip() for line in existing.stdout.splitlines() if line.strip()}
+    if safe_path not in configured:
+        subprocess.run(
+            ["git", "config", "--global", "--add", "safe.directory", safe_path],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    repo.git.rev_parse("--is-inside-work-tree")
 
 
 def _write_default_project_files(base_path: Path) -> None:
@@ -160,6 +198,7 @@ def _initialize_local_repo(target_path: Path, branch: str) -> Repo:
                 repo.git.checkout("-b", branch)
         except Exception:
             pass
+    _ensure_safe_directory(repo)
     _write_default_project_files(target_path)
     _ensure_git_identity(repo)
     repo.git.add(A=True)
@@ -312,7 +351,9 @@ def _ensure_repo(path: str) -> Repo:
             detail={"error": "git_not_configured", "message": "Repository connection not configured."},
         )
     try:
-        return Repo(path_obj)
+        repo = Repo(path_obj)
+        _ensure_safe_directory(repo)
+        return repo
     except InvalidGitRepositoryError as exc:  # pragma: no cover - defensive
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -425,6 +466,7 @@ def connect_repository(
         else:
             repo = _initialize_local_repo(target_path, branch)
 
+    _ensure_safe_directory(repo)
     _ensure_git_identity(repo)
 
     # Ensure the desired branch exists locally; otherwise create it from remote or fall back gracefully
