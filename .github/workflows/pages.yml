@@ -63,14 +63,23 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Ensure GitHub Pages is enabled
+      - name: Ensure GitHub Pages uses workflow deployments
         uses: actions/github-script@v7
         with:
           script: |
             const {owner, repo} = context.repo;
             try {
-              await github.rest.repos.getPages({owner, repo});
-              core.info('GitHub Pages is already enabled.');
+              const {data: pages} = await github.rest.repos.getPages({owner, repo});
+              if (pages.build_type === 'workflow') {
+                core.info('GitHub Pages already uses workflow deployments.');
+              } else {
+                core.info('Switching GitHub Pages to workflow deployments.');
+                await github.rest.repos.updateInformationAboutPagesSite({
+                  owner,
+                  repo,
+                  build_type: 'workflow',
+                });
+              }
             } catch (error) {
               if (error.status !== 404) {
                 throw error;

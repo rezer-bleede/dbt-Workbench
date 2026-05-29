@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createDocusaurusConfig } from '../config/createDocusaurusConfig';
 
-const originalRepository = process.env.GITHUB_REPOSITORY;
-
-test('docusaurus config derives url and baseUrl from repository', async () => {
-  process.env.GITHUB_REPOSITORY = 'example-org/example-repo';
-  const configModule = await import('../docusaurus.config?test=repo');
-  const config = configModule.default;
+test('docusaurus config derives url and baseUrl from repository', () => {
+  const config = createDocusaurusConfig(
+    { GITHUB_REPOSITORY: 'example-org/example-repo' },
+    { inferRepository: () => null },
+  );
 
   assert.equal(config.url, 'https://example-org.github.io');
   assert.equal(config.baseUrl, '/example-repo/');
@@ -14,10 +14,11 @@ test('docusaurus config derives url and baseUrl from repository', async () => {
   assert.equal(config.projectName, 'example-repo');
 });
 
-test('docusaurus config uses repository for GitHub navbar link', async () => {
-  process.env.GITHUB_REPOSITORY = 'octo-org/octo-repo';
-  const configModule = await import('../docusaurus.config?test=navbar');
-  const config = configModule.default;
+test('docusaurus config uses repository for GitHub navbar link', () => {
+  const config = createDocusaurusConfig(
+    { GITHUB_REPOSITORY: 'octo-org/octo-repo' },
+    { inferRepository: () => null },
+  );
 
   const githubItem = config.themeConfig?.navbar?.items?.find(
     (item) => typeof item === 'object' && 'href' in item && item.href?.includes('github.com'),
@@ -29,18 +30,17 @@ test('docusaurus config uses repository for GitHub navbar link', async () => {
   );
 });
 
-test('docusaurus config falls back to default repo', async () => {
-  delete process.env.GITHUB_REPOSITORY;
-  const configModule = await import('../docusaurus.config?test=default');
-  const config = configModule.default;
+test('docusaurus config falls back to default repo', () => {
+  const config = createDocusaurusConfig({}, { inferRepository: () => null });
 
   assert.equal(config.baseUrl, '/dbt-Workbench/');
 });
 
-test('docusaurus sitemap config excludes local search routes', async () => {
-  process.env.GITHUB_REPOSITORY = 'example-org/example-repo';
-  const configModule = await import('../docusaurus.config?test=sitemap');
-  const config = configModule.default;
+test('docusaurus sitemap config excludes local search routes', () => {
+  const config = createDocusaurusConfig(
+    { GITHUB_REPOSITORY: 'example-org/example-repo' },
+    { inferRepository: () => null },
+  );
   const classicPreset = config.presets?.[0];
   const classicOptions =
     Array.isArray(classicPreset) && classicPreset.length > 1 ? classicPreset[1] : null;
@@ -49,12 +49,15 @@ test('docusaurus sitemap config excludes local search routes', async () => {
   assert.deepEqual(ignorePatterns, ['/tags/**', '/search', '/search/', '/search/**']);
 });
 
-test('docusaurus config emits verification metadata when env vars are provided', async () => {
-  process.env.GITHUB_REPOSITORY = 'example-org/example-repo';
-  process.env.GOOGLE_SITE_VERIFICATION = 'google-token';
-  process.env.BING_SITE_VERIFICATION = 'bing-token';
-  const configModule = await import('../docusaurus.config?test=verification');
-  const config = configModule.default;
+test('docusaurus config emits verification metadata when env vars are provided', () => {
+  const config = createDocusaurusConfig(
+    {
+      GITHUB_REPOSITORY: 'example-org/example-repo',
+      GOOGLE_SITE_VERIFICATION: 'google-token',
+      BING_SITE_VERIFICATION: 'bing-token',
+    },
+    { inferRepository: () => null },
+  );
   const metadata = config.themeConfig?.metadata ?? [];
 
   assert.equal(
@@ -80,8 +83,4 @@ test('docusaurus config emits verification metadata when env vars are provided',
     true,
   );
 
-  delete process.env.GOOGLE_SITE_VERIFICATION;
-  delete process.env.BING_SITE_VERIFICATION;
 });
-
-process.env.GITHUB_REPOSITORY = originalRepository;

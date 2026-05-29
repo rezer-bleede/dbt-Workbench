@@ -9,11 +9,13 @@ test.describe('SQL Workspace Smoke Tests', () => {
   test('loads DBeaver-style workbench chrome and supports tab interactions', async ({ page }) => {
     await page.goto('/sql')
 
-    await expect(page.getByRole('heading', { name: /sql workspace/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /^Run$/ })).toBeVisible()
-    await expect(page.getByRole('button', { name: /New SQL Tab/i })).toBeVisible()
+    const actionBar = page.getByTestId('editor-action-bar')
 
-    await page.getByRole('button', { name: /New SQL Tab/i }).click()
+    await expect(page.getByRole('toolbar', { name: /sql workbench controls/i })).toBeVisible()
+    await expect(actionBar.getByRole('button', { name: /^Run$/ })).toBeVisible()
+    await expect(actionBar.getByRole('button', { name: 'New SQL Tab' })).toBeVisible()
+
+    await actionBar.getByRole('button', { name: 'New SQL Tab' }).click()
     await expect(page.locator('[role="tab"]').first()).toBeVisible()
 
     await page.getByRole('tab', { name: /Output/i }).click()
@@ -26,19 +28,22 @@ test.describe('SQL Workspace Smoke Tests', () => {
 
     await expect(page.getByRole('button', { name: /show navigator/i })).toBeVisible()
     await page.getByRole('button', { name: /show navigator/i }).click()
-    await expect(page.getByText(/Project Navigator/i)).toBeVisible()
+    await expect(page.getByRole('button', { name: /hide navigator/i })).toBeVisible()
+    await expect(page.locator('.sqlwb-navigator h3').first()).toHaveText('Project Navigator')
   })
 
   test('supports native fullscreen toggle for SQL workbench', async ({ page }) => {
     await page.goto('/sql')
 
-    await expect(page.getByRole('button', { name: /enter full screen/i })).toBeVisible()
-    await page.getByRole('button', { name: /enter full screen/i }).click()
+    const fullscreenButton = page.getByRole('button', { name: /enter full screen/i })
+
+    await expect(fullscreenButton).toBeVisible()
+    await fullscreenButton.click()
 
     await expect.poll(async () => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true)
     await expect(page.getByRole('button', { name: /exit full screen/i })).toBeVisible()
 
-    await page.keyboard.press('Escape')
+    await page.getByRole('button', { name: /exit full screen/i }).click()
     await expect.poll(async () => page.evaluate(() => document.fullscreenElement === null)).toBe(true)
     await expect(page.getByRole('button', { name: /enter full screen/i })).toBeVisible()
   })
