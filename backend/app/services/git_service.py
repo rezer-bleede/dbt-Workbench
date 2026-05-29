@@ -375,8 +375,10 @@ def connect_repository(
     else:
         target_path = _workspace_root(settings, workspace)
 
-    # Clean up invalid directory if it exists but is not a git repo
-    _cleanup_invalid_directory(target_path, workspace.key)
+    # For remote clones, clean up invalid non-git directories so clone can proceed.
+    # For local repositories, keep existing contents and initialize git in place.
+    if remote_url:
+        _cleanup_invalid_directory(target_path, workspace.key)
 
     target_path.mkdir(parents=True, exist_ok=True)
 

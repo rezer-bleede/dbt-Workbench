@@ -170,3 +170,25 @@ def test_local_repository_initialization(tmp_path, db_session):
     assert status.configured is True
     history = git_service.history(db_session, 1)
     assert history
+
+
+def test_local_repository_init_preserves_existing_directory(tmp_path, db_session):
+    project_root = Path(db_session.workspace_root) / "preexisting_local"
+    project_root.mkdir(parents=True, exist_ok=True)
+    existing_file = project_root / "notes.txt"
+    existing_file.write_text("keep me", encoding="utf-8")
+
+    summary = git_service.connect_repository(
+        db_session,
+        workspace_id=1,
+        remote_url=None,
+        branch="main",
+        directory=str(project_root),
+        provider="local",
+        user_id=None,
+        username=None,
+    )
+
+    assert summary.remote_url is None
+    assert (project_root / ".git").exists()
+    assert existing_file.exists()

@@ -55,6 +55,12 @@ jobs:
         env:
           CI: true
 
+      - name: Capture Docker Compose logs
+        if: always()
+        run: |
+          mkdir -p frontend/test-results
+          docker compose -f docker-compose.yml logs --no-color > frontend/test-results/docker-compose.log || true
+
       - name: Upload Playwright Report
         if: always()
         uses: actions/upload-artifact@v4
