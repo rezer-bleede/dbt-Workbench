@@ -59,3 +59,4 @@ dbt_project/target/partial_parse.msgpack
 dbt_project/target/run_results.json
 dbt_project/target/semantic_manifest.json
 profiles/.user.yml
+/backend/data
