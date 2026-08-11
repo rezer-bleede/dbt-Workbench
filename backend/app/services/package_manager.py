@@ -43,9 +43,6 @@ class PackageManager:
         except Exception as e:
             logger.error(f"Error listing packages: {str(e)}")
             return []
-        except Exception as e:
-            logger.error(f"Error listing packages: {str(e)}")
-            return []
 
     @staticmethod
     def get_package_version(package_name: str) -> Optional[str]:

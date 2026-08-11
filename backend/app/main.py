@@ -25,7 +25,6 @@ from app.api.routes import (
     workspaces,
     admin,
     plugins,
-    plugins,
     git,
     profiles,
     theme,
