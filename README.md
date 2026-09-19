@@ -1,10 +1,13 @@
 <img src="assets/brand.svg" width="340" height="90" alt="dbt-Workbench">
 
-# dbt-Workbench: Open Source dbt UI
+# dbt-Workbench: Self-Hosted dbt Control Plane
 
-dbt-Workbench is an open source, self-hosted UI for dbt lineage visualization, run orchestration,
-catalog and docs workflows, SQL exploration, and workspace management.
+dbt-Workbench is an open source, self-hosted dbt control plane for lineage visualization, run
+orchestration, catalog and docs workflows, SQL exploration, and workspace management.
 It is designed for local, on-prem, and air-gapped deployments where teams need full control.
+
+If your team has outgrown `dbt docs`, needs an operational UI around dbt Core, or cannot send data
+workflows to a managed SaaS platform, start with the Docker demo below.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/rezer-bleede/dbt-Workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/rezer-bleede/dbt-Workbench/actions/workflows/ci.yml)
@@ -40,6 +43,38 @@ Open:
 
 The repository includes a ready-to-run demo dbt project in `./dbt_project` so you can run models,
 inspect lineage, and explore catalog metadata immediately.
+
+## Who It Is For
+
+- **Analytics engineers:** Explore lineage, run models, inspect artifacts, and browse documentation
+  without switching between terminal commands and static docs.
+- **Data platform teams:** Provide a governed dbt workspace with RBAC, run history, scheduling, and
+  workspace isolation inside your own infrastructure.
+- **Regulated teams:** Keep dbt workflows local, on-prem, or air-gapped while retaining searchable
+  lineage, catalog, and operational diagnostics.
+
+## Why Evaluate It Now
+
+| If you need... | Start here |
+|---|---|
+| A working dbt UI in under 30 minutes | [Docker quickstart](https://rezer-bleede.github.io/dbt-Workbench/docs/quickstart-docker/) |
+| A self-hosted dbt Cloud alternative | [Migration guide](https://rezer-bleede.github.io/dbt-Workbench/docs/guides/migrate-from-dbt-cloud/) |
+| Secure private-network deployment | [Air-gapped deployment](https://rezer-bleede.github.io/dbt-Workbench/docs/air-gapped-on-prem/) |
+| Faster impact analysis | [Lineage and column lineage](https://rezer-bleede.github.io/dbt-Workbench/docs/lineage-overview/) |
+
+## Production Readiness Checklist
+
+Before adopting the tool for a production evaluation, verify the items that matter to your team:
+
+- [ ] Docker image and Compose deployment run successfully in the target environment.
+- [ ] Authentication and Viewer/Developer/Admin RBAC match the team access model.
+- [ ] dbt artifacts, logs, and project paths are stored according to your retention policy.
+- [ ] Scheduler notifications, retries, and timezone behavior are tested.
+- [ ] Backup, upgrade, and rollback procedures are documented.
+- [ ] Air-gapped or restricted-network dependencies are mirrored and tested if applicable.
+
+See the [production deployment guides](https://rezer-bleede.github.io/dbt-Workbench/docs/air-gapped-on-prem/)
+and open an issue if a checklist item is unclear.
 
 ## dbt Cloud vs dbt-Workbench (At a Glance)
 

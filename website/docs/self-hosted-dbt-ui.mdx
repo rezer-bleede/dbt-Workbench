@@ -1,0 +1,45 @@
+---
+title: Self-hosted dbt UI and dbt Cloud alternative
+description: Evaluate dbt-Workbench as an open source, self-hosted dbt UI for lineage, execution, catalog, and documentation workflows.
+slug: /self-hosted-dbt-ui
+keywords: [self-hosted dbt, dbt cloud alternative, open source dbt ui, dbt control plane]
+seo_primary_keyword: "self-hosted dbt UI"
+seo_intent: comparison
+last_reviewed: "2026-09-19"
+---
+
+import GitHubCta from '@site/src/components/seo/GitHubCta';
+
+<GitHubCta position="top" campaign="self-hosted-dbt-ui-top" label="Evaluate dbt-Workbench on GitHub" />
+
+# Self-hosted dbt UI and dbt Cloud alternative
+
+dbt-Workbench is an open source, self-hosted dbt control plane for teams that need operational dbt
+workflows inside their own infrastructure. It combines lineage, run orchestration, scheduling,
+catalog, docs previews, SQL exploration, and optional RBAC.
+
+## When to evaluate it
+
+- Your team needs more than static `dbt docs` output.
+- Data workflows must remain local, on-prem, or air-gapped.
+- You want to keep execution and artifacts inside your network.
+- Per-seat, per-run, or managed-service costs need a second option.
+- Platform engineers need a repeatable dbt workspace for multiple teams.
+
+## Evaluation path
+
+1. Run the [Docker quickstart](/docs/quickstart-docker/).
+2. Inspect [model and column lineage](/docs/lineage-overview/) and [catalog workflows](/docs/catalog/).
+3. Launch a run using [run orchestration](/docs/run-orchestration/) and inspect [artifacts](/docs/artifacts/).
+4. Configure [scheduling](/docs/scheduler/) and [run history](/docs/tutorials/dbt-observability-with-run-history-and-artifacts/).
+5. Review [authentication and RBAC](/docs/auth-rbac/) before a team evaluation.
+6. Test [air-gapped deployment](/docs/air-gapped-on-prem/) if network isolation is a requirement.
+
+## Set expectations
+
+This is an open-source project, not a claim of feature parity with every managed dbt platform.
+Validate adapter support, operational ownership, upgrade procedures, and security requirements in
+your own environment before production adoption. The [architecture guide](/docs/architecture/),
+[roadmap](/docs/roadmap/), and [contribution guide](/docs/contributing/) make those tradeoffs visible.
+
+<GitHubCta position="bottom" campaign="self-hosted-dbt-ui-bottom" label="Start a self-hosted dbt evaluation" />

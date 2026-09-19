@@ -1,0 +1,48 @@
+---
+title: Production readiness checklist for dbt-Workbench
+description: A practical checklist for evaluating authentication, deployment, artifacts, scheduling, backups, and air-gapped operation in dbt-Workbench.
+slug: /production-readiness
+keywords: [dbt production readiness, self-hosted dbt deployment, dbt security checklist, dbt air-gapped]
+seo_primary_keyword: "self-hosted dbt production readiness"
+seo_intent: tutorial
+last_reviewed: "2026-09-19"
+---
+
+import GitHubCta from '@site/src/components/seo/GitHubCta';
+
+<GitHubCta position="top" campaign="production-readiness-top" label="Review the implementation on GitHub" />
+
+# Production readiness checklist for dbt-Workbench
+
+Use this checklist to turn a local demo into a controlled production evaluation. It is intentionally
+explicit about what the project provides and what the adopting team must operate.
+
+## Deployment and data boundaries
+
+- [ ] Pin image and dependency versions for the evaluation.
+- [ ] Confirm project, artifact, log, and database volumes are backed up.
+- [ ] Test restore and rollback, not only backup creation.
+- [ ] Document network egress requirements and mirror dependencies for restricted environments.
+- [ ] Follow the [air-gapped deployment guide](/docs/air-gapped-on-prem/) where required.
+
+## Access and governance
+
+- [ ] Enable [JWT authentication and RBAC](/docs/auth-rbac/).
+- [ ] Map Viewer, Developer, and Admin roles to team responsibilities.
+- [ ] Test workspace isolation and [multiple project management](/docs/guides/manage-multiple-dbt-projects/).
+- [ ] Define audit, retention, and incident-response ownership.
+
+## Operations
+
+- [ ] Verify [run orchestration](/docs/run-orchestration/) and log visibility.
+- [ ] Test [scheduler retries and notifications](/docs/scheduler/).
+- [ ] Confirm artifact ingestion and [run history diagnostics](/docs/tutorials/dbt-observability-with-run-history-and-artifacts/).
+- [ ] Document how operators debug failures using [lineage](/docs/lineage-overview/) and [compiled SQL](/docs/guides/use-compiled-sql-safely/).
+
+## Acceptance test
+
+The evaluation is complete when a second operator can deploy the stack, authenticate, run the demo
+project, find the failing model or upstream dependency, and restore the system using only the team
+runbook. Record gaps as GitHub issues with the environment and expected behavior.
+
+<GitHubCta position="bottom" campaign="production-readiness-bottom" label="Report an evaluation gap" />

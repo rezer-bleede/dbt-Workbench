@@ -29,6 +29,23 @@ dbt-Workbench includes optional Google Analytics 4 tracking. The GA script is on
 - Inspect the rendered HTML for the GA script.
 - Confirm real-time events in the GA4 console.
 
+## Funnel events to review
+
+Use the following funnel as the minimum monthly scorecard. The first four are available from the
+existing site and repository surfaces; the final event requires product analytics or a maintainer
+check until it is instrumented in the application.
+
+| Funnel stage | Suggested measure |
+|---|---|
+| Discovery | Organic clicks to documentation and non-brand top-10 queries |
+| Evaluation | Documentation-to-GitHub CTA click-through, tagged by `utm_campaign` |
+| Activation | Successful Docker quickstart and first demo run |
+| Adoption | New issues, discussions, contributors, and repeat repository visitors |
+| Production evaluation | Teams completing the [production readiness checklist](/docs/production-readiness/) |
+
+Set a baseline over 14 days before choosing targets. Do not treat impressions, followers, or GitHub
+stars as product adoption without activation evidence.
+
 ## Optional: Search console verification tags
 
 You can inject verification meta tags at build time with GitHub Actions secrets:

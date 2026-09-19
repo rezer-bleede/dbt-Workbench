@@ -5,7 +5,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Getting Started',
-      items: ['quickstart-docker', 'screenshots'],
+      items: ['quickstart-docker', 'self-hosted-dbt-ui', 'production-readiness', 'screenshots'],
     },
     {
       type: 'category',
