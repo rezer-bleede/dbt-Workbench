@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './index.module.css';
 import {FaqJsonLd, HomeJsonLd} from '@site/src/components/seo/JsonLd';
 import GitHubCta from '@site/src/components/seo/GitHubCta';
@@ -55,6 +56,8 @@ const homeFaqItems = [
 ];
 
 export default function Home(): JSX.Element {
+  const lineageScreenshotUrl = useBaseUrl('/img/screenshots/lineage-ui.png');
+
   return (
     <Layout
       title="dbt-Workbench: Open Source dbt UI for Lineage, Runs, and Docs"
@@ -124,8 +127,8 @@ export default function Home(): JSX.Element {
           </div>
           <img
             className={styles.screenshot}
-            src="/img/screenshots/lineage-ui.png"
-            alt="dbt-Workbench lineage graph screenshot"
+            src={lineageScreenshotUrl}
+            alt="dbt-Workbench lineage visualization showing model dependencies"
             loading="lazy"
           />
         </section>

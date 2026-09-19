@@ -84,3 +84,24 @@ test('docusaurus config emits verification metadata when env vars are provided',
   );
 
 });
+
+test('docusaurus config emits base-path-aware social metadata', () => {
+  const config = createDocusaurusConfig(
+    { GITHUB_REPOSITORY: 'example-org/example-repo' },
+    { inferRepository: () => null },
+  );
+  const metadata = config.themeConfig?.metadata ?? [];
+  const getMeta = (property: string) =>
+    metadata.find(
+      (item) =>
+        typeof item === 'object' &&
+        'property' in item &&
+        item.property === property,
+    );
+
+  assert.equal(getMeta('og:url')?.content, 'https://example-org.github.io/example-repo/');
+  assert.equal(
+    getMeta('og:image')?.content,
+    'https://example-org.github.io/example-repo/img/og-image-1200x630.png',
+  );
+});

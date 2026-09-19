@@ -63,12 +63,16 @@ test('buildHomeJsonLdGraph emits baseUrl-aware schema URLs', () => {
   const organization = graph.find((item) => item['@type'] === 'Organization');
   assert.equal(organization?.url, 'https://example.com/repo/');
   assert.equal(organization?.logo, 'https://example.com/repo/img/brand.svg');
+  assert.equal(
+    organization?.image,
+    'https://example.com/repo/img/og-image-1200x630.png',
+  );
 
   const webSite = graph.find((item) => item['@type'] === 'WebSite');
   assert.equal(webSite?.url, 'https://example.com/repo/');
   assert.equal(
     (webSite?.potentialAction as {target: string}).target,
-    'https://example.com/repo/search?q={search_term_string}',
+    'https://example.com/repo/search/?q={search_term_string}',
   );
 
   const sourceCode = graph.find((item) => item['@type'] === 'SoftwareSourceCode');

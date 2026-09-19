@@ -35,7 +35,10 @@ function getSiteBaseUrl(siteUrl: string, baseUrl: string) {
 export function useCanonicalUrl() {
   const {siteConfig} = useDocusaurusContext();
   const {pathname} = useLocation();
-  return new URL(pathname, siteConfig.url).toString();
+  return new URL(
+    `${siteConfig.baseUrl.replace(/\/$/, '')}${pathname}`,
+    siteConfig.url,
+  ).toString();
 }
 
 export function BreadcrumbJsonLd({items}: {items: BreadcrumbItem[]}) {

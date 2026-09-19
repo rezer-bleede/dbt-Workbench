@@ -6,7 +6,10 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 export default function Root({children}: {children: React.ReactNode}) {
   const {siteConfig} = useDocusaurusContext();
   const {pathname} = useLocation();
-  const canonicalUrl = new URL(pathname, siteConfig.url).toString();
+  const canonicalUrl = new URL(
+    `${siteConfig.baseUrl.replace(/\/$/, '')}${pathname}`,
+    siteConfig.url,
+  ).toString();
   const normalizedPath = pathname.toLowerCase();
   const isNoIndexRoute =
     normalizedPath.includes('/search') ||

@@ -170,6 +170,7 @@ export function buildHomeJsonLdGraph(
     ? siteBaseUrl
     : `${siteBaseUrl}/`;
   const logoUrl = new URL('img/brand.svg', normalizedSiteBaseUrl).toString();
+  const imageUrl = new URL('img/og-image-1200x630.png', normalizedSiteBaseUrl).toString();
 
   return {
     '@context': 'https://schema.org',
@@ -180,6 +181,7 @@ export function buildHomeJsonLdGraph(
         name: 'dbt-Workbench',
         url: normalizedSiteBaseUrl,
         logo: logoUrl,
+        image: imageUrl,
         sameAs: [organizationUrl, repositoryUrl],
       },
       {
@@ -190,12 +192,13 @@ export function buildHomeJsonLdGraph(
         inLanguage: 'en',
         description:
           'Open source dbt UI for lineage visualization, run orchestration, catalogs, and SQL workspace.',
+        image: imageUrl,
         publisher: {
           '@id': `${normalizedSiteBaseUrl}#organization`,
         },
         potentialAction: {
           '@type': 'SearchAction',
-          target: `${normalizedSiteBaseUrl}search?q={search_term_string}`,
+          target: `${normalizedSiteBaseUrl}search/?q={search_term_string}`,
           'query-input': 'required name=search_term_string',
         },
       },
@@ -208,6 +211,7 @@ export function buildHomeJsonLdGraph(
         operatingSystem: 'Linux, macOS, Windows',
         description:
           'A lightweight, open-source UI for dbt that provides model browsing, lineage visualization, run orchestration, documentation previews, and environment management without vendor lock-in.',
+        image: imageUrl,
         url: normalizedSiteBaseUrl,
         isAccessibleForFree: true,
         softwareHelp: `${normalizedSiteBaseUrl}docs/`,

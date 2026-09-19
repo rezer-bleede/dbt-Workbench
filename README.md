@@ -19,8 +19,8 @@ If dbt-Workbench helps your team, please star the repository.
 ## Product Preview
 
 <p align="center">
-  <img src="assets/screenshots/lineage-readme.png" width="49%" alt="Lineage view in dbt-Workbench">
-  <img src="assets/screenshots/catalog-readme.png" width="49%" alt="Catalog view in dbt-Workbench">
+  <img src="https://raw.githubusercontent.com/rezer-bleede/dbt-Workbench/main/assets/screenshots/lineage-readme.png" width="49%" alt="dbt-Workbench lineage visualization showing model dependencies">
+  <img src="https://raw.githubusercontent.com/rezer-bleede/dbt-Workbench/main/assets/screenshots/catalog-readme.png" width="49%" alt="dbt-Workbench catalog showing dbt model metadata">
 </p>
 
 ## Try It in About a Minute

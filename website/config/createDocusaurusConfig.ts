@@ -78,6 +78,8 @@ export function createDocusaurusConfig(
   const bingSiteVerification = env.BING_SITE_VERIFICATION;
   const repositoryUrl = `https://github.com/${organizationName}/${projectName}`;
   const repositoryCtaUrl = `${repositoryUrl}?utm_source=docs&utm_medium=organic&utm_campaign=repo_cta`;
+  const siteBaseUrl = new URL(baseUrl, siteUrl).toString();
+  const socialImageUrl = new URL('img/og-image-1200x630.png', siteBaseUrl).toString();
 
   return {
     title: 'dbt-Workbench',
@@ -155,8 +157,27 @@ export function createDocusaurusConfig(
             'Open source dbt UI for lineage visualization, run orchestration, catalog, docs, and SQL workspace in local, on-prem, and air-gapped deployments.',
         },
         { name: 'og:type', content: 'website' },
+        { property: 'og:title', content: 'dbt-Workbench: Open Source dbt UI' },
+        {
+          property: 'og:description',
+          content:
+            'Open source dbt UI for lineage visualization, run orchestration, catalog, docs, and SQL workspace in local, on-prem, and air-gapped deployments.',
+        },
+        { property: 'og:url', content: siteBaseUrl },
+        { property: 'og:image', content: socialImageUrl },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
+        { property: 'og:image:alt', content: 'dbt-Workbench open source dbt UI' },
         { name: 'og:site_name', content: 'dbt-Workbench' },
         { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'dbt-Workbench: Open Source dbt UI' },
+        {
+          name: 'twitter:description',
+          content:
+            'Open source dbt UI for lineage visualization, run orchestration, catalog, docs, and SQL workspace.',
+        },
+        { name: 'twitter:image', content: socialImageUrl },
+        { name: 'twitter:image:alt', content: 'dbt-Workbench open source dbt UI' },
         { name: 'twitter:site', content: '@dbtworkbench' },
         { name: 'twitter:creator', content: '@dbtworkbench' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
