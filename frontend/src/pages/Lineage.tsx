@@ -1,12 +1,9 @@
-import { graphlib, layout as dagreLayout } from '@dagrejs/dagre'
-import { select } from 'd3-selection'
-import { line, curveCatmullRom } from 'd3-shape'
-import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from 'd3-zoom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { api } from '../api/client'
 import { Table } from '../components/Table'
+import { LineageGraph as ReactFlowLineageGraph, type LineageGraphNode } from '../components/LineageGraph'
 import { useAi } from '../context/AiContext'
 import { RowLineageService } from '../services/rowLineageService'
 import { SchedulerService } from '../services/schedulerService'
@@ -35,19 +32,12 @@ type ViewMode = 'model' | 'column' | 'row'
 type ColumnLens = 'lineage' | 'evolution'
 
 type GraphNode<T extends LineageNode | ColumnNode> = T & { isGroup?: boolean; isSubtree?: boolean }
-type PositionedNode<T extends LineageNode | ColumnNode> = GraphNode<T> & { x: number; y: number }
-type PositionedEdge = LineageEdge & { points: { x: number; y: number }[] }
 
 type VisibleGraph<T extends LineageNode | ColumnNode> = {
   nodes: GraphNode<T>[]
   edges: LineageEdge[]
 }
 
-type LayoutResult<T extends LineageNode | ColumnNode> = {
-  nodes: PositionedNode<T>[]
-  edges: PositionedEdge[]
-  size: { width: number; height: number }
-}
 
 type LineageConfig = {
   default_grouping_mode?: GroupingMode
@@ -56,8 +46,6 @@ type LineageConfig = {
   performance_mode?: string
 }
 
-const nodeSize = { width: 190, height: 84 }
-const canvas = { width: 1200, height: 720 }
 const nodeLabelLineMaxChars = 24
 const nodeMetaMaxChars = 28
 const emptyImpact: ImpactResponse = { upstream: [], downstream: [] }
@@ -195,56 +183,6 @@ const dedupeWarnings = (warnings: Array<string | undefined> | undefined): string
     output.push(warning)
   })
   return output
-}
-
-const curvedLine = line<{ x: number; y: number }>()
-  .x((d) => d.x)
-  .y((d) => d.y)
-  .curve(curveCatmullRom.alpha(0.6))
-
-const buildLayout = <T extends LineageNode | ColumnNode>(visibleGraph: VisibleGraph<T>): LayoutResult<T> => {
-  if (visibleGraph.nodes.length === 0) return { nodes: [], edges: [], size: canvas }
-
-  const dag = new graphlib.Graph({ multigraph: true, compound: false })
-  dag.setDefaultEdgeLabel(() => ({}))
-  dag.setGraph({ rankdir: 'LR', ranksep: 140, nodesep: 80, marginx: 48, marginy: 48 })
-
-  visibleGraph.nodes.forEach((node) => {
-    dag.setNode(node.id, { width: nodeSize.width, height: nodeSize.height })
-  })
-
-  visibleGraph.edges.forEach((edge) => {
-    dag.setEdge(edge.source, edge.target, {})
-  })
-
-  dagreLayout(dag)
-
-  const graphLabel = dag.graph()
-  const width = Math.max(graphLabel?.width || canvas.width, canvas.width)
-  const height = Math.max(graphLabel?.height || canvas.height, canvas.height)
-
-  const positionedNodes: PositionedNode<T>[] = visibleGraph.nodes.map((node) => {
-    const dagNode = dag.node(node.id)
-    return {
-      ...node,
-      x: dagNode?.x ?? nodeSize.width,
-      y: dagNode?.y ?? nodeSize.height,
-    }
-  })
-
-  const positionedEdges: PositionedEdge[] = visibleGraph.edges.map((edge) => {
-    const dagEdge = dag.edge(edge.source, edge.target)
-    return {
-      ...edge,
-      points: dagEdge?.points || [],
-    }
-  })
-
-  return { nodes: positionedNodes, edges: positionedEdges, size: { width, height } }
-}
-
-const buildPathFromPoints = (points: { x: number; y: number }[]): string => {
-  return curvedLine(points) || ''
 }
 
 const buildGroupedGraph = <T extends LineageNode | ColumnNode>(
@@ -599,8 +537,6 @@ function LineagePage() {
           : 'Select a column to view lineage.'
         : 'No lineage data available.'
 
-  const layout = useMemo(() => buildLayout(visibleGraph), [visibleGraph])
-
   const resolveNodeColor = (node: LineageNode | ColumnNode): { fill: string; stroke: string } => {
     const base = getNodeColor(node)
     if (viewMode !== 'column' || columnLens !== 'evolution') {
@@ -619,25 +555,8 @@ function LineagePage() {
     return base
   }
 
-  const svgRef = useRef<SVGSVGElement | null>(null)
   const graphContainerRef = useRef<HTMLDivElement | null>(null)
-  const zoomBehaviorRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null)
-  const [transform, setTransform] = useState<ZoomTransform>(zoomIdentity)
   const [isFullscreen, setIsFullscreen] = useState(false)
-
-  useEffect(() => {
-    if (!svgRef.current || !hasData) return
-    const svg = select(svgRef.current)
-    const zoomBehavior = zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.3, 3])
-      .on('zoom', (event) => setTransform(event.transform))
-
-    zoomBehaviorRef.current = zoomBehavior
-    svg.call(zoomBehavior as any).on('dblclick.zoom', null)
-    return () => {
-      svg.on('.zoom', null)
-    }
-  }, [hasData])
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -646,16 +565,6 @@ function LineagePage() {
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
-
-  const adjustZoom = (scaleFactor: number) => {
-    if (!svgRef.current || !zoomBehaviorRef.current) return
-    select(svgRef.current).call(zoomBehaviorRef.current.scaleBy as any, scaleFactor)
-  }
-
-  const resetZoom = () => {
-    if (!svgRef.current || !zoomBehaviorRef.current) return
-    select(svgRef.current).call(zoomBehaviorRef.current.transform as any, zoomIdentity)
-  }
 
   const toggleFullscreen = () => {
     const target = graphContainerRef.current
@@ -715,14 +624,14 @@ function LineagePage() {
       .catch(() => setImpact(emptyImpact))
   }
 
-  const handleNodeClick = (node: PositionedNode<LineageNode> | PositionedNode<ColumnNode>) => {
+  const handleNodeClick = (node: LineageGraphNode) => {
     if (node.isGroup || node.isSubtree) {
       return
     }
     if (viewMode === 'model') {
       selectModelNode(node.id)
     } else if (viewMode === 'column') {
-      const columnNode = node as PositionedNode<ColumnNode>
+      const columnNode = node as ColumnNode
       selectColumnNode({ id: columnNode.id, model_id: columnNode.model_id, column: columnNode.column })
     } else {
       setRowSelectedNodeId(node.id)
@@ -1133,144 +1042,15 @@ function LineagePage() {
                 }`}
                 data-testid="lineage-graph-container"
               >
-                <div className="panel-gradient-subtle absolute right-3 top-3 z-10 flex items-center gap-2 rounded-md border border-border px-2 py-1 text-[11px] text-text backdrop-blur">
-                  <button
-                    onClick={() => adjustZoom(1.2)}
-                    className="rounded border border-border px-2 py-1 hover:bg-panel/70"
-                    aria-label="Zoom in"
-                  >
-                    +
-                  </button>
-                  <button
-                    onClick={() => adjustZoom(1 / 1.2)}
-                    className="rounded border border-border px-2 py-1 hover:bg-panel/70"
-                    aria-label="Zoom out"
-                  >
-                    -
-                  </button>
-                  <button
-                    onClick={resetZoom}
-                    className="rounded border border-border px-2 py-1 hover:bg-panel/70"
-                  >
-                    Reset
-                  </button>
-                  <button
-                    onClick={toggleFullscreen}
-                    className="rounded border border-border px-2 py-1 hover:bg-panel/70"
-                  >
-                    {isFullscreen ? 'Exit full screen' : 'Full screen'}
-                  </button>
-                </div>
-                <svg
-                  ref={svgRef}
-                  width="100%"
-                  height={isFullscreen ? '100%' : canvas.height}
-                  viewBox={`0 0 ${layout.size.width} ${layout.size.height}`}
-                  className="w-full h-full text-text cursor-grab active:cursor-grabbing"
-                  style={{ touchAction: 'none' }}
-                >
-                  <defs>
-                    <marker
-                      id="lineage-arrow"
-                      markerWidth="12"
-                      markerHeight="10"
-                      refX="12"
-                      refY="5"
-                      orient="auto"
-                      markerUnits="strokeWidth"
-                    >
-                      <polygon points="0 0, 12 5, 0 10" fill="#38bdf8" />
-                    </marker>
-                    <filter id="node-shadow" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0ea5e9" floodOpacity="0.12" />
-                    </filter>
-                    <pattern id="lineage-grid" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
-                      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#1f2937" strokeWidth="0.5" />
-                    </pattern>
-                  </defs>
-                  <rect
-                    width={layout.size.width}
-                    height={layout.size.height}
-                    fill="url(#lineage-grid)"
-                    rx={16}
-                    ry={16}
-                    className="text-border"
-                  />
-                  <g transform={transform.toString()}>
-                    {layout.edges.map((edge) => {
-                      const sourceHighlighted = highlightNodes.has(edge.source) && highlightNodes.has(edge.target)
-                      const opacity = sourceHighlighted || highlightNodes.size === 0 ? 0.92 : 0.25
-                      return (
-                        <path
-                          key={`${edge.source}-${edge.target}`}
-                          d={buildPathFromPoints(edge.points)}
-                          fill="none"
-                          stroke={sourceHighlighted ? '#38bdf8' : '#475569'}
-                          strokeWidth={sourceHighlighted ? 3 : 1.5}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          markerEnd="url(#lineage-arrow)"
-                          opacity={opacity}
-                        />
-                      )
-                    })}
-
-                    {layout.nodes.map((node) => {
-                      const { fill, stroke } = resolveNodeColor(node)
-                      const emphasized = highlightNodes.size === 0 || highlightNodes.has(node.id)
-                      const faded = emphasized ? 1 : 0.35
-                      const isCollapsed = (node as PositionedNode<LineageNode>).isGroup || (node as PositionedNode<LineageNode>).isSubtree
-                      const labelLines = clampSvgTextLines(String(node.label || ''), 2, nodeLabelLineMaxChars)
-                      const schemaText = node.schema ? truncateWithEllipsis(String(node.schema), nodeMetaMaxChars) : null
-                      const typeText = node.type ? truncateWithEllipsis(String(node.type), nodeMetaMaxChars) : null
-                      const labelOffset = Math.max(0, labelLines.length - 1) * 16
-                      const schemaY = 46 + labelOffset
-                      const typeY = 62 + labelOffset
-                      return (
-                        <g
-                          key={node.id}
-                          transform={`translate(${node.x - nodeSize.width / 2}, ${node.y - nodeSize.height / 2})`}
-                          onClick={() => handleNodeClick(node)}
-                          data-node-id={node.id}
-                          data-testid={`lineage-node-${node.id}`}
-                          role="button"
-                          className="cursor-pointer transition duration-150"
-                          opacity={faded}
-                        >
-                          <rect
-                            width={nodeSize.width}
-                            height={nodeSize.height}
-                            rx={12}
-                            ry={12}
-                            fill={fill}
-                            stroke={stroke}
-                            strokeWidth={isCollapsed ? 1 : 1.75}
-                            strokeDasharray={isCollapsed ? '6 4' : '0'}
-                            filter="url(#node-shadow)"
-                          />
-                          <text x={16} y={26} className="text-sm font-semibold" fill="#e5e7eb">
-                            {labelLines.map((lineText, idx) => (
-                              <tspan key={`${node.id}-label-${idx}`} x={16} dy={idx === 0 ? 0 : 16}>
-                                {lineText}
-                              </tspan>
-                            ))}
-                          </text>
-                          {schemaText && (
-                            <text x={16} y={schemaY} className="text-[11px]" fill="#cbd5e1">
-                              {schemaText}
-                            </text>
-                          )}
-                          {typeText && (
-                            <text x={16} y={typeY} className="text-[10px] uppercase" fill="#94a3b8">
-                              {typeText}
-                            </text>
-                          )}
-                          <title>{node.label}</title>
-                        </g>
-                      )
-                    })}
-                  </g>
-                </svg>
+                <ReactFlowLineageGraph
+                  nodes={visibleGraph.nodes}
+                  edges={visibleGraph.edges}
+                  highlighted={highlightNodes}
+                  resolveColor={resolveNodeColor}
+                  onNodeClick={handleNodeClick}
+                  isFullscreen={isFullscreen}
+                  onToggleFullscreen={toggleFullscreen}
+                />
               </div>
             ))}
         </div>
