@@ -62,6 +62,9 @@ npm run start
 docker compose up --build
 ```
 
+Open the UI at `http://localhost:3000`. The frontend uses `http://localhost:8000`
+for browser-to-backend requests; `backend` is only the internal Docker service name.
+
 ### Environment Variables
 
 Create a `.env` file in `backend/` for local development:

@@ -24,8 +24,6 @@ services:
       - AI_MCP_LOCAL_ALLOWLIST_JSON={}
     volumes:
       - ./data:/app/data
-      - ./data/artifacts:/app/data/artifacts
-      - ./data/repos:/app/data/repos
       - ./dbt_project:/app/data/repos/default
       - ./profiles:/app/data/profiles
     networks:
@@ -38,11 +36,12 @@ services:
       start_period: 30s
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
     ports:
       - "3000:3000"
-    environment:
-      - VITE_API_BASE_URL=http://backend:8000
     depends_on:
       backend:
         condition: service_healthy
