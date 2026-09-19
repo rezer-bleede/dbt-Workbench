@@ -219,4 +219,4 @@ MIT License. See [LICENSE](LICENSE).
 
 ## Star History
 
-[![Stargazers over time](https://starchart.cc/rezer-bleede/dbt-Workbench.svg)](https://starchart.cc/rezer-bleede/dbt-Workbench)
+[![Star History Chart](https://api.star-history.com/svg?repos=rezer-bleede/dbt-Workbench&type=Date)](https://star-history.com/#rezer-bleede/dbt-Workbench&Date)
