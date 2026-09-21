@@ -59,9 +59,10 @@ describe('Plugin pages', () => {
   it('renders installed plugins and adapter suggestions', async () => {
     render(<PluginsInstalledPage />)
 
-    await waitFor(() => screen.getByText('Installed Plugins'))
+    await waitFor(() => {
+      expect(screen.getByText('dbt Adapters')).toBeInTheDocument()
+    })
 
-    expect(screen.getByText('Installed Plugins')).toBeInTheDocument()
     expect(screen.getByText('dbt Adapters')).toBeInTheDocument()
     expect(screen.getByText('demo')).toBeInTheDocument()
     expect(screen.getByText('Demo plugin')).toBeInTheDocument()

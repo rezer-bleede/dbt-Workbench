@@ -8,7 +8,6 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
 
 FROM node:20-alpine
-RUN apk add --no-cache curl
 WORKDIR /app
 RUN npm install -g serve@14.2.6
 COPY --from=builder /app/dist ./dist
