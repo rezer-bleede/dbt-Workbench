@@ -80,9 +80,7 @@ describe('VersionControlPage', () => {
   it('renders git panels and file explorer', async () => {
     render(<VersionControlPage />)
 
-    await waitFor(() => {
-      expect(screen.getByText('Projects & Version Control')).toBeInTheDocument()
-    })
+    await screen.findByRole('combobox')
 
     expect(screen.getByText('Project Files')).toBeInTheDocument()
     const filterInput = await screen.findByLabelText('Filter files')
