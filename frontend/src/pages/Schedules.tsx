@@ -252,8 +252,8 @@ function SchedulesPage() {
   const renderStatusBadge = (status: ScheduleStatus) => {
     const color =
       status === 'active'
-        ? 'border border-emerald-400/35 bg-emerald-500/14 text-emerald-300'
-        : 'border border-amber-400/35 bg-amber-500/14 text-amber-300';
+        ? 'border border-status-success/35 bg-status-success/15 text-status-success'
+        : 'border border-status-warning/35 bg-status-warning/15 text-status-warning';
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${color}`}>
         {status === 'active' ? 'Active' : 'Paused'}
@@ -325,7 +325,7 @@ function SchedulesPage() {
       </div>
 
       {error && (
-        <div className="rounded-md border border-rose-400/40 bg-rose-500/12 p-4 text-sm text-rose-300">
+        <div className="rounded-md border border-status-danger/35 bg-status-danger/15 p-4 text-sm text-status-danger">
           {error}
         </div>
       )}
@@ -782,9 +782,9 @@ function SchedulesPage() {
                       <li key={result.channel}>
                         <span className="font-medium">{result.channel}</span>:{' '}
                         {result.success ? (
-                          <span className="text-emerald-300">success</span>
+                          <span className="text-status-success font-semibold">success</span>
                         ) : (
-                          <span className="text-rose-300">
+                          <span className="text-status-danger font-semibold">
                             failed{result.error_message ? ` – ${result.error_message}` : ''}
                           </span>
                         )}

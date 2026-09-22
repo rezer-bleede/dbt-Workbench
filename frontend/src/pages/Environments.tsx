@@ -257,7 +257,7 @@ function EnvironmentsPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-400/40 bg-rose-500/12 p-4 text-sm text-rose-300">
+        <div className="rounded-xl border border-status-danger/35 bg-status-danger/15 p-4 text-sm text-status-danger">
           {error}
         </div>
       )}
@@ -355,7 +355,7 @@ function EnvironmentsPage() {
             <h2 className="text-xl font-semibold text-text">{editingProfileName ? `Edit ${editingProfileName}` : 'Add Profile'}</h2>
             <p className="mt-1 text-sm text-muted">Provide a YAML snippet for a single profile. It will be merged into profiles.yml.</p>
             {profileEditorError && (
-              <div className="mt-3 rounded-lg border border-rose-400/40 bg-rose-500/12 p-2 text-sm text-rose-300">{profileEditorError}</div>
+              <div className="mt-3 rounded-lg border border-status-danger/35 bg-status-danger/15 p-2 text-sm text-status-danger">{profileEditorError}</div>
             )}
             <div className="mt-4 flex-1">
               <textarea
@@ -536,7 +536,7 @@ function EnvironmentsPage() {
                         </button>
                         <button
                           onClick={() => handleDelete(env.id)}
-                          className="inline-flex items-center rounded-lg border border-rose-400/45 bg-rose-500/12 px-2.5 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-500/20"
+                          className="inline-flex items-center rounded-lg border border-status-danger/35 bg-status-danger/15 px-2.5 py-1.5 text-xs font-semibold text-status-danger hover:bg-status-danger/25"
                         >
                           Delete
                         </button>

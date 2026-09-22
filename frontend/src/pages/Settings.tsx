@@ -522,28 +522,28 @@ function SettingsPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted">Manifest</span>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${artifacts?.manifest ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${artifacts?.manifest ? 'border-status-success/35 bg-status-success/15 text-status-success' : 'border-status-danger/35 bg-status-danger/15 text-status-danger'
                 }`}>
                 {artifacts?.manifest ? 'Present' : 'Missing'}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted">Run Results</span>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${artifacts?.run_results ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${artifacts?.run_results ? 'border-status-success/35 bg-status-success/15 text-status-success' : 'border-status-danger/35 bg-status-danger/15 text-status-danger'
                 }`}>
                 {artifacts?.run_results ? 'Present' : 'Missing'}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted">Catalog</span>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${artifacts?.catalog ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${artifacts?.catalog ? 'border-status-success/35 bg-status-success/15 text-status-success' : 'border-status-danger/35 bg-status-danger/15 text-status-danger'
                 }`}>
                 {artifacts?.catalog ? 'Present' : 'Missing'}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted">Docs</span>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${artifacts?.docs ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${artifacts?.docs ? 'border-status-success/35 bg-status-success/15 text-status-success' : 'border-status-danger/35 bg-status-danger/15 text-status-danger'
                 }`}>
                 {artifacts?.docs ? 'Available' : 'Missing'}
               </span>

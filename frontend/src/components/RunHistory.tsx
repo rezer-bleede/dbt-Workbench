@@ -63,11 +63,11 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ onRunSelect, refreshTrig
   if (error) {
     return (
       <div className="panel-gradient rounded-lg p-6">
-        <div className="rounded-md border border-rose-400/40 bg-rose-500/12 p-4">
-          <p className="text-rose-300">{error}</p>
+        <div className="rounded-md border border-status-danger/35 bg-status-danger/15 p-4">
+          <p className="text-status-danger font-medium">{error}</p>
           <button
             onClick={() => fetchHistory(currentPage)}
-            className="mt-2 text-sm text-rose-200 underline hover:text-rose-100"
+            className="mt-2 text-sm text-status-danger underline hover:opacity-80"
           >
             Try again
           </button>
@@ -150,7 +150,7 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ onRunSelect, refreshTrig
                     View
                   </button>
                   {run.artifacts_available && (
-                    <span className="text-xs text-emerald-300">
+                    <span className="text-xs text-status-success font-semibold">
                       Artifacts
                     </span>
                   )}

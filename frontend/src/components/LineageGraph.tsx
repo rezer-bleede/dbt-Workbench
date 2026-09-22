@@ -22,13 +22,13 @@ function GraphCanvas({ props }: { props: Props }) {
 
   useEffect(() => { if (nodes.length) requestAnimationFrame(() => reactFlow.fitView({ padding: 0.18, duration: 250 })) }, [layoutMode, nodes.length, reactFlow])
   const toggleFullscreen = useCallback(() => props.onToggleFullscreen(), [props])
-  return <div className={`relative h-full w-full ${props.isFullscreen ? 'bg-slate-950' : ''}`}>
-    <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-md border border-slate-700 bg-slate-900/90 p-1 text-slate-200 shadow backdrop-blur">
-      <select aria-label="Graph layout" value={layoutMode} onChange={(event) => setLayoutMode(event.target.value as LineageLayoutMode)} className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px]"><option value="hierarchical">Hierarchical</option><option value="star">Star</option><option value="snowflake">Snowflake</option></select>
-      <button aria-label="Zoom in" onClick={() => reactFlow.zoomIn()} className="rounded p-1.5 hover:bg-slate-700"><ZoomIn size={15} /></button>
-      <button aria-label="Zoom out" onClick={() => reactFlow.zoomOut()} className="rounded p-1.5 hover:bg-slate-700"><ZoomOut size={15} /></button>
-      <button aria-label="Fit graph" onClick={() => reactFlow.fitView({ padding: 0.18, duration: 250 })} className="rounded p-1.5 hover:bg-slate-700"><ScanSearch size={15} /></button>
-      <button aria-label={props.isFullscreen ? 'Exit full screen' : 'Full screen'} onClick={toggleFullscreen} className="rounded p-1.5 hover:bg-slate-700">{props.isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}</button>
+  return <div className={`relative h-full w-full ${props.isFullscreen ? 'bg-bg' : ''}`}>
+    <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-md border border-border bg-surface/90 p-1 text-text shadow backdrop-blur">
+      <select aria-label="Graph layout" value={layoutMode} onChange={(event) => setLayoutMode(event.target.value as LineageLayoutMode)} className="rounded border border-border bg-surface px-2 py-1 text-[11px] text-text"><option value="hierarchical">Hierarchical</option><option value="star">Star</option><option value="snowflake">Snowflake</option></select>
+      <button aria-label="Zoom in" onClick={() => reactFlow.zoomIn()} className="rounded p-1.5 hover:bg-surface-muted"><ZoomIn size={15} /></button>
+      <button aria-label="Zoom out" onClick={() => reactFlow.zoomOut()} className="rounded p-1.5 hover:bg-surface-muted"><ZoomOut size={15} /></button>
+      <button aria-label="Fit graph" onClick={() => reactFlow.fitView({ padding: 0.18, duration: 250 })} className="rounded p-1.5 hover:bg-surface-muted"><ScanSearch size={15} /></button>
+      <button aria-label={props.isFullscreen ? 'Exit full screen' : 'Full screen'} onClick={toggleFullscreen} className="rounded p-1.5 hover:bg-surface-muted">{props.isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}</button>
     </div>
     <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView onNodeClick={(_, node) => props.onNodeClick(node.data)} minZoom={0.25} maxZoom={2.5} proOptions={{ hideAttribution: true }}>
       <Background color="#1f2937" gap={32} size={1} /><Controls showInteractive={false} /><MiniMap nodeColor={(node) => String((node.data as FlowNodeData)?.color?.stroke || '#38bdf8')} pannable zoomable />

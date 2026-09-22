@@ -3,20 +3,20 @@ interface StatusBadgeProps {
 }
 
 const statusColors: Record<string, string> = {
-  success: 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/35',
-  succeeded: 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/35',
-  error: 'bg-rose-500/16 text-rose-300 border border-rose-400/40',
-  fail: 'bg-rose-500/16 text-rose-300 border border-rose-400/40',
-  failure: 'bg-rose-500/16 text-rose-300 border border-rose-400/40',
-  failed: 'bg-rose-500/16 text-rose-300 border border-rose-400/40',
-  running: 'bg-sky-500/16 text-sky-300 border border-sky-400/38',
-  in_progress: 'bg-sky-500/16 text-sky-300 border border-sky-400/38',
-  queued: 'bg-cyan-500/14 text-cyan-300 border border-cyan-400/34',
-  pending: 'bg-cyan-500/14 text-cyan-300 border border-cyan-400/34',
-  cancelled: 'bg-slate-500/16 text-muted border border-border',
-  skipped: 'bg-slate-500/16 text-muted border border-border',
-  active: 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/35',
-  paused: 'bg-amber-500/16 text-amber-300 border border-amber-400/35',
+  success: 'bg-status-success/15 text-status-success border border-status-success/35',
+  succeeded: 'bg-status-success/15 text-status-success border border-status-success/35',
+  error: 'bg-status-danger/15 text-status-danger border border-status-danger/35',
+  fail: 'bg-status-danger/15 text-status-danger border border-status-danger/35',
+  failure: 'bg-status-danger/15 text-status-danger border border-status-danger/35',
+  failed: 'bg-status-danger/15 text-status-danger border border-status-danger/35',
+  running: 'bg-status-info/15 text-status-info border border-status-info/35',
+  in_progress: 'bg-status-info/15 text-status-info border border-status-info/35',
+  queued: 'bg-status-info/15 text-status-info border border-status-info/35',
+  pending: 'bg-status-info/15 text-status-info border border-status-info/35',
+  cancelled: 'bg-surface-muted text-muted border border-border',
+  skipped: 'bg-surface-muted text-muted border border-border',
+  active: 'bg-status-success/15 text-status-success border border-status-success/35',
+  paused: 'bg-status-warning/15 text-status-warning border border-status-warning/35',
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {
