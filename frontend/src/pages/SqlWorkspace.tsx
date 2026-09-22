@@ -110,45 +110,13 @@ function SqlWorkspacePage() {
   const modelOptions = state.selectedModelOptions.map((model) => ({ id: model.id, name: model.name }))
 
   return (
-    <div className="space-y-2">
-      <div>
-        <div className="mt-2 flex flex-wrap gap-1">
-          <button
-            type="button"
-            className="panel-gradient-subtle rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel/70"
-            onClick={() => state.openAiCopilot('explain')}
-          >
-            AI Explain SQL
-          </button>
-          <button
-            type="button"
-            className="panel-gradient-subtle rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel/70"
-            onClick={() => state.openAiCopilot('generate')}
-          >
-            AI Generate SQL
-          </button>
-          <button
-            type="button"
-            className="panel-gradient-subtle rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel/70"
-            onClick={() => state.openAiCopilot('optimize')}
-          >
-            AI Optimize SQL
-          </button>
-          <button
-            type="button"
-            className="panel-gradient-subtle rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel/70"
-            onClick={() => state.openAiCopilot('fix')}
-          >
-            AI Fix SQL
-          </button>
-        </div>
-      </div>
-
+    <div className="h-full flex flex-col flex-1">
       <div
         ref={workbenchRef}
-        className="sqlwb-root panel-gradient"
+        className="sqlwb-root panel-gradient flex-1"
         data-testid="sql-workbench-root"
         data-fullscreen={isFullscreen ? 'true' : 'false'}
+        data-theme={state.editorTheme}
       >
         <WorkbenchToolbar
           environmentId={state.environmentId}

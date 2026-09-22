@@ -6,11 +6,11 @@
   --sqlwb-border: #3a434d;
   --sqlwb-border-soft: #303844;
   --sqlwb-text: #e4e9ef;
-  --sqlwb-muted: #9eaab8;
+  --sqlwb-muted: #b0c0d0;
   --sqlwb-accent: #4f8cc9;
   --sqlwb-accent-2: #6ba4de;
-  --sqlwb-danger: #da6f6f;
-  --sqlwb-warning: #d8b06a;
+  --sqlwb-danger: #f87171;
+  --sqlwb-warning: #fbbf24;
   --sqlwb-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
   --sqlwb-sans: 'IBM Plex Sans', 'Segoe UI', Tahoma, sans-serif;
 
@@ -21,8 +21,25 @@
   border-radius: 10px;
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 180px);
+  min-height: calc(100vh - 120px);
+  height: 100%;
   overflow: hidden;
+}
+
+.sqlwb-root[data-theme="light"] {
+  --sqlwb-bg: #ffffff;
+  --sqlwb-bg-muted: #f1f5f9;
+  --sqlwb-panel: #ffffff;
+  --sqlwb-panel-2: #e2e8f0;
+  --sqlwb-border: #cbd5e1;
+  --sqlwb-border-soft: #e2e8f0;
+  --sqlwb-text: #0f172a;
+  --sqlwb-muted: #475569;
+  --sqlwb-accent: #0284c7;
+  --sqlwb-accent-2: #0369a1;
+  --sqlwb-danger: #b91c1c;
+  --sqlwb-warning: #b45309;
+  background: #f8fafc;
 }
 
 .sqlwb-root:fullscreen,
@@ -38,10 +55,14 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--sqlwb-border);
   background: linear-gradient(180deg, #303945 0%, #27303a 100%);
   flex-wrap: wrap;
+}
+
+.sqlwb-root[data-theme="light"] .sqlwb-toolbar {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 .sqlwb-toolbar-group {
@@ -54,6 +75,7 @@
 .sqlwb-toolbar-label {
   color: var(--sqlwb-muted);
   font-size: 12px;
+  font-weight: 500;
 }
 
 .sqlwb-select,
@@ -71,24 +93,44 @@
   font-size: 12px;
 }
 
+.sqlwb-root[data-theme="light"] .sqlwb-select,
+.sqlwb-root[data-theme="light"] .sqlwb-form-field select,
+.sqlwb-root[data-theme="light"] .sqlwb-form-field input,
+.sqlwb-root[data-theme="light"] .sqlwb-history-filters select,
+.sqlwb-root[data-theme="light"] .sqlwb-history-filters input,
+.sqlwb-root[data-theme="light"] .sqlwb-file-actions input {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.sqlwb-select::placeholder,
+.sqlwb-form-field input::placeholder,
+.sqlwb-history-filters input::placeholder,
+.sqlwb-file-actions input::placeholder {
+  color: var(--sqlwb-muted);
+  opacity: 1;
+}
+
 .sqlwb-btn {
   height: 30px;
   border-radius: 4px;
   border: 1px solid transparent;
   font-size: 12px;
+  font-weight: 500;
   padding: 0 10px;
   cursor: pointer;
   font-family: var(--sqlwb-sans);
 }
 
 .sqlwb-btn:disabled {
-  opacity: 0.55;
+  color: #94a3b3;
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
 .sqlwb-btn-primary {
   background: linear-gradient(180deg, #5f97d2 0%, #3e79b6 100%);
-  color: #f4f7fb;
+  color: #ffffff;
   border-color: #2f5f90;
 }
 
@@ -96,6 +138,11 @@
   background: #2a323d;
   color: var(--sqlwb-text);
   border-color: var(--sqlwb-border);
+}
+
+.sqlwb-root[data-theme="light"] .sqlwb-btn-ghost {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .sqlwb-toggle {
@@ -111,20 +158,31 @@
   background: #2a323d;
   color: var(--sqlwb-muted);
   font-size: 12px;
+  font-weight: 500;
   padding: 0 10px;
   cursor: pointer;
 }
 
+.sqlwb-root[data-theme="light"] .sqlwb-toggle-btn {
+  background: #f1f5f9;
+  color: #475569;
+}
+
 .sqlwb-toggle-btn.is-active {
   background: #3a516b;
-  color: #edf5ff;
+  color: #ffffff;
+}
+
+.sqlwb-root[data-theme="light"] .sqlwb-toggle-btn.is-active {
+  background: #0284c7;
+  color: #ffffff;
 }
 
 .sqlwb-error-banner {
   margin: 8px 10px;
-  border: 1px solid #854f4f;
-  background: #47292c;
-  color: #ffd5d5;
+  border: 1px solid #991b1b;
+  background: #451a1a;
+  color: #fef2f2;
   border-radius: 4px;
   padding: 8px 10px;
   display: flex;
@@ -168,6 +226,10 @@
   background: #20262e;
 }
 
+.sqlwb-root[data-theme="light"] .sqlwb-center-pane {
+  background: #f8fafc;
+}
+
 .sqlwb-editor-zone {
   flex: 1;
   min-height: 220px;
@@ -204,6 +266,10 @@
   min-height: 36px;
 }
 
+.sqlwb-root[data-theme="light"] .sqlwb-editor-tabs {
+  background: #e2e8f0;
+}
+
 .sqlwb-editor-tab-list {
   display: flex;
   flex: 1;
@@ -218,21 +284,35 @@
   background: #2f3842;
 }
 
+.sqlwb-root[data-theme="light"] .sqlwb-editor-tab {
+  background: #cbd5e1;
+}
+
 .sqlwb-editor-tab.is-active {
   background: #1f252d;
+}
+
+.sqlwb-root[data-theme="light"] .sqlwb-editor-tab.is-active {
+  background: #ffffff;
 }
 
 .sqlwb-editor-tab-button {
   border: 0;
   background: transparent;
-  color: var(--sqlwb-text);
-  padding: 0 8px;
+  color: #f1f5f9;
+  padding: 0 10px;
   height: 36px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
   max-width: 220px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.sqlwb-root[data-theme="light"] .sqlwb-editor-tab-button {
+  color: #0f172a;
 }
 
 .sqlwb-editor-tab-title {
@@ -242,7 +322,7 @@
 }
 
 .sqlwb-editor-tab-dirty {
-  color: #ffcf7e;
+  color: #f59e0b;
   font-size: 10px;
 }
 
@@ -254,6 +334,17 @@
   width: 28px;
   height: 36px;
   cursor: pointer;
+  font-size: 14px;
+}
+
+.sqlwb-editor-tab-close:hover,
+.sqlwb-tab-plus:hover {
+  color: #ffffff;
+}
+
+.sqlwb-root[data-theme="light"] .sqlwb-editor-tab-close:hover,
+.sqlwb-root[data-theme="light"] .sqlwb-tab-plus:hover {
+  color: #0f172a;
 }
 
 .sqlwb-tab-plus {
@@ -272,8 +363,8 @@
   min-height: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 8px;
+  gap: 6px;
+  padding: 6px;
 }
 
 .sqlwb-single-editor {
@@ -281,12 +372,18 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 8px;
+  padding: 0;
+}
+
+.sqlwb-single-editor .sqlwb-editor-cm {
+  border: none;
+  border-radius: 0;
 }
 
 .sqlwb-editor-pane-section {
   display: flex;
   flex-direction: column;
+  flex: 1;
   min-height: 0;
 }
 
@@ -295,35 +392,52 @@
   justify-content: space-between;
   align-items: center;
   font-size: 11px;
+  font-weight: 600;
   color: var(--sqlwb-muted);
-  margin-bottom: 6px;
+  padding: 4px 8px;
 }
 
 .sqlwb-loading-text {
-  color: #8ebbe9;
+  color: #38bdf8;
 }
 
 .sqlwb-editor-cm {
   flex: 1;
-  min-height: 220px;
+  min-height: 0;
+  height: 100%;
   border: 1px solid var(--sqlwb-border);
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
   background: #1a2027;
+  display: flex;
+  flex-direction: column;
+}
+
+.sqlwb-root[data-theme="light"] .sqlwb-editor-cm {
+  background: #ffffff;
+}
+
+.sqlwb-editor-cm .cm-editor {
+  height: 100%;
+  flex: 1;
+}
+
+.sqlwb-editor-cm .cm-scroller {
+  overflow: auto;
+  flex: 1;
 }
 
 .sqlwb-hint {
-  margin-top: 6px;
   color: var(--sqlwb-muted);
   font-size: 11px;
 }
 
 .sqlwb-inline-error {
-  margin-top: 8px;
-  padding: 8px;
-  border: 1px solid #7f4c4c;
-  background: #412629;
-  color: #f6cece;
+  margin: 6px;
+  padding: 6px 10px;
+  border: 1px solid #991b1b;
+  background: #451a1a;
+  color: #fef2f2;
   border-radius: 4px;
   font-size: 12px;
 }
@@ -358,7 +472,7 @@
   font-weight: 600;
   letter-spacing: 0.2px;
   text-transform: uppercase;
-  color: #cdd8e3;
+  color: var(--sqlwb-text);
 }
 
 .sqlwb-tree-wrap {
@@ -394,7 +508,7 @@
 .sqlwb-link {
   border: 0;
   background: none;
-  color: #8dbbe9;
+  color: #38bdf8;
   cursor: pointer;
   font-size: 12px;
   padding: 0;
@@ -416,10 +530,11 @@
 
 .sqlwb-schema-name {
   font-size: 11px;
-  color: #b8c5d3;
+  color: var(--sqlwb-muted);
   text-transform: uppercase;
   letter-spacing: 0.2px;
   margin-bottom: 4px;
+  font-weight: 600;
 }
 
 .sqlwb-schema-block ul {
@@ -459,6 +574,10 @@
   background: #2b333d;
 }
 
+.sqlwb-root[data-theme="light"] .sqlwb-bottom-tabs {
+  background: #e2e8f0;
+}
+
 .sqlwb-bottom-tab {
   border: 0;
   background: transparent;
@@ -466,12 +585,17 @@
   padding: 8px 12px;
   cursor: pointer;
   font-size: 12px;
+  font-weight: 500;
 }
 
 .sqlwb-bottom-tab.is-active {
   color: var(--sqlwb-text);
   background: #1f252d;
   border-bottom: 2px solid var(--sqlwb-accent-2);
+}
+
+.sqlwb-root[data-theme="light"] .sqlwb-bottom-tab.is-active {
+  background: #ffffff;
 }
 
 .sqlwb-bottom-content {
@@ -500,7 +624,7 @@
 }
 
 .sqlwb-result-tab.is-active {
-  color: var(--sqlwb-text);
+  color: #ffffff;
   border-color: var(--sqlwb-accent);
   background: #334a63;
 }
@@ -518,6 +642,7 @@
 .sqlwb-warning-text {
   color: var(--sqlwb-warning);
   font-size: 11px;
+  font-weight: 600;
 }
 
 .sqlwb-pagination {
@@ -535,7 +660,12 @@
 }
 
 .sqlwb-null {
-  color: #94a4b5;
+  color: #a8b8c8;
+  font-style: italic;
+}
+
+.sqlwb-root[data-theme="light"] .sqlwb-null {
+  color: #64748b;
 }
 
 .sqlwb-table-wrap {
@@ -561,7 +691,13 @@
 
 .sqlwb-compact-table th {
   background: #303844;
-  color: #c4d0dc;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.sqlwb-root[data-theme="light"] .sqlwb-compact-table th {
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 .sqlwb-mono,
@@ -570,9 +706,10 @@
 }
 
 .sqlwb-model-chip {
-  color: #8dbbe9;
+  color: #38bdf8;
   font-size: 10px;
   text-transform: uppercase;
+  font-weight: 600;
 }
 
 .sqlwb-history-filters {
@@ -620,11 +757,11 @@
 }
 
 .sqlwb-output-row.level-error {
-  border-color: #6c4141;
+  border-color: #991b1b;
 }
 
 .sqlwb-output-row.level-warning {
-  border-color: #6d5a38;
+  border-color: #b45309;
 }
 
 .sqlwb-output-level {
@@ -648,6 +785,10 @@
   white-space: nowrap;
 }
 
+.sqlwb-root[data-theme="light"] .sqlwb-statusbar {
+  background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
 .sqlwb-status-pill {
   border: 1px solid var(--sqlwb-border);
   border-radius: 999px;
@@ -655,15 +796,15 @@
 }
 
 .sqlwb-status-pill.is-running {
-  color: #d6ecff;
-  border-color: #4b7cae;
-  background: #2d4965;
+  color: #e0f2fe;
+  border-color: #0284c7;
+  background: #1e3a8a;
 }
 
 .sqlwb-status-pill.is-idle {
-  color: #cad5e2;
-  border-color: #4a5562;
-  background: #2c3641;
+  color: #e2e8f0;
+  border-color: #475569;
+  background: #334155;
 }
 
 @media (max-width: 1280px) {

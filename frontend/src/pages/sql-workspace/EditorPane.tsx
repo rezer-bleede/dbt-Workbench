@@ -66,9 +66,6 @@ export const EditorPane = ({ activeTab, editorTheme, completionSource, onChange 
 
   return (
     <div className="sqlwb-single-editor">
-      <div className="sqlwb-editor-pane-header">
-        <span>{activeTab.sourceFilePath ? `Editing: ${activeTab.sourceFilePath}` : 'SQL editor'}</span>
-      </div>
       <div className="sqlwb-editor-cm">
         <CodeMirror
           value={activeTab.sqlText}
@@ -80,7 +77,7 @@ export const EditorPane = ({ activeTab, editorTheme, completionSource, onChange 
           editable={!activeTab.isReadonly}
         />
       </div>
-      {activeTab.isReadonly && <div className="sqlwb-hint">This SQL buffer is read-only.</div>}
+      {activeTab.isReadonly && <div className="sqlwb-hint px-2 py-1">This SQL buffer is read-only.</div>}
     </div>
   )
 }
