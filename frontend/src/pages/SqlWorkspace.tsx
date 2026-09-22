@@ -111,39 +111,6 @@ function SqlWorkspacePage() {
 
   return (
     <div className="space-y-2">
-      <div>
-        <div className="mt-2 flex flex-wrap gap-1">
-          <button
-            type="button"
-            className="panel-gradient-subtle rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel/70"
-            onClick={() => state.openAiCopilot('explain')}
-          >
-            AI Explain SQL
-          </button>
-          <button
-            type="button"
-            className="panel-gradient-subtle rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel/70"
-            onClick={() => state.openAiCopilot('generate')}
-          >
-            AI Generate SQL
-          </button>
-          <button
-            type="button"
-            className="panel-gradient-subtle rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel/70"
-            onClick={() => state.openAiCopilot('optimize')}
-          >
-            AI Optimize SQL
-          </button>
-          <button
-            type="button"
-            className="panel-gradient-subtle rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel/70"
-            onClick={() => state.openAiCopilot('fix')}
-          >
-            AI Fix SQL
-          </button>
-        </div>
-      </div>
-
       <div
         ref={workbenchRef}
         className="sqlwb-root panel-gradient"
