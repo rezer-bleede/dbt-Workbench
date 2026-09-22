@@ -367,13 +367,13 @@ export default function VersionControlPage() {
           </div>
 
           {connectSuccess && (
-            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded text-sm text-green-400">
+            <div className="mb-4 p-3 bg-status-success/15 border border-status-success/35 rounded text-sm text-status-success">
               {connectSuccess}
             </div>
           )}
 
           {connectError && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded text-sm text-red-400">
+            <div className="mb-4 p-3 bg-status-danger/15 border border-status-danger/35 rounded text-sm text-status-danger">
               {connectError}
             </div>
           )}
@@ -509,7 +509,7 @@ export default function VersionControlPage() {
               )}
 
               {projectsError && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-sm text-red-400">
+                <div className="bg-status-danger/15 border border-status-danger/35 rounded-lg p-4 text-sm text-status-danger">
                   {projectsError}
                 </div>
               )}
@@ -629,8 +629,8 @@ export default function VersionControlPage() {
                     <button type="submit" className="btn btn-sm w-full" disabled={actionsDisabled}>
                       Create file
                     </button>
-                    {fileSaveError && <div className="text-xs text-red-400">{fileSaveError}</div>}
-                    {fileSaveStatus && <div className="text-xs text-green-400">{fileSaveStatus}</div>}
+                    {fileSaveError && <div className="text-xs text-status-danger font-semibold">{fileSaveError}</div>}
+                    {fileSaveStatus && <div className="text-xs text-status-success font-semibold">{fileSaveStatus}</div>}
                   </form>
                 </div>
               </>

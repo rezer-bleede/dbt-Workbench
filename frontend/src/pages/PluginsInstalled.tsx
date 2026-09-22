@@ -91,7 +91,7 @@ export default function PluginsInstalled() {
       </div>
 
       {error && (
-        <div className="rounded-md border border-rose-400/40 bg-rose-500/12 p-4 text-sm text-rose-300">
+        <div className="rounded-md border border-status-danger/35 bg-status-danger/15 p-4 text-sm text-status-danger">
           {error}
         </div>
       )}
@@ -120,11 +120,11 @@ export default function PluginsInstalled() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">{adapter.package}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     {adapter.installed ? (
-                      <span className="inline-flex rounded-full border border-emerald-400/35 bg-emerald-500/14 px-2 text-xs font-semibold leading-5 text-emerald-300">
+                      <span className="inline-flex rounded-full border border-status-success/35 bg-status-success/15 px-2 text-xs font-semibold leading-5 text-status-success">
                         Installed
                       </span>
                     ) : adapter.required_by_profile ? (
-                      <span className="inline-flex rounded-full border border-amber-400/35 bg-amber-500/14 px-2 text-xs font-semibold leading-5 text-amber-300">
+                      <span className="inline-flex rounded-full border border-status-warning/35 bg-status-warning/15 px-2 text-xs font-semibold leading-5 text-status-warning">
                         Missing
                       </span>
                     ) : (
@@ -188,7 +188,7 @@ export default function PluginsInstalled() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text">{plugin.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">{plugin.version}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${plugin.enabled ? 'border border-emerald-400/35 bg-emerald-500/14 text-emerald-300' : 'border border-rose-400/35 bg-rose-500/14 text-rose-300'
+                    <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${plugin.enabled ? 'border border-status-success/35 bg-status-success/15 text-status-success' : 'border border-status-danger/35 bg-status-danger/15 text-status-danger'
                       }`}>
                       {plugin.enabled ? 'Enabled' : 'Disabled'}
                     </span>

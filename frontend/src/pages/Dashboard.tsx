@@ -52,7 +52,7 @@ function DashboardPage() {
         <div className="flex items-center space-x-3">
           <div className="text-sm text-muted">Projects: {workspaces.length}</div>
           {health && (
-            <span className={`rounded border px-2 py-1 text-xs font-medium ${health.status === 'ok' ? 'border-emerald-400/35 bg-emerald-500/14 text-emerald-300' : 'border-rose-400/35 bg-rose-500/14 text-rose-300'}`}>
+            <span className={`rounded border px-2 py-1 text-xs font-semibold ${health.status === 'ok' ? 'border-status-success/35 bg-status-success/15 text-status-success' : 'border-status-danger/35 bg-status-danger/15 text-status-danger'}`}>
               System: {health.status}
             </span>
           )}
@@ -64,7 +64,7 @@ function DashboardPage() {
         <Card title="Sources">{modelStats['source'] || 0}</Card>
         <Card title="Tests">{modelStats['test'] || 0}</Card>
         <Card title="Latest Run">
-          <span className={`${lastRun?.status === 'succeeded' ? 'text-green-600' : lastRun?.status === 'failed' ? 'text-red-600' : 'text-gray-600'}`}>
+          <span className={`font-semibold ${lastRun?.status === 'succeeded' ? 'text-status-success' : lastRun?.status === 'failed' ? 'text-status-danger' : 'text-muted'}`}>
             {lastRun?.status || 'No runs yet'}
           </span>
         </Card>
@@ -124,9 +124,9 @@ function DashboardPage() {
                       ) : null}
                       <div className="relative flex space-x-3">
                         <div>
-                          <span className={`flex h-8 w-8 items-center justify-center rounded-full ring-8 ring-surface ${run.status === 'succeeded' ? 'bg-green-500' : run.status === 'failed' ? 'bg-red-500' : 'bg-slate-500'
+                          <span className={`flex h-8 w-8 items-center justify-center rounded-full ring-8 ring-surface ${run.status === 'succeeded' ? 'bg-status-success' : run.status === 'failed' ? 'bg-status-danger' : 'bg-surface-muted border border-border'
                             }`}>
-                            <span className="text-white text-xs">{run.status?.[0]?.toUpperCase()}</span>
+                            <span className="text-white font-bold text-xs drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">{run.status?.[0]?.toUpperCase()}</span>
                           </span>
                         </div>
                         <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
@@ -175,7 +175,7 @@ function DashboardPage() {
                 ].map((item) => (
                   <div key={item.label} className="flex justify-between text-sm">
                     <span className="text-muted">{item.label}</span>
-                    <span className={item.present ? 'text-emerald-300' : 'text-rose-300'}>
+                    <span className={`font-semibold ${item.present ? 'text-status-success' : 'text-status-danger'}`}>
                       {item.present ? 'Present' : 'Missing'}
                     </span>
                   </div>

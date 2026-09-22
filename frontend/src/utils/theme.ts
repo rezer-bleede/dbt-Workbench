@@ -410,7 +410,9 @@ export const buildThemeMode = (mode: ThemeMode, input: ThemeColors): ThemeResolv
   let secondaryActive = shiftLightness(colors.secondary, activeDelta)
   secondaryActive = adjustColorForContrast(secondaryActive, [colors.background, colors.surface], 3).color
 
-  const textMuted = shiftLightness(colors.text, mode === 'dark' ? -20 : 20)
+  const initialTextMuted = shiftLightness(colors.text, mode === 'dark' ? -20 : 20)
+  const textMuted = adjustColorForContrast(initialTextMuted, [colors.background, colors.surface], 4.5).color
+
   const bgMuted = shiftLightness(colors.background, mode === 'dark' ? 4 : -4)
   const surfaceMuted = shiftLightness(colors.surface, mode === 'dark' ? 4 : -4)
   const border = shiftLightness(colors.surface, mode === 'dark' ? 12 : -12)
@@ -430,6 +432,12 @@ export const buildThemeMode = (mode: ThemeMode, input: ThemeColors): ThemeResolv
     ring,
   }
 
+  // Define theme-safe high-contrast status colors (passing 4.5:1 against surface/background)
+  const successColor = mode === 'dark' ? '#4ade80' : '#15803d' // emerald-400 in dark, emerald-700 in light
+  const dangerColor = mode === 'dark' ? '#f87171' : '#b91c1c'  // red-400 in dark, red-700 in light
+  const warningColor = mode === 'dark' ? '#fbbf24' : '#b45309' // amber-400 in dark, amber-700 in light
+  const infoColor = mode === 'dark' ? '#38bdf8' : '#0369a1'    // sky-400 in dark, sky-700 in light
+
   const checks: ContrastCheck[] = []
   const pushCheck = (id: string, label: string, foreground: string, background: string, minRatio: number) => {
     const ratio = contrastRatio(foreground, background)
@@ -446,12 +454,18 @@ export const buildThemeMode = (mode: ThemeMode, input: ThemeColors): ThemeResolv
 
   pushCheck('text-bg', 'Text on background', colors.text, colors.background, 4.5)
   pushCheck('text-surface', 'Text on surface', colors.text, colors.surface, 4.5)
+  pushCheck('text-muted-bg', 'Muted text on background', derived.text_muted, colors.background, 4.5)
+  pushCheck('text-muted-surface', 'Muted text on surface', derived.text_muted, colors.surface, 4.5)
   pushCheck('primary-bg', 'Primary on background', colors.primary, colors.background, 3)
   pushCheck('primary-surface', 'Primary on surface', colors.primary, colors.surface, 3)
   pushCheck('secondary-bg', 'Secondary on background', colors.secondary, colors.background, 3)
   pushCheck('secondary-surface', 'Secondary on surface', colors.secondary, colors.surface, 3)
   pushCheck('primary-foreground', 'Primary text', derived.primary_foreground, colors.primary, 4.5)
   pushCheck('secondary-foreground', 'Secondary text', derived.secondary_foreground, colors.secondary, 4.5)
+  pushCheck('status-success-bg', 'Success status on background', successColor, colors.background, 4.5)
+  pushCheck('status-danger-bg', 'Danger status on background', dangerColor, colors.background, 4.5)
+  pushCheck('status-warning-bg', 'Warning status on background', warningColor, colors.background, 4.5)
+  pushCheck('status-info-bg', 'Info status on background', infoColor, colors.background, 4.5)
 
   const violations = checks.filter((check) => !check.pass)
 
@@ -493,6 +507,10 @@ export const buildThemeMode = (mode: ThemeMode, input: ThemeColors): ThemeResolv
     '--color-text-muted': toCss(derived.text_muted),
     '--color-border': toCss(derived.border),
     '--color-ring': toCss(derived.ring),
+    '--color-status-success': toCss(successColor),
+    '--color-status-danger': toCss(dangerColor),
+    '--color-status-warning': toCss(warningColor),
+    '--color-status-info': toCss(infoColor),
     '--fx-shell-base-top': toCss(shellBaseTop),
     '--fx-shell-base-bottom': toCss(shellBaseBottom),
     '--fx-shell-glow-primary': toCss(shellGlowPrimary),
