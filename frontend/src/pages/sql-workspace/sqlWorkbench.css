@@ -6,10 +6,10 @@
   --sqlwb-border: #3a434d;
   --sqlwb-border-soft: #303844;
   --sqlwb-text: #e4e9ef;
-  --sqlwb-muted: #9eaab8;
+  --sqlwb-muted: #a4b3c6;
   --sqlwb-accent: #4f8cc9;
   --sqlwb-accent-2: #6ba4de;
-  --sqlwb-danger: #da6f6f;
+  --sqlwb-danger: #f87171;
   --sqlwb-warning: #d8b06a;
   --sqlwb-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
   --sqlwb-sans: 'IBM Plex Sans', 'Segoe UI', Tahoma, sans-serif;
@@ -71,6 +71,16 @@
   font-size: 12px;
 }
 
+.sqlwb-select::placeholder,
+.sqlwb-form-field select::placeholder,
+.sqlwb-form-field input::placeholder,
+.sqlwb-history-filters select::placeholder,
+.sqlwb-history-filters input::placeholder,
+.sqlwb-file-actions input::placeholder {
+  color: #a4b3c6;
+  opacity: 1;
+}
+
 .sqlwb-btn {
   height: 30px;
   border-radius: 4px;
@@ -87,9 +97,9 @@
 }
 
 .sqlwb-btn-primary {
-  background: linear-gradient(180deg, #5f97d2 0%, #3e79b6 100%);
-  color: #f4f7fb;
-  border-color: #2f5f90;
+  background: linear-gradient(180deg, #2b6cb0 0%, #1e4e80 100%);
+  color: #ffffff;
+  border-color: #183e66;
 }
 
 .sqlwb-btn-ghost {
@@ -358,7 +368,7 @@
   font-weight: 600;
   letter-spacing: 0.2px;
   text-transform: uppercase;
-  color: #cdd8e3;
+  color: #dce6f0;
 }
 
 .sqlwb-tree-wrap {
@@ -401,7 +411,7 @@
 }
 
 .sqlwb-link-danger {
-  color: var(--sqlwb-danger);
+  color: #fca5a5;
 }
 
 .sqlwb-schema-browser {
@@ -535,7 +545,7 @@
 }
 
 .sqlwb-null {
-  color: #94a4b5;
+  color: #a8b8c8;
 }
 
 .sqlwb-table-wrap {
@@ -560,8 +570,9 @@
 }
 
 .sqlwb-compact-table th {
-  background: #303844;
-  color: #c4d0dc;
+  background: #2a323d;
+  color: #dce6f0;
+  font-weight: 600;
 }
 
 .sqlwb-mono,
