@@ -49,16 +49,16 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
     const eventSource = ExecutionService.createLogStream(runId);
     eventSourceRef.current = eventSource;
 
-    eventSource.onmessage = (event) => {
-      if (event.type === 'log') {
-        try {
-          const logMessage: LogMessage = JSON.parse(event.data);
-          setLogs(prev => [...prev, logMessage.message]);
-        } catch (err) {
-          console.error('Failed to parse log message:', err);
-        }
+    const handleLog = (event: MessageEvent) => {
+      try {
+        const logMessage: LogMessage = JSON.parse(event.data);
+        setLogs(prev => [...prev, logMessage.message]);
+      } catch (err) {
+        console.error('Failed to parse log message:', err);
       }
     };
+
+    eventSource.addEventListener('log', handleLog as EventListener);
 
     eventSource.onerror = (event) => {
       console.error('Log stream error:', event);
@@ -73,6 +73,7 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
         // Stop polling if run is complete
         if (['succeeded', 'failed', 'cancelled'].includes(status.status)) {
           clearInterval(statusInterval);
+          eventSource.removeEventListener('log', handleLog as EventListener);
           eventSource.close();
         }
       } catch (err) {
@@ -83,6 +84,7 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
     return () => {
       clearInterval(statusInterval);
       if (eventSourceRef.current) {
+        eventSourceRef.current.removeEventListener('log', handleLog as EventListener);
         eventSourceRef.current.close();
       }
     };
