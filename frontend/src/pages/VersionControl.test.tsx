@@ -1,6 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 
 import VersionControlPage from './VersionControl'
@@ -56,15 +55,10 @@ describe('VersionControlPage', () => {
       has_conflicts: false,
     })
     mockedService.branches.mockResolvedValue([{ name: 'main', is_active: true }])
-    mockedService.files.mockResolvedValue([{ name: 'model.sql', path: 'models/model.sql', type: 'file', category: 'models' }])
     mockedService.history.mockResolvedValue([
       { commit_hash: 'abc1234', author: 'tester', message: 'init', timestamp: new Date().toISOString() },
     ])
     mockedService.audit.mockResolvedValue([])
-    mockedService.diff.mockResolvedValue([{ path: 'models/model.sql', diff: '' }])
-    mockedService.readFile.mockResolvedValue({ path: 'models/model.sql', content: 'select 1', readonly: false })
-    mockedService.writeFile.mockResolvedValue({ is_valid: true })
-    mockedService.createFile.mockResolvedValue({ is_valid: true })
     mockedService.getRepository.mockResolvedValue({
       id: 1,
       workspace_id: 1,
@@ -77,25 +71,12 @@ describe('VersionControlPage', () => {
     mockedWorkspace.listWorkspaces.mockResolvedValue([])
   })
 
-  it('renders git panels and file explorer', async () => {
+  it('renders git panels and project section', async () => {
     render(<VersionControlPage />)
 
-    await screen.findByRole('combobox')
-
-    expect(screen.getByText('Project Files')).toBeInTheDocument()
-    const filterInput = await screen.findByLabelText('Filter files')
-    const treeRoot = filterInput.closest('div')?.parentElement
-    expect(treeRoot).toBeTruthy()
-
-    const treeScope = within(treeRoot as HTMLElement)
-    await userEvent.click(treeScope.getByText('Expand all'))
-
-    await waitFor(() => {
-      const fileButton = treeScope.getAllByRole('button').find((button) =>
-        button.textContent?.includes('model.sql'),
-      )
-      expect(fileButton).toBeTruthy()
-    })
+    expect(await screen.findByRole('heading', { name: 'Projects' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Working Changes' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Repository' })).toBeInTheDocument()
   })
 
   it('shows branch metadata and recent history when repository is connected', async () => {
@@ -123,54 +104,5 @@ describe('VersionControlPage', () => {
 
     expect(await screen.findByText('Create or connect a project')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Project workspace name')).toBeInTheDocument()
-    expect(screen.getByText('Connect a repository to browse files')).toBeInTheDocument()
-  })
-
-  it('allows editing and saving a selected file', async () => {
-    render(<VersionControlPage />)
-
-    const filterInput = await screen.findByLabelText('Filter files')
-    const treeRoot = filterInput.closest('div')?.parentElement
-    expect(treeRoot).toBeTruthy()
-
-    const treeScope = within(treeRoot as HTMLElement)
-    await userEvent.click(treeScope.getByText('Expand all'))
-
-    await waitFor(() => {
-      const fileButton = treeScope.getAllByRole('button').find((button) =>
-        button.textContent?.includes('model.sql'),
-      )
-      expect(fileButton).toBeTruthy()
-    })
-
-    const fileButton = treeScope.getAllByRole('button').find((button) =>
-      button.textContent?.includes('model.sql'),
-    )
-    expect(fileButton).toBeTruthy()
-    await userEvent.click(fileButton as HTMLElement)
-
-    const editor = await screen.findByDisplayValue('select 1')
-    await userEvent.type(editor, ' from source')
-
-    const saveButton = await screen.findByRole('button', { name: 'Save File' })
-    await userEvent.click(saveButton)
-
-    await waitFor(() => expect(mockedService.writeFile).toHaveBeenCalled())
-    expect(mockedService.writeFile.mock.calls[0][0].path).toBe('models/model.sql')
-  })
-
-  it('creates a new file from project panel', async () => {
-    render(<VersionControlPage />)
-
-    const pathInput = await screen.findByPlaceholderText('models/new_file.sql')
-    const [createContent] = screen.getAllByPlaceholderText('File contents')
-    await userEvent.type(pathInput, 'models/new_model.sql')
-    await userEvent.type(createContent, 'select 1')
-
-    const createButton = screen.getByRole('button', { name: 'Create file' })
-    await userEvent.click(createButton)
-
-    await waitFor(() => expect(mockedService.createFile).toHaveBeenCalled())
-    expect(mockedService.createFile.mock.calls[0][0]).toMatchObject({ path: 'models/new_model.sql', content: 'select 1' })
   })
 })

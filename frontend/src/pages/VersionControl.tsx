@@ -1,11 +1,9 @@
-import React, { FormEvent, useEffect, useMemo, useState } from 'react'
+import React, { FormEvent, useEffect, useState } from 'react'
 
-import { FileTree } from '../components/FileTree'
 import { ProjectCard } from '../components/ProjectCard'
 import { RepoStatusCard } from '../components/RepoStatusCard'
 import { BranchSelector } from '../components/BranchSelector'
 import { CommitTimeline } from '../components/CommitTimeline'
-import { FileEditorPanel } from '../components/FileEditorPanel'
 import { AuditLogList } from '../components/AuditLogList'
 import { GitChanges } from '../components/GitChanges'
 
@@ -14,9 +12,6 @@ import { GitService } from '../services/gitService'
 import {
   AuditRecord,
   GitBranch,
-  GitDiff,
-  GitFileContent,
-  GitFileNode,
   GitHistoryEntry,
   GitRepository,
   GitStatus,
@@ -50,17 +45,6 @@ export default function VersionControlPage() {
 
   const [status, setStatus] = useState<GitStatus | null>(null)
   const [branches, setBranches] = useState<GitBranch[]>([])
-  const [files, setFiles] = useState<GitFileNode[]>([])
-  const [selectedPath, setSelectedPath] = useState<string>('')
-  const [fileContent, setFileContent] = useState<GitFileContent | null>(null)
-  const [fileEditContent, setFileEditContent] = useState('')
-  const [fileSaveStatus, setFileSaveStatus] = useState<string | null>(null)
-  const [fileSaveError, setFileSaveError] = useState<string | null>(null)
-  const [newFilePath, setNewFilePath] = useState('')
-  const [newFileContent, setNewFileContent] = useState('')
-  const [newFileMessage, setNewFileMessage] = useState('')
-  const [commitMessage, setCommitMessage] = useState('')
-  const [diffs, setDiffs] = useState<GitDiff[]>([])
   const [history, setHistory] = useState<GitHistoryEntry[]>([])
   const [auditRecords, setAuditRecords] = useState<AuditRecord[]>([])
   const [loading, setLoading] = useState(false)
@@ -96,20 +80,16 @@ export default function VersionControlPage() {
         setShowCloneForm(true)
         setStatus(newStatus)
         setBranches([])
-        setFiles([])
         setHistory([])
-        setDiffs([])
         return
       }
-      const [branchList, fileList, historyEntries, audits] = await Promise.all([
+      const [branchList, historyEntries, audits] = await Promise.all([
         GitService.branches(),
-        GitService.files(),
         GitService.history(),
         GitService.audit(),
       ])
       setStatus(newStatus)
       setBranches(branchList)
-      setFiles(fileList)
       setHistory(historyEntries)
       setAuditRecords(audits)
       setRepoMissing(false)
@@ -119,9 +99,7 @@ export default function VersionControlPage() {
         setRepoMissing(true)
         setStatus(null)
         setBranches([])
-        setFiles([])
         setHistory([])
-        setDiffs([])
       } else {
         console.error('Failed to load git status', err)
       }
@@ -147,11 +125,7 @@ export default function VersionControlPage() {
   useEffect(() => {
     setStatus(null)
     setBranches([])
-    setFiles([])
     setHistory([])
-    setDiffs([])
-    setSelectedPath('')
-    setFileContent(null)
     setRepoMissing(false)
     setRepository(null)
     setConnectError(null)
@@ -171,67 +145,10 @@ export default function VersionControlPage() {
     loadProjects().catch((err) => console.error(err))
   }, [activeWorkspace?.id])
 
-  const loadFile = async (path: string) => {
-    const content = await GitService.readFile(path)
-    setSelectedPath(path)
-    setFileContent(content)
-    setFileEditContent(content.content)
-    setFileSaveError(null)
-    setFileSaveStatus(null)
-    const diff = await GitService.diff(path)
-    setDiffs(diff)
-  }
-
-  const handleCommit = async () => {
-    if (!commitMessage.trim()) return
-    await GitService.commit(commitMessage)
-    setCommitMessage('')
-    await reload()
-  }
-
   const handleBranchChange = async (branchName: string) => {
     await GitService.switchBranch(branchName)
     setBranch(branchName)
     await reload()
-  }
-
-  const handleSaveFile = async () => {
-    if (!selectedPath || !fileContent || fileContent.readonly) return
-    setFileSaveError(null)
-    setFileSaveStatus(null)
-    try {
-      await GitService.writeFile({ path: selectedPath, content: fileEditContent, message: commitMessage || undefined })
-      const updated = await GitService.readFile(selectedPath)
-      setFileContent(updated)
-      setFileEditContent(updated.content)
-      const diff = await GitService.diff(selectedPath)
-      setDiffs(diff)
-      setFileSaveStatus('File saved successfully.')
-    } catch (err: any) {
-      const message = err?.response?.data?.detail?.message || err?.message || 'Failed to save file'
-      setFileSaveError(message)
-    }
-  }
-
-  const handleCreateFile = async (event: FormEvent) => {
-    event.preventDefault()
-    if (!newFilePath.trim()) {
-      setFileSaveError('Provide a file path before creating a file.')
-      return
-    }
-    setFileSaveError(null)
-    setFileSaveStatus(null)
-    try {
-      await GitService.createFile({ path: newFilePath, content: newFileContent, message: newFileMessage || undefined })
-      setNewFilePath('')
-      setNewFileContent('')
-      setNewFileMessage('')
-      await reload()
-      setFileSaveStatus('File created successfully.')
-    } catch (err: any) {
-      const message = err?.response?.data?.detail?.message || err?.message || 'Failed to create file'
-      setFileSaveError(message)
-    }
   }
 
   const handleProjectCreate = async (event: FormEvent) => {
@@ -333,6 +250,7 @@ export default function VersionControlPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <h1 className="text-xl font-bold text-text">Version Control</h1>
           <p className="text-sm text-muted mt-1">
             Projects & Version Control: Manage projects, git operations, and version control
           </p>
@@ -576,81 +494,6 @@ export default function VersionControlPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <h2 className="text-lg font-semibold text-text mb-4">Project Files</h2>
-            <p className="text-sm text-muted mb-4">Browse and manage dbt files</p>
-
-            {repoMissing ? (
-              <div className="panel-gradient-subtle rounded-lg p-8 text-center">
-                <svg className="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <div className="text-muted text-sm">Connect a repository to browse files</div>
-              </div>
-            ) : (
-              <>
-                <div className="panel-gradient-subtle rounded-lg p-4">
-                  <FileTree
-                    nodes={files}
-                    onSelect={loadFile}
-                    selectedPath={selectedPath}
-                    storageKey={`version-control-${workspaceId ?? 'none'}`}
-                    emptyMessage="No project files found."
-                  />
-                </div>
-
-                <div className="mt-4 panel-gradient-subtle rounded-lg p-4">
-                  <h3 className="text-text font-semibold mb-3">Create File</h3>
-                  <form className="space-y-3" onSubmit={handleCreateFile}>
-                    <input
-                      type="text"
-                      className="panel-input w-full rounded px-3 py-2 text-sm"
-                      placeholder="models/new_file.sql"
-                      value={newFilePath}
-                      onChange={(e) => setNewFilePath(e.target.value)}
-                    />
-                    <textarea
-                      className="panel-input min-h-[120px] w-full resize-y rounded px-3 py-2 text-xs font-mono"
-                      placeholder="File contents"
-                      value={newFileContent}
-                      onChange={(e) => setNewFileContent(e.target.value)}
-                    />
-                    <input
-                      type="text"
-                      className="panel-input w-full rounded px-3 py-2 text-sm"
-                      placeholder="Commit message (optional)"
-                      value={newFileMessage}
-                      onChange={(e) => setNewFileMessage(e.target.value)}
-                    />
-                    <button type="submit" className="btn btn-sm w-full" disabled={actionsDisabled}>
-                      Create file
-                    </button>
-                    {fileSaveError && <div className="text-xs text-status-danger font-semibold">{fileSaveError}</div>}
-                    {fileSaveStatus && <div className="text-xs text-status-success font-semibold">{fileSaveStatus}</div>}
-                  </form>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="lg:col-span-2">
-            <FileEditorPanel
-              selectedPath={selectedPath}
-              fileContent={fileContent}
-              fileEditContent={fileEditContent}
-              onFileEditContentChange={setFileEditContent}
-              diffs={diffs}
-              commitMessage={commitMessage}
-              onCommitMessageChange={setCommitMessage}
-              onSave={handleSaveFile}
-              onCommit={handleCommit}
-              loading={loading}
-              disabled={actionsDisabled}
-            />
           </div>
         </div>
 
