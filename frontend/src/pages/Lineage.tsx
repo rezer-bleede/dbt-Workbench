@@ -383,9 +383,11 @@ function LineagePage() {
     SchedulerService.listEnvironments()
       .then((envs) => {
         setEnvironments(envs)
-        if (!rowEnvironmentId && envs.length > 0) {
-          setRowEnvironmentId(envs[0].id)
-        }
+        setRowEnvironmentId((prev) => {
+          const exists = typeof prev === 'number' && envs.some((env) => env.id === prev)
+          if (exists) return prev
+          return envs.length > 0 ? envs[0].id : ''
+        })
       })
       .catch(() => {
         const now = new Date().toISOString()

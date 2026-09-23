@@ -192,4 +192,27 @@ describe('useSqlWorkbenchState', () => {
 
     expect(mockedSqlService.executeQuery).not.toHaveBeenCalled()
   })
+
+  it('resets stale environmentId to available environment fallback', async () => {
+    // Persist a stale environment ID (99)
+    window.localStorage.setItem(
+      'dbt_sql_workbench_state_demo',
+      JSON.stringify({
+        version: 2,
+        tabs: [],
+        activeTabId: 'tab-1',
+        environmentId: 99,
+        editorTheme: 'dark',
+        activeBottomPanel: 'results',
+        layout: { leftPaneWidth: 280, bottomPaneHeight: 280, isEditorFocused: false },
+      })
+    )
+
+    let latestState: any = null
+    render(<HookHarness onState={(state) => (latestState = state)} />)
+
+    await waitFor(() => {
+      expect(latestState.environmentId).toBe(1)
+    })
+  })
 })
