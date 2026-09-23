@@ -18,6 +18,7 @@ import LoginPage from './pages/Login'
 import PluginsInstalledPage from './pages/PluginsInstalled'
 import PluginMarketplacePage from './pages/PluginMarketplace'
 import VersionControlPage from './pages/VersionControl'
+import FileEditorPage from './pages/FileEditor'
 import { useAuth } from './context/AuthContext'
 import { AiProvider } from './context/AiContext'
 import { AiAssistantPanel } from './components/ai/AiAssistantPanel'
@@ -80,6 +81,7 @@ function App() {
               <Route path="/plugins/installed" element={<PluginsInstalledPage />} />
               <Route path="/plugins/marketplace" element={<PluginMarketplacePage />} />
               <Route path="/version-control" element={<VersionControlPage />} />
+              <Route path="/file-editor" element={<FileEditorPage />} />
               <Route path="/docs" element={<DocsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/login" element={<LoginPage />} />
