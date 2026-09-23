@@ -416,8 +416,12 @@ export const useSqlWorkbenchState = () => {
     try {
       const envs = await SchedulerService.listEnvironments()
       setEnvironments(envs)
-      if (!environmentIdRef.current && envs.length > 0) {
+      const currentEnvId = environmentIdRef.current
+      const exists = typeof currentEnvId === 'number' && envs.some((env) => env.id === currentEnvId)
+      if (!exists && envs.length > 0) {
         setEnvironmentId(envs[0].id)
+      } else if (!exists && envs.length === 0) {
+        setEnvironmentId('')
       }
     } catch (err) {
       console.error('Failed to load environments', err)
@@ -433,7 +437,9 @@ export const useSqlWorkbenchState = () => {
         },
       ]
       setEnvironments(fallback)
-      if (!environmentIdRef.current) {
+      const currentEnvId = environmentIdRef.current
+      const exists = typeof currentEnvId === 'number' && fallback.some((env) => env.id === currentEnvId)
+      if (!exists) {
         setEnvironmentId(0)
       }
     }
@@ -938,11 +944,10 @@ export const useSqlWorkbenchState = () => {
       activeTab?.mode === 'model' &&
       activeTab.selectedModelId &&
       !activeTab.isLoadingCompiled &&
-      !activeTab.compileError &&
       !alreadyLoadedForEnvironment
     ) {
       loadCompiledSqlForTab(activeTab.id, {
-        force: false,
+        force: true,
         hydrateSourceSql: true,
         modelId: activeTab.selectedModelId,
         environmentId: currentEnvironmentId,

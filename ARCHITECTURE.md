@@ -134,7 +134,7 @@ backend/app/
 | `workspaces` | Multi-tenant workspace isolation |
 | `users` | User accounts and credentials |
 | `user_workspaces` | User-workspace membership |
-| `environments` | dbt execution environments |
+| `environments` | dbt execution environments (binds connection_profile_reference, dbt_target_name, and JSON variables) |
 | `schedules` | Cron-based schedule definitions |
 | `scheduled_runs` | Schedule execution history (includes environment snapshot for profile/target) |
 | `runs` | dbt run records |

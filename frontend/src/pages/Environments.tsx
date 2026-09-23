@@ -15,6 +15,7 @@ function EnvironmentsPage() {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [selectedEnvironment, setSelectedEnvironment] = useState<Environment | null>(null);
   const [form, setForm] = useState<EnvironmentCreate | EnvironmentUpdate | null>(null);
+  const [variablesText, setVariablesText] = useState('{}');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,13 +61,16 @@ function EnvironmentsPage() {
 
   const handleCreateClick = () => {
     if (!isDeveloperOrAdmin) return;
+    const defaultProfile = profiles[0]?.name || 'test_project';
+    const defaultTarget = profiles[0]?.targets[0] || 'dev';
     setForm({
       name: '',
       description: '',
-      dbt_target_name: 'dev',
-      connection_profile_reference: 'test_project',
+      dbt_target_name: defaultTarget,
+      connection_profile_reference: defaultProfile,
       variables: {},
     });
+    setVariablesText('{}');
     setSelectedEnvironment(null);
     setMode('create');
     setError(null);
@@ -82,38 +86,60 @@ function EnvironmentsPage() {
       connection_profile_reference: env.connection_profile_reference || '',
       variables: env.variables || {},
     });
+    setVariablesText(JSON.stringify(env.variables || {}, null, 2));
     setMode('edit');
   };
 
   const handleFormChange = (field: keyof (EnvironmentCreate | EnvironmentUpdate), value: any) => {
-    if (form) {
-      setForm((prev: EnvironmentCreate | EnvironmentUpdate | null) => ({ ...prev!, [field]: value }));
+    if (!form) return;
 
-      // If profile changes, reset target or auto-select first available
-      if (field === 'connection_profile_reference') {
-        const selectedProfile = profiles.find((p: ProfileInfo) => p.name === value);
-        if (selectedProfile && selectedProfile.targets.length > 0) {
-          // Optional: default to first target
-          setForm((prev: EnvironmentCreate | EnvironmentUpdate | null) => ({ ...prev!, dbt_target_name: selectedProfile.targets[0] }));
-        } else {
-          setForm((prev: EnvironmentCreate | EnvironmentUpdate | null) => ({ ...prev!, dbt_target_name: '' }));
-        }
-      }
+    if (field === 'connection_profile_reference') {
+      const selectedProfile = profiles.find((p: ProfileInfo) => p.name === value);
+      const defaultTarget = selectedProfile && selectedProfile.targets.length > 0 ? selectedProfile.targets[0] : '';
+      setForm((prev: EnvironmentCreate | EnvironmentUpdate | null) => (prev ? {
+        ...prev,
+        connection_profile_reference: value,
+        dbt_target_name: defaultTarget,
+      } : null));
+    } else {
+      setForm((prev: EnvironmentCreate | EnvironmentUpdate | null) => (prev ? {
+        ...prev,
+        [field]: value,
+      } : null));
     }
   };
 
   const handleSave = async () => {
     if (!isDeveloperOrAdmin || !form) return;
-    if (!form.name) {
+    if (!form.name || !form.name.trim()) {
       setError('Environment name is required');
       return;
     }
+
+    let parsedVars: Record<string, any> = {};
+    if (variablesText.trim()) {
+      try {
+        parsedVars = JSON.parse(variablesText);
+        if (typeof parsedVars !== 'object' || Array.isArray(parsedVars) || parsedVars === null) {
+          throw new Error('Variables must be a JSON object');
+        }
+      } catch (err) {
+        setError('Variables must be valid JSON');
+        return;
+      }
+    }
+
+    const payload = {
+      ...form,
+      variables: parsedVars,
+    };
+
     setIsSaving(true);
     try {
       if (mode === 'create') {
-        await EnvironmentService.create(form as EnvironmentCreate);
+        await EnvironmentService.create(payload as EnvironmentCreate);
       } else if (mode === 'edit' && selectedEnvironment) {
-        await EnvironmentService.update(selectedEnvironment.id, form as EnvironmentUpdate);
+        await EnvironmentService.update(selectedEnvironment.id, payload as EnvironmentUpdate);
       }
       await loadData();
       setMode('list');
@@ -153,10 +179,17 @@ function EnvironmentsPage() {
       }
 
       const merged = { ...parsedProfiles } as Record<string, unknown>;
-      Object.entries(parsedSnippet as Record<string, unknown>).forEach(([key, value]) => {
-        if (key !== 'config') {
-          merged[key] = value;
+      const snippetEntries = Object.entries(parsedSnippet as Record<string, unknown>).filter(([k]) => k !== 'config');
+
+      if (editingProfileName && snippetEntries.length > 0) {
+        const [newKey] = snippetEntries[0];
+        if (newKey !== editingProfileName) {
+          delete merged[editingProfileName];
         }
+      }
+
+      snippetEntries.forEach(([key, value]) => {
+        merged[key] = value;
       });
 
       const updatedContent = yaml.dump(merged, { lineWidth: 120 });
@@ -471,14 +504,8 @@ function EnvironmentsPage() {
             <div className="mt-4">
               <label className={labelClassName}>Variables (JSON)</label>
               <textarea
-                value={form.variables ? JSON.stringify(form.variables, null, 2) : ''}
-                onChange={e => {
-                  try {
-                    handleFormChange('variables', JSON.parse(e.target.value));
-                  } catch {
-                    // ignore parse error
-                  }
-                }}
+                value={variablesText}
+                onChange={e => setVariablesText(e.target.value)}
                 className={textareaClassName}
                 placeholder='{"key": "value"}'
               />

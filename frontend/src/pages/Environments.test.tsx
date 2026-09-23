@@ -1,6 +1,6 @@
 import React from 'react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import EnvironmentsPage from './Environments'
@@ -139,6 +139,82 @@ describe('EnvironmentsPage profile management', () => {
 
     expect(await screen.findByText('Profile definition must be a YAML object')).toBeInTheDocument()
     expect(mockedProfileService.update).not.toHaveBeenCalled()
+  })
+
+  it('removes old profile key when a profile is renamed in snippet editor', async () => {
+    render(<EnvironmentsPage />)
+
+    const user = userEvent.setup()
+
+    // Wait for "Default dbt Project" section
+    await screen.findByText('Default dbt Project')
+
+    // Find the profile card containing "default" and its "Edit" button
+    const defaultHeadings = screen.getAllByText('default')
+    const card = defaultHeadings[0].closest('div')?.parentElement
+    const editBtn = card?.querySelector('button') as HTMLButtonElement
+    await user.click(editBtn)
+
+    const textarea = await screen.findByRole('textbox')
+    await user.clear(textarea)
+    await user.type(
+      textarea,
+      'renamed_profile:\n  target: dev\n  outputs:\n    dev:\n      type: postgres\n'
+    )
+
+    await user.click(screen.getByText('Save Profile'))
+
+    await waitFor(() => {
+      expect(mockedProfileService.update).toHaveBeenCalled()
+      const updatedYaml = mockedProfileService.update.mock.calls[0][0]
+      expect(updatedYaml).toContain('renamed_profile:')
+      expect(updatedYaml).not.toContain('default:')
+    })
+  })
+
+  it('allows typing variables as JSON string and validates invalid JSON on save', async () => {
+    mockedEnvService.create.mockResolvedValue({
+      id: 2,
+      name: 'Staging',
+      description: 'Staging env',
+      dbt_target_name: 'dev',
+      connection_profile_reference: 'default',
+      variables: { key: 'val' },
+      created_at: '',
+      updated_at: '',
+    })
+
+    render(<EnvironmentsPage />)
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByText('New Environment'))
+
+    const nameInput = screen.getByPlaceholderText('Production')
+    fireEvent.change(nameInput, { target: { value: 'Staging' } })
+
+    const textareas = screen.getAllByRole('textbox')
+    const varsTextarea = textareas[textareas.length - 1]
+
+    // Type invalid JSON
+    fireEvent.change(varsTextarea, { target: { value: '{\n"invalid": ' } })
+
+    await user.click(screen.getByText('Save'))
+    expect(await screen.findByText('Variables must be valid JSON')).toBeInTheDocument()
+    expect(mockedEnvService.create).not.toHaveBeenCalled()
+
+    // Type valid JSON
+    fireEvent.change(varsTextarea, { target: { value: '{\n"key": "val"\n}' } })
+
+    await user.click(screen.getByText('Save'))
+
+    await waitFor(() => {
+      expect(mockedEnvService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Staging',
+          variables: { key: 'val' },
+        })
+      )
+    })
   })
 
   it('renders the profiles panel with gradient panel styling', async () => {

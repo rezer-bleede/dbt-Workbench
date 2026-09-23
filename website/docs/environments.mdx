@@ -19,19 +19,51 @@ import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
 
 # Environment management
 
-dbt-Workbench centralizes dbt profile settings and environment targets. Environments are used by run orchestration and the scheduler to ensure consistent execution.
+dbt-Workbench provides unified management of dbt connection profiles (`profiles.yml`) and environment execution targets. Managing environments and profiles ensures consistent execution across ad-hoc SQL queries, scheduled runs, lineage tracing, and CLI commands.
 
-## What environments control
+## Understanding Environments, Profiles, and Targets
 
-- Active dbt profiles and targets.
-- Connection details for the SQL workspace.
-- Environment-specific run settings and credentials.
+To prevent confusion, dbt-Workbench distinguishes between **Profiles** (connection credentials) and **Environments** (execution contexts):
 
-## Profile management
+| Concept | What It Defines | Where Stored | Examples |
+|---------|-----------------|--------------|----------|
+| **Profile** | Database connection details (adapter type, host, port, credentials, dbname, schema). | `profiles.yml` file | `jaffle_shop`, `analytics_profile` |
+| **Target** | A named output connection target within a profile. | `profiles.yml` inside profile outputs | `dev`, `prod`, `staging` |
+| **Environment** | Operational context binding a Profile, Target, and custom JSON variables (`vars`). | Database (`environments` table) | `Development`, `Staging`, `Production` |
 
-- View configured dbt profiles and available targets.
-- Add a new profile with a YAML snippet that merges into `profiles.yml`.
-- Edit the full `profiles.yml` inline for advanced changes.
+- **Profiles** define *how* to connect to target data warehouses.
+- **Environments** bind a selected Profile and Target with custom environment variables, retention policies, and query permissions into a named execution scope.
+
+## Managing Connection Profiles
+
+On the **Environments** page (`http://localhost:3000/environments`), you can manage `profiles.yml`:
+
+- **View Active Profiles**: Inspect all available profiles and their output targets.
+- **Add Profile Snippet**: Create a single profile block using YAML. The snippet is merged directly into `profiles.yml`.
+- **Edit Snippet or Profile Name**: Modify an existing profile snippet. If the profile key name is changed (e.g. `dev_profile` to `prod_profile`), dbt-Workbench automatically removes the old profile key to avoid duplicate or orphan profiles.
+- **Full `profiles.yml` Editor**: Edit the full raw `profiles.yml` file in an inline modal for complete control.
+
+## Managing Environments
+
+Environments define execution settings used across dbt-Workbench:
+
+1. **Name & Description**: Human-readable name (e.g., `Production`) and optional description.
+2. **Profile Reference**: Select from configured profiles in `profiles.yml`.
+3. **dbt Target Name**: Select a target output defined within that profile. Changing the selected profile automatically defaults to the first available target.
+4. **Variables (JSON)**: Supply environment-specific dbt variables or workspace flags (e.g., `{"sql_workspace_allow_destructive": false}`).
+
+## Switching Environments Across dbt-Workbench
+
+Switching environments in the UI dynamically affects execution contexts across the application:
+
+- **SQL Workspace**: Use the environment selector in the toolbar to switch active environments. Switching environments dynamically updates connection credentials, query history filtering, and clears/re-compiles model tab SQL against the newly selected environment target.
+- **Scheduler**: Assign schedules to an environment. Scheduled runs take an environment snapshot to execute commands with the designated profile, target, and retention policy.
+- **Lineage**: Select an environment for row lineage preview and trace actions to query the appropriate database target.
+
+## Fallback & Conflict Resolution
+
+- **Stale or Deleted Environments**: If an environment is deleted or no longer belongs to the active workspace, dbt-Workbench automatically falls back to an available valid environment.
+- **Manifest Target Mismatches**: When compiling SQL in the SQL Workspace for a model tab, dbt-Workbench validates the compiled manifest target against the selected environment's target name to ensure queries run against the intended database.
 
 ## Related pages
 
