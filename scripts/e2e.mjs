@@ -20,8 +20,8 @@ const __dirname = dirname(__filename);
 const repoRoot = join(__dirname, '..');
 
 // Configuration
-const BACKEND_URL = 'http://localhost:8000';
-const FRONTEND_URL = 'http://localhost:3000';
+const BACKEND_URL = 'http://localhost:8080';
+const FRONTEND_URL = 'http://localhost:3080';
 const HEALTH_ENDPOINT = '/health';
 const MAX_WAIT_TIME = 240000; // 4 minutes
 const CHECK_INTERVAL = 2000; // 2 seconds

@@ -2,7 +2,7 @@ import axios from 'axios'
 import { loadWorkspaceId } from '../storage/workspaceStorage'
 
 const apiBase =
-  (import.meta.env?.VITE_API_BASE_URL) || (import.meta.env as any)?.VITE_API_BASE_URL || 'http://localhost:8000'
+  (import.meta.env?.VITE_API_BASE_URL) || (import.meta.env as any)?.VITE_API_BASE_URL || 'http://localhost:8080'
 
 export const api = axios.create({
   baseURL: apiBase,
