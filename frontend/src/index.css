@@ -85,6 +85,77 @@ body {
   @apply bg-accent/30;
 }
 
+.run-progress-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  overflow: hidden;
+  border: 1px solid hsl(var(--color-primary) / 0.28);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(110deg, hsl(var(--color-primary) / 0.12), hsl(var(--fx-panel-top) / 0.5));
+}
+
+.run-progress-banner::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+  background: linear-gradient(105deg, transparent 20%, hsl(var(--color-primary) / 0.12) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: run-progress-sheen 2.4s ease-in-out infinite;
+}
+
+.run-progress-orb {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 0.75rem;
+  height: 0.75rem;
+  flex: 0 0 0.75rem;
+  border-radius: 9999px;
+  background: hsl(var(--color-primary));
+  box-shadow: 0 0 0 0 hsl(var(--color-primary) / 0.45);
+  animation: run-progress-pulse 1.8s ease-out infinite;
+}
+
+.run-progress-dots {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+
+.run-progress-dots i {
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.35;
+  animation: run-progress-dot 1.2s ease-in-out infinite;
+}
+
+.run-progress-dots i:nth-child(2) { animation-delay: 0.15s; }
+.run-progress-dots i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes run-progress-pulse {
+  70% { box-shadow: 0 0 0 0.5rem hsl(var(--color-primary) / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--color-primary) / 0); }
+}
+
+@keyframes run-progress-sheen {
+  100% { transform: translateX(100%); }
+}
+
+@keyframes run-progress-dot {
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .run-progress-banner::after,
+  .run-progress-orb,
+  .run-progress-dots i { animation: none; }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }

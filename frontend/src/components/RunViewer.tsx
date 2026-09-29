@@ -235,6 +235,19 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
             <p className="text-sm text-rose-300">{runDetail.error_message}</p>
           </div>
         )}
+
+        {['queued', 'running'].includes(runDetail.status) && (
+          <div className="run-progress-banner mt-4" role="status" aria-live="polite">
+            <span className="run-progress-orb" aria-hidden="true" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-sm font-semibold text-text">
+                {runDetail.status === 'queued' ? 'Preparing your run' : 'dbt is running'}
+                <span className="run-progress-dots" aria-hidden="true"><i /> <i /> <i /></span>
+              </div>
+              <p className="mt-1 text-xs text-muted">Live logs and status updates will appear below.</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Logs */}

@@ -12,7 +12,7 @@ const nodeTypes = { lineage: LineageNode }
 
 function GraphCanvas({ props }: { props: Props }) {
   const reactFlow = useReactFlow()
-  const [layoutMode, setLayoutMode] = useState<LineageLayoutMode>('hierarchical')
+  const [layoutMode, setLayoutMode] = useState<LineageLayoutMode>('star')
   const graph = useMemo(() => layoutLineageGraph(props.nodes, props.edges, layoutMode), [props.nodes, props.edges, layoutMode])
   const nodes = useMemo(() => graph.nodes.map((node) => ({ ...node, data: { ...node.data, color: props.resolveColor(node.data), faded: props.highlighted.size > 0 && !props.highlighted.has(node.id) } })), [graph.nodes, props.highlighted, props.resolveColor])
   const edges = useMemo(() => graph.edges.map((edge) => {

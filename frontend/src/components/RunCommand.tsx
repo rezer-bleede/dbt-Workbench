@@ -337,7 +337,16 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
         )}
 
         {/* Execute Buttons */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {isLoading && (
+          <div className="run-progress-banner" role="status" aria-live="polite">
+            <span className="run-progress-orb" aria-hidden="true" />
+            <span>
+              <strong className="block text-sm text-text">Run in progress</strong>
+              <span className="text-xs text-muted">dbt is working. You can keep this page open to follow the run.</span>
+            </span>
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {commands.map((cmd) => (
             <button
               key={cmd.id}
@@ -345,11 +354,11 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               data-testid={`${cmd.id}-execute`}
               onClick={() => void handleSubmit(undefined, cmd.id)}
               disabled={isLoading}
-              className="flex h-10 w-full items-center justify-center rounded-md bg-primary px-2 py-2 text-xs sm:text-sm font-medium text-primary-foreground hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 min-w-0 w-full flex-none items-center justify-center overflow-hidden rounded-md bg-primary px-2 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
               aria-busy={isLoading && pendingCommand === cmd.id}
             >
               {isLoading && pendingCommand === cmd.id ? (
-                <span className="inline-flex items-center justify-center gap-1.5 min-w-0">
+                <span className="inline-flex min-w-0 items-center justify-center gap-1.5">
                   <svg
                     className="h-4 w-4 shrink-0 animate-spin text-current"
                     xmlns="http://www.w3.org/2000/svg"
