@@ -8,7 +8,7 @@ import {
 } from '../types';
 import { api } from '../api/client';
 
-const getBaseUrl = () => (api.defaults.baseURL || '').replace(/\/$/, '') || 'http://localhost:8000';
+const getBaseUrl = () => (api.defaults.baseURL || '').replace(/\/$/, '') || 'http://localhost:8080';
 
 export class ExecutionService {
   static async startRun(request: RunRequest): Promise<RunSummary> {

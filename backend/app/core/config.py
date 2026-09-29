@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     postgres_user: str = Field("user", alias="POSTGRES_USER")
     postgres_password: str = Field("password", alias="POSTGRES_PASSWORD")
     postgres_host: str = Field("localhost", alias="POSTGRES_HOST")
-    postgres_port: int = Field(5432, alias="POSTGRES_PORT")
+    postgres_port: int = Field(5433, alias="POSTGRES_PORT")
     postgres_db: str = Field("dbt_workbench", alias="POSTGRES_DB")
 
     database_url_override: str | None = Field(None, alias="DATABASE_URL")
@@ -35,7 +35,7 @@ class Settings(BaseSettings):
         )
 
     # Core application settings
-    backend_port: int = Field(8000, alias="BACKEND_PORT")
+    backend_port: int = Field(8080, alias="BACKEND_PORT")
     dbt_artifacts_path: str = Field("./data/artifacts", alias="DBT_ARTIFACTS_PATH")
     dbt_profiles_path: str = Field("./data/profiles", alias="DBT_PROFILES_PATH")
     backend_version: str = "0.1.0"

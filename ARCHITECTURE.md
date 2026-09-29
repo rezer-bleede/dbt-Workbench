@@ -208,11 +208,11 @@ Core behaviors:
 # docker-compose.yml structure
 services:
   db:              # PostgreSQL database
-    ports: 5432
+    ports: 5433:5432
     volumes: pgdata
 
   backend:         # FastAPI application
-    ports: 8000
+    ports: 8080
     volumes:
       - ./sample_artifacts:/app/dbt_artifacts:ro
       - ./plugins:/app/plugins:ro
@@ -220,7 +220,7 @@ services:
     depends_on: db
 
   frontend:        # React/Vite application
-    ports: 3000
+    ports: 3080
     depends_on: backend
 ```
 

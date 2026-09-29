@@ -37,9 +37,9 @@ docker compose up --build
 ```
 
 Open:
-- UI: `http://localhost:3000`
-- API: `http://localhost:8000`
-- API Docs: `http://localhost:8000/docs`
+- UI: `http://localhost:3080`
+- API: `http://localhost:8080`
+- API Docs: `http://localhost:8080/docs`
 
 The repository includes a ready-to-run demo dbt project in `./dbt_project` so you can run models,
 inspect lineage, and explore catalog metadata immediately.
@@ -148,7 +148,7 @@ dbt-Workbench/
 ## API and Configuration
 
 Use these references for full endpoint and environment variable details:
-- API reference: `http://localhost:8000/docs` when running locally
+- API reference: `http://localhost:8080/docs` when running locally
 - Architecture and deployment guidance: [Documentation site](https://rezer-bleede.github.io/dbt-Workbench/)
 - Runtime settings reference: [backend/app/core/config.py](backend/app/core/config.py)
 
@@ -161,7 +161,7 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 ```
 
 Frontend:
@@ -169,7 +169,7 @@ Frontend:
 ```bash
 cd frontend
 npm install
-npm run dev -- --host --port 3000
+npm run dev -- --host --port 3080
 ```
 
 Docs site:

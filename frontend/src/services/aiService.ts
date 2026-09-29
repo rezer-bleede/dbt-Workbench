@@ -17,7 +17,7 @@ import {
 } from '../types/ai'
 
 function getApiBase() {
-  return (api.defaults.baseURL || '').replace(/\/$/, '') || 'http://localhost:8000'
+  return (api.defaults.baseURL || '').replace(/\/$/, '') || 'http://localhost:8080'
 }
 
 function getAuthToken(): string | null {

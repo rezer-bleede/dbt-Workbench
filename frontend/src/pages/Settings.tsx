@@ -510,7 +510,7 @@ function SettingsPage() {
             <div className="sm:col-span-2">
               <dt className="text-sm font-medium text-muted">API URL</dt>
               <dd className="panel-gradient-subtle mt-1 rounded p-1 text-sm font-mono text-text">
-                {(import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:8000'}
+                {(import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:8080'}
               </dd>
             </div>
           </dl>
