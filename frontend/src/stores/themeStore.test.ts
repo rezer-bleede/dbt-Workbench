@@ -51,6 +51,13 @@ describe('themeStore', () => {
     expect(useThemeStore.getState().resolvedMode).toBe('light')
   })
 
+  it('defaults new users to coral-reef', () => {
+    const fresh = useThemeStore.getInitialState()
+    expect(fresh.theme).toBe('coral-reef')
+    expect(fresh.resolvedTheme).toBe('coral-reef')
+    expect(fresh.resolvedMode).toBe('light')
+  })
+
   it('system resolves to light in jsdom (no matchMedia)', () => {
     useThemeStore.getState().setTheme('system')
 

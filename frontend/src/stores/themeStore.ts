@@ -189,8 +189,8 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      theme: 'system',
-      resolvedTheme: 'light',
+      theme: 'coral-reef',
+      resolvedTheme: 'coral-reef',
       resolvedMode: 'light',
 
       setTheme: (theme: ThemeId) => {
