@@ -35,6 +35,22 @@ export interface ThemePreference {
   dark: ThemeModeConfig
 }
 
+export interface ThemeStatusColors {
+  success: string
+  danger: string
+  warning: string
+  info: string
+}
+
+export interface ThemePreset {
+  id: string
+  label: string
+  description: string
+  swatches: string[]
+  colors: Record<ThemeMode, ThemeColors>
+  status: Record<ThemeMode, ThemeStatusColors>
+}
+
 export interface ContrastCheck {
   id: string
   label: string
@@ -335,7 +351,89 @@ const DEFAULT_DARK_COLORS: ThemeColors = {
   text: '#e2e8f0',
 }
 
-export const buildThemeMode = (mode: ThemeMode, input: ThemeColors): ThemeResolved => {
+// Theme-safe high-contrast status colors (passing 4.5:1 against surface/background)
+export const DEFAULT_STATUS_COLORS: Record<ThemeMode, ThemeStatusColors> = {
+  light: {
+    success: '#15803d', // emerald-700
+    danger: '#b91c1c', // red-700
+    warning: '#b45309', // amber-700
+    info: '#0369a1', // sky-700
+  },
+  dark: {
+    success: '#4ade80', // emerald-400
+    danger: '#f87171', // red-400
+    warning: '#fbbf24', // amber-400
+    info: '#38bdf8', // sky-400
+  },
+}
+
+// "Mariner" — a theme derived from Zoho CRM's design language: the cobalt blue that drives
+// buttons/tabs/menus across the CRM, its canvas tint, and the red/green/blue/yellow quartet
+// used for status accents. Values sourced from Zoho's brand palette and web design tokens.
+const MARINER_LIGHT_COLORS: ThemeColors = {
+  primary: '#0067ff', // Zoho CRM cobalt blue
+  secondary: '#049949', // Zoho Green
+  background: '#f2f7ff', // Zoho canvas tint
+  surface: '#ffffff', // Zoho card surface
+  text: '#1d414e', // LyteUI dark navy
+}
+
+const MARINER_DARK_COLORS: ThemeColors = {
+  primary: '#6691ff', // Zoho dark-mode link blue
+  secondary: '#1fad6b', // Zoho Green, lifted for night mode
+  background: '#0b0d1f', // Zoho "Ebony"
+  surface: '#161c34', // lifted navy panel
+  text: '#e8eefc', // cool off-white
+}
+
+const MARINER_LIGHT_STATUS: ThemeStatusColors = {
+  success: '#02713a', // Zoho Green
+  danger: '#c81a20', // Zoho CTA hover red
+  warning: '#8f5000', // Zoho Yellow, darkened
+  info: '#0057d6', // Zoho Blue
+}
+
+const MARINER_DARK_STATUS: ThemeStatusColors = {
+  success: '#1fad6b',
+  danger: '#f87171',
+  warning: '#f9b21d', // Zoho Yellow
+  info: '#6691ff', // Zoho Blue
+}
+
+export const THEME_PRESETS: ThemePreset[] = [
+  {
+    id: 'mariner',
+    label: 'Mariner',
+    description: 'Zoho CRM-inspired cobalt blue with the Zoho status quartet.',
+    swatches: ['#0067ff', '#049949', '#0b0d1f'],
+    colors: {
+      light: MARINER_LIGHT_COLORS,
+      dark: MARINER_DARK_COLORS,
+    },
+    status: {
+      light: MARINER_LIGHT_STATUS,
+      dark: MARINER_DARK_STATUS,
+    },
+  },
+]
+
+export const getThemePreset = (id: string | null | undefined): ThemePreset | null => {
+  if (!id) return null
+  return THEME_PRESETS.find((preset) => preset.id === id) ?? null
+}
+
+const normalizeStatusColors = (input: ThemeStatusColors): ThemeStatusColors => ({
+  success: normalizeHexColor(input.success, DEFAULT_STATUS_COLORS.light.success),
+  danger: normalizeHexColor(input.danger, DEFAULT_STATUS_COLORS.light.danger),
+  warning: normalizeHexColor(input.warning, DEFAULT_STATUS_COLORS.light.warning),
+  info: normalizeHexColor(input.info, DEFAULT_STATUS_COLORS.light.info),
+})
+
+export const buildThemeMode = (
+  mode: ThemeMode,
+  input: ThemeColors,
+  statusColors?: ThemeStatusColors,
+): ThemeResolved => {
   const fallback = mode === 'dark' ? DEFAULT_DARK_COLORS : DEFAULT_LIGHT_COLORS
   const normalized: ThemeColors = {
     primary: normalizeHexColor(input.primary, fallback.primary),
@@ -433,10 +531,9 @@ export const buildThemeMode = (mode: ThemeMode, input: ThemeColors): ThemeResolv
   }
 
   // Define theme-safe high-contrast status colors (passing 4.5:1 against surface/background)
-  const successColor = mode === 'dark' ? '#4ade80' : '#15803d' // emerald-400 in dark, emerald-700 in light
-  const dangerColor = mode === 'dark' ? '#f87171' : '#b91c1c'  // red-400 in dark, red-700 in light
-  const warningColor = mode === 'dark' ? '#fbbf24' : '#b45309' // amber-400 in dark, amber-700 in light
-  const infoColor = mode === 'dark' ? '#38bdf8' : '#0369a1'    // sky-400 in dark, sky-700 in light
+  const resolvedStatus: ThemeStatusColors = statusColors ?? DEFAULT_STATUS_COLORS[mode]
+  const { success: successColor, danger: dangerColor, warning: warningColor, info: infoColor } =
+    normalizeStatusColors(resolvedStatus)
 
   const checks: ContrastCheck[] = []
   const pushCheck = (id: string, label: string, foreground: string, background: string, minRatio: number) => {

@@ -3,7 +3,7 @@ import { api } from '../api/client'
 import { ArtifactSummary, GitRepository } from '../types'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
-import { ThemeColorKey, ThemeMode } from '../utils/theme'
+import { ThemeColorKey, ThemeMode, THEME_PRESETS, getThemePreset } from '../utils/theme'
 import { AiService } from '../services/aiService'
 import { AiMcpServer, AiSettings } from '../types/ai'
 
@@ -24,7 +24,7 @@ interface ConfigResponse {
 
 function SettingsPage() {
   const { user } = useAuth()
-  const { mode, resolved, setColor, resetTheme } = useTheme()
+  const { mode, resolved, setColor, applyPreset, presetId, resetTheme } = useTheme()
   const [artifacts, setArtifacts] = useState<ArtifactSummary | null>(null)
   const [config, setConfig] = useState<ConfigResponse | null>(null)
   const [repo, setRepo] = useState<GitRepository | null>(null)
@@ -56,6 +56,7 @@ function SettingsPage() {
   }, [mode])
 
   const activeTheme = resolved[editingMode]
+  const activePreset = getThemePreset(presetId)
   const previewStyle = activeTheme.variables as React.CSSProperties
   const colorFields: Array<{ key: ThemeColorKey; label: string; description: string }> = [
     { key: 'primary', label: 'Primary', description: 'Buttons, highlights, key actions.' },
@@ -186,6 +187,42 @@ function SettingsPage() {
             >
               Reset to default theme
             </button>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-text">Themes</div>
+            <div className="flex flex-wrap items-center gap-2">
+              {THEME_PRESETS.map((preset) => {
+                const isActive = presetId === preset.id
+                return (
+                  <button
+                    key={preset.id}
+                    onClick={() => applyPreset(preset.id)}
+                    aria-pressed={isActive}
+                    title={preset.description}
+                    className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'panel-gradient-subtle text-text border-border hover:bg-panel/70'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1" aria-hidden="true">
+                      {preset.swatches.map((swatch) => (
+                        <span
+                          key={swatch}
+                          className="h-3 w-3 rounded-full border border-black/10"
+                          style={{ backgroundColor: swatch }}
+                        />
+                      ))}
+                    </span>
+                    {preset.label}
+                  </button>
+                )
+              })}
+              {activePreset && (
+                <span className="text-xs text-muted">Customized from {activePreset.label}</span>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">

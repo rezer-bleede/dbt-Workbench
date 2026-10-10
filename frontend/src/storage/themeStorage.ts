@@ -7,6 +7,8 @@ const getStorageKey = (userId?: number | null) => {
   return `${baseKey}_${userId}`
 }
 
+const getPresetKey = (userId?: number | null) => `${getStorageKey(userId)}_preset`
+
 export type StoredTheme = ThemePreference
 
 export const loadStoredTheme = (userId?: number | null): StoredTheme | null => {
@@ -32,6 +34,27 @@ export const storeTheme = (theme: StoredTheme, userId?: number | null) => {
 export const clearStoredTheme = (userId?: number | null) => {
   try {
     window.localStorage.removeItem(getStorageKey(userId))
+    window.localStorage.removeItem(getPresetKey(userId))
+  } catch {
+    // ignore
+  }
+}
+
+export const loadStoredThemePresetId = (userId?: number | null): string | null => {
+  try {
+    return window.localStorage.getItem(getPresetKey(userId))
+  } catch {
+    return null
+  }
+}
+
+export const storeThemePresetId = (presetId: string | null, userId?: number | null) => {
+  try {
+    if (presetId) {
+      window.localStorage.setItem(getPresetKey(userId), presetId)
+    } else {
+      window.localStorage.removeItem(getPresetKey(userId))
+    }
   } catch {
     // ignore
   }

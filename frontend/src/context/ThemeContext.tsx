@@ -6,18 +6,29 @@ import {
   ThemeMode,
   ThemePreference,
   ThemeResolved,
+  ThemeStatusColors,
   applyThemeVariables,
   buildThemeMode,
   getDefaultThemePreference,
   getPreferredColorScheme,
+  getThemePreset,
+  DEFAULT_STATUS_COLORS,
 } from '../utils/theme'
-import { clearStoredTheme, loadStoredTheme, storeTheme } from '../storage/themeStorage'
+import {
+  clearStoredTheme,
+  loadStoredTheme,
+  loadStoredThemePresetId,
+  storeTheme,
+  storeThemePresetId,
+} from '../storage/themeStorage'
 
 interface ThemeContextValue {
   mode: ThemeMode
   isLoading: boolean
   resolved: Record<ThemeMode, ThemeResolved>
+  presetId: string | null
   setColor: (mode: ThemeMode, key: ThemeColorKey, value: string) => void
+  applyPreset: (presetId: string) => void
   resetTheme: () => Promise<void>
 }
 
@@ -25,9 +36,12 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
 
 const THEME_SAVE_DEBOUNCE_MS = 500
 
-const buildResolvedFromPreference = (preference: ThemePreference): Record<ThemeMode, ThemeResolved> => ({
-  light: buildThemeMode('light', preference.light.colors),
-  dark: buildThemeMode('dark', preference.dark.colors),
+const buildResolvedFromPreference = (
+  preference: ThemePreference,
+  status?: Record<ThemeMode, ThemeStatusColors>,
+): Record<ThemeMode, ThemeResolved> => ({
+  light: buildThemeMode('light', preference.light.colors, status?.light),
+  dark: buildThemeMode('dark', preference.dark.colors, status?.dark),
 })
 
 const buildPreferenceFromResolved = (resolved: Record<ThemeMode, ThemeResolved>): ThemePreference => ({
@@ -39,9 +53,11 @@ const buildPreferenceFromResolved = (resolved: Record<ThemeMode, ThemeResolved>)
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isLoading: authLoading, user } = useAuth()
   const [mode, setMode] = useState<ThemeMode>(getPreferredColorScheme())
+  const [statusColors, setStatusColors] = useState<Record<ThemeMode, ThemeStatusColors>>(DEFAULT_STATUS_COLORS)
   const [resolved, setResolved] = useState<Record<ThemeMode, ThemeResolved>>(() =>
     buildResolvedFromPreference(getDefaultThemePreference())
   )
+  const [presetId, setPresetId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const persistTimeoutRef = useRef<number | null>(null)
   const hydratingRef = useRef(false)
@@ -71,20 +87,28 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const userId = user?.id ?? null
     const local = loadStoredTheme(userId)
+    const storedPresetId = loadStoredThemePresetId(userId)
+    const storedPreset = getThemePreset(storedPresetId)
+    const initialStatus = storedPreset?.status
+
+    if (initialStatus) {
+      setStatusColors(initialStatus)
+      setPresetId(storedPreset!.id)
+    }
 
     if (local) {
-      setResolved(buildResolvedFromPreference(local))
+      setResolved(buildResolvedFromPreference(local, initialStatus))
     }
 
     try {
       const res = await api.get<ThemePreference>('/theme')
       const preference = res.data
-      setResolved(buildResolvedFromPreference(preference))
+      setResolved(buildResolvedFromPreference(preference, initialStatus))
       storeTheme(preference, userId)
     } catch {
       if (!local) {
         const fallback = getDefaultThemePreference()
-        setResolved(buildResolvedFromPreference(fallback))
+        setResolved(buildResolvedFromPreference(fallback, initialStatus))
       }
     } finally {
       hydratingRef.current = false
@@ -137,13 +161,25 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ...prev[targetMode].colors,
         [key]: value,
       }
-      const updated = buildThemeMode(targetMode, currentColors)
+      const updated = buildThemeMode(targetMode, currentColors, statusColors[targetMode])
       return {
         ...prev,
         [targetMode]: updated,
       }
     })
-  }, [])
+  }, [statusColors])
+
+  const applyPreset = useCallback((id: string) => {
+    const preset = getThemePreset(id)
+    if (!preset) return
+    setPresetId(preset.id)
+    setStatusColors(preset.status)
+    storeThemePresetId(preset.id, user?.id ?? null)
+    setResolved({
+      light: buildThemeMode('light', preset.colors.light, preset.status.light),
+      dark: buildThemeMode('dark', preset.colors.dark, preset.status.dark),
+    })
+  }, [user?.id])
 
   const resetTheme = useCallback(async () => {
     if (persistTimeoutRef.current) {
@@ -155,6 +191,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // ignore
     }
     clearStoredTheme(user?.id ?? null)
+    setPresetId(null)
+    setStatusColors(DEFAULT_STATUS_COLORS)
     const fallback = getDefaultThemePreference()
     setResolved(buildResolvedFromPreference(fallback))
   }, [user?.id])
@@ -163,9 +201,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     mode,
     isLoading,
     resolved,
+    presetId,
     setColor,
+    applyPreset,
     resetTheme,
-  }), [mode, isLoading, resolved, setColor, resetTheme])
+  }), [mode, isLoading, resolved, presetId, setColor, applyPreset, resetTheme])
 
   if (isLoading) {
     return null

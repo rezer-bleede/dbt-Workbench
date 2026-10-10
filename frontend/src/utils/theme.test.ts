@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { ThemeMode, buildThemeMode, getDefaultThemePreference } from './theme'
+import {
+  ThemeMode,
+  THEME_PRESETS,
+  buildThemeMode,
+  getDefaultThemePreference,
+} from './theme'
 
 const FX_VARIABLE_KEYS = [
   '--fx-shell-base-top',
@@ -65,5 +70,55 @@ describe('theme fx variables', () => {
         expect(check.ratio).toBeGreaterThanOrEqual(4.5)
       })
     })
+  })
+})
+
+describe('theme presets', () => {
+  it('exposes at least one preset with unique ids', () => {
+    expect(THEME_PRESETS.length).toBeGreaterThan(0)
+    const ids = THEME_PRESETS.map((preset) => preset.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('builds every preset mode with no contrast violations', () => {
+    THEME_PRESETS.forEach((preset) => {
+      ;(['light', 'dark'] as ThemeMode[]).forEach((mode) => {
+        const resolved = buildThemeMode(mode, preset.colors[mode], preset.status[mode])
+        expect(resolved.validation.violations).toEqual([])
+        expect(resolved.validation.isValid).toBe(true)
+
+        FX_VARIABLE_KEYS.forEach((key) => {
+          expect(resolved.variables[key]).toMatch(/^\d+\s\d+%\s\d+%$/)
+        })
+
+        resolved.validation.checks.forEach((check) => {
+          expect(check.pass).toBe(true)
+          expect(check.ratio).toBeGreaterThanOrEqual(check.minRatio)
+        })
+      })
+    })
+  })
+
+  it('applies preset status colors to the emitted css variables', () => {
+    THEME_PRESETS.forEach((preset) => {
+      ;(['light', 'dark'] as ThemeMode[]).forEach((mode) => {
+        const resolved = buildThemeMode(mode, preset.colors[mode], preset.status[mode])
+        const expected = preset.status[mode]
+        ;(['success', 'danger', 'warning', 'info'] as const).forEach((key) => {
+          expect(resolved.variables[`--color-status-${key}`]).toBeDefined()
+        })
+        expect(resolved.variables['--color-status-success']).not.toBe('')
+        expect(expected.success).toMatch(/^#[0-9a-f]{6}$/)
+      })
+    })
+  })
+
+  it('keeps default status colors when a preset overrides none', () => {
+    const preset = THEME_PRESETS[0]
+    const withStatus = buildThemeMode('light', preset.colors.light, preset.status.light)
+    const withoutStatus = buildThemeMode('light', preset.colors.light)
+    expect(withStatus.variables['--color-status-success']).not.toBe(
+      withoutStatus.variables['--color-status-success'],
+    )
   })
 })
