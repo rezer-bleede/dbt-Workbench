@@ -79,7 +79,7 @@ function DocsPage() {
             src={docsUrl}
             title="dbt Docs"
             className="w-full"
-            style={{ minHeight: '70vh', backgroundColor: '#0b0b0f' }}
+            style={{ minHeight: '70vh', backgroundColor: 'var(--color-bg-secondary)' }}
           />
         </div>
       )}

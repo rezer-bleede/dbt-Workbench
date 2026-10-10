@@ -21,6 +21,10 @@ const statusColors: Record<string, string> = {
 
 export function StatusBadge({ status }: StatusBadgeProps) {
   const normalized = status?.toLowerCase() || 'unknown'
-  const color = statusColors[normalized] || 'bg-slate-500/16 text-muted border border-border'
-  return <span className={`px-2 py-1 rounded-full text-xs font-semibold ${color}`}>{status || 'unknown'}</span>
+  const color = statusColors[normalized] || 'bg-bg-tertiary text-text-tertiary border-border-primary'
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${color}`}>
+      {status || 'unknown'}
+    </span>
+  )
 }

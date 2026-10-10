@@ -32,10 +32,10 @@ export function GitChanges({ status }: GitChangesProps) {
 
   const getChangeColor = (type: string) => {
     const lower = type.toLowerCase()
-    if (lower === 'added' || lower === 'a') return 'text-green-400'
-    if (lower === 'modified' || lower === 'm') return 'text-blue-400'
-    if (lower === 'deleted' || lower === 'd') return 'text-red-400'
-    if (lower === 'renamed' || lower === 'r') return 'text-yellow-400'
+    if (lower === 'added' || lower === 'a') return 'text-brand-success'
+    if (lower === 'modified' || lower === 'm') return 'text-brand-primary'
+    if (lower === 'deleted' || lower === 'd') return 'text-brand-danger'
+    if (lower === 'renamed' || lower === 'r') return 'text-brand-warning'
     return 'text-muted'
   }
 

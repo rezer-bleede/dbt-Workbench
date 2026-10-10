@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { RunDetail, LogMessage, PackagesCheckResponse, RunSummary } from '../types';
 import { ExecutionService } from '../services/executionService';
 import { StatusBadge } from './StatusBadge';
+import ModalPortal from './ui/ModalPortal';
 
 interface DepsModalProps {
   packagesCheck: PackagesCheckResponse;
@@ -110,9 +111,17 @@ export const DepsModal: React.FC<DepsModalProps> = ({
   const primaryButtonClassName = "inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50";
   const secondaryButtonClassName = "panel-gradient-subtle inline-flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-text hover:bg-panel/70";
 
+  const requestClose = () => {
+    if (!installing) onCancel();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 py-6">
-      <div className="panel-gradient flex h-[80vh] w-full max-w-4xl flex-col rounded-2xl p-6 shadow-xl">
+    <ModalPortal
+      isOpen
+      onClose={requestClose}
+      title="Missing dbt Packages"
+      className="bg-widget-bg border border-widget-border rounded-2xl shadow-lg flex h-[80vh] w-full max-w-4xl flex-col p-6"
+    >
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-text">
@@ -123,7 +132,7 @@ export const DepsModal: React.FC<DepsModalProps> = ({
             </p>
           </div>
           <button
-            onClick={onCancel}
+            onClick={requestClose}
             className="text-muted hover:text-text"
             disabled={installing}
           >
@@ -141,7 +150,7 @@ export const DepsModal: React.FC<DepsModalProps> = ({
                 <ul className="space-y-2">
                   {packagesCheck.missing_packages.map((pkg) => (
                     <li key={pkg} className="flex items-center gap-2 text-sm">
-                      <span className="inline-flex h-2 w-2 rounded-full bg-red-500" />
+                      <span className="inline-flex h-2 w-2 rounded-full bg-brand-danger" />
                       <span className="text-text">{pkg}</span>
                     </li>
                   ))}
@@ -152,7 +161,7 @@ export const DepsModal: React.FC<DepsModalProps> = ({
                 <ul className="space-y-2">
                   {packagesCheck.packages_installed.map((pkg) => (
                     <li key={pkg} className="flex items-center gap-2 text-sm">
-                      <span className="inline-flex h-2 w-2 rounded-full bg-green-500" />
+                      <span className="inline-flex h-2 w-2 rounded-full bg-brand-success" />
                       <span className="text-text">{pkg}</span>
                     </li>
                   ))}
@@ -161,7 +170,7 @@ export const DepsModal: React.FC<DepsModalProps> = ({
             </div>
 
             {error && (
-              <div className="mt-4 rounded-lg border border-rose-400/40 bg-rose-500/12 p-3 text-sm text-rose-300">
+              <div className="mt-4 rounded-lg border border-brand-danger/30 bg-brand-danger/10 p-3 text-sm text-brand-danger">
                 {error}
               </div>
             )}
@@ -214,7 +223,7 @@ export const DepsModal: React.FC<DepsModalProps> = ({
                     Auto-scroll
                   </label>
                 </div>
-                <div className="panel-gradient-subtle flex-1 overflow-y-auto rounded-lg p-4 font-mono text-sm text-emerald-300">
+                <div className="panel-gradient-subtle flex-1 overflow-y-auto rounded-lg p-4 font-mono text-sm text-brand-success">
                   {logs.length === 0 ? (
                     <p className="text-muted">Waiting for logs...</p>
                   ) : (
@@ -230,7 +239,7 @@ export const DepsModal: React.FC<DepsModalProps> = ({
             </div>
 
             {(error || runDetail.error_message) && (
-              <div className="mt-4 rounded-lg border border-rose-400/40 bg-rose-500/12 p-3 text-sm text-rose-300">
+              <div className="mt-4 rounded-lg border border-brand-danger/30 bg-brand-danger/10 p-3 text-sm text-brand-danger">
                 {error || runDetail.error_message}
               </div>
             )}
@@ -267,7 +276,6 @@ export const DepsModal: React.FC<DepsModalProps> = ({
             </div>
           </>
         )}
-      </div>
-    </div>
+    </ModalPortal>
   );
 };

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useChartPalette, type ChartPalette } from '../utils/chartTokens'
 
 import { api } from '../api/client'
 import { Table } from '../components/Table'
@@ -54,21 +55,27 @@ const normalizeImpact = (value?: Partial<ImpactResponse>): ImpactResponse => ({
   downstream: value?.downstream ?? [],
 })
 
-const groupColor: Record<string, { fill: string; stroke: string }> = {
-  model: { fill: '#1f2937', stroke: '#3b82f6' },
-  seed: { fill: '#1f2937', stroke: '#22c55e' },
-  snapshot: { fill: '#1f2937', stroke: '#a855f7' },
-  source: { fill: '#1f2937', stroke: '#fb923c' },
-  test: { fill: '#1f2937', stroke: '#f59e0b' },
-  row: { fill: '#1f2937', stroke: '#f472b6' },
-  group: { fill: '#111827', stroke: '#9ca3af' },
-  subtree: { fill: '#0f172a', stroke: '#e5e7eb' },
-}
+const buildGroupColor = (
+  palette: ChartPalette,
+): Record<string, { fill: string; stroke: string }> => ({
+  model: { fill: palette.widgetBg, stroke: palette.colors[0] },
+  seed: { fill: palette.widgetBg, stroke: palette.colors[2] },
+  snapshot: { fill: palette.widgetBg, stroke: palette.colors[5] },
+  source: { fill: palette.widgetBg, stroke: palette.colors[3] },
+  test: { fill: palette.widgetBg, stroke: palette.colors[1] },
+  row: { fill: palette.widgetBg, stroke: palette.colors[6] },
+  group: { fill: palette.bgSecondary, stroke: palette.axis },
+  subtree: { fill: palette.bgTertiary, stroke: palette.borderSecondary },
+})
 
-const getNodeColor = (node: LineageNode | ColumnNode): { fill: string; stroke: string } => {
+const getNodeColor = (
+  node: LineageNode | ColumnNode,
+  groupColor: Record<string, { fill: string; stroke: string }>,
+  fallback: { fill: string; stroke: string },
+): { fill: string; stroke: string } => {
   if ((node as GraphNode<LineageNode>).isGroup) return groupColor.group
   if ((node as GraphNode<LineageNode>).isSubtree) return groupColor.subtree
-  return groupColor[node.type] || { fill: '#111827', stroke: '#9ca3af' }
+  return groupColor[node.type] || fallback
 }
 
 const normalizeColumnId = (columnId: string) => columnId.replace(/\s+/g, '')
@@ -539,8 +546,11 @@ function LineagePage() {
           : 'Select a column to view lineage.'
         : 'No lineage data available.'
 
+  const palette = useChartPalette()
+  const groupColor = useMemo(() => buildGroupColor(palette), [palette])
+
   const resolveNodeColor = (node: LineageNode | ColumnNode): { fill: string; stroke: string } => {
-    const base = getNodeColor(node)
+    const base = getNodeColor(node, groupColor, { fill: palette.bgSecondary, stroke: palette.axis })
     if (viewMode !== 'column' || columnLens !== 'evolution') {
       return base
     }
@@ -549,10 +559,10 @@ function LineagePage() {
     }
     const status = columnEvolutionStatus.get(normalizeColumnId(node.id))
     if (status === 'added') {
-      return { fill: '#0f172a', stroke: '#22c55e' }
+      return { fill: palette.bgTertiary, stroke: palette.colors[2] }
     }
     if (status === 'changed') {
-      return { fill: '#0f172a', stroke: '#f59e0b' }
+      return { fill: palette.bgTertiary, stroke: palette.colors[3] }
     }
     return base
   }
@@ -817,7 +827,7 @@ function LineagePage() {
                   onClick={() => handleViewModeChange(mode.id)}
                   className={`px-3 py-2 text-sm ${
                     idx > 0 ? 'border-l border-border' : ''
-                  } ${active ? 'bg-accent text-text' : 'panel-gradient-subtle text-text hover:bg-panel/70'}`}
+                  } ${active ? 'bg-brand-primary text-brand-accent-contrast' : 'panel-gradient-subtle text-text hover:bg-panel/70'}`}
                 >
                   {mode.label}
                 </button>
@@ -894,7 +904,7 @@ function LineagePage() {
               fetchGraph(maxDepth)
               if (config.load_column_lineage_by_default) fetchColumnGraph()
             }}
-            className="bg-accent text-text px-4 py-2 rounded text-sm"
+            className="bg-brand-primary text-brand-accent-contrast px-4 py-2 rounded text-sm"
           >
             {viewMode === 'row' ? 'Refresh row lineage' : 'Refresh'}
           </button>
@@ -967,7 +977,7 @@ function LineagePage() {
                 <button
                   onClick={handleLoadRows}
                   disabled={!rowAvailable || !rowSelectedModelUniqueId || rowPreviewLoading}
-                  className="bg-accent text-text px-4 py-2 rounded text-sm disabled:opacity-60"
+                  className="bg-brand-primary text-brand-accent-contrast px-4 py-2 rounded text-sm disabled:opacity-60"
                   data-testid="row-lineage-load-rows"
                 >
                   {rowPreviewLoading ? 'Loading rows...' : 'Load rows'}
@@ -1039,7 +1049,7 @@ function LineagePage() {
             ) : (
               <div
                 ref={graphContainerRef}
-                className={`relative rounded-lg overflow-hidden border border-border/60 bg-gradient-to-br from-gray-950 via-slate-950 to-gray-900 ${
+                className={`relative rounded-lg overflow-hidden border border-border-primary bg-bg-secondary ${
                   isFullscreen ? 'h-full w-full' : 'h-[720px]'
                 }`}
                 data-testid="lineage-graph-container"

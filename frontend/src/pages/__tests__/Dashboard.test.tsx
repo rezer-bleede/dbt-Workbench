@@ -62,9 +62,9 @@ describe('DashboardPage', () => {
     )
 
     await waitFor(() => expect(mockedApi.get).toHaveBeenCalled())
-    expect(screen.getByText(/Projects: 1/)).toBeInTheDocument()
+    expect(screen.getByText(/1 workspace/)).toBeInTheDocument()
     expect(screen.getAllByText('Missing').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('No runs yet').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('No runs recorded yet').length).toBeGreaterThan(0)
   })
 
   it('shows latest run status from execution history', async () => {
@@ -107,6 +107,6 @@ describe('DashboardPage', () => {
     )
 
     await waitFor(() => expect(mockedExecutionService.getRunHistory).toHaveBeenCalled())
-    expect(await screen.findByText('succeeded')).toBeInTheDocument()
+    expect(await screen.findByText('Passed')).toBeInTheDocument()
   })
 })

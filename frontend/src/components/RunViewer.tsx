@@ -105,12 +105,12 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
 
   const getStatusColor = (status: RunStatus): string => {
     switch (status) {
-      case 'queued': return 'bg-gray-100 text-gray-800';
-      case 'running': return 'bg-blue-100 text-blue-800';
-      case 'succeeded': return 'bg-green-100 text-green-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      case 'cancelled': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'queued': return 'bg-bg-tertiary text-text-tertiary';
+      case 'running': return 'bg-brand-secondary/15 text-brand-secondary';
+      case 'succeeded': return 'bg-brand-success/15 text-brand-success';
+      case 'failed': return 'bg-brand-danger/15 text-brand-danger';
+      case 'cancelled': return 'bg-brand-warning/15 text-brand-warning';
+      default: return 'bg-bg-tertiary text-text-tertiary';
     }
   };
 

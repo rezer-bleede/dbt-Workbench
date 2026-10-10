@@ -5,8 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>dbt-Workbench</title>
+    <meta name="theme-color" content="#4f46e5" />
+
+    <!-- Inline Anti-Flash Script -->
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('theme-storage');
+          var theme = 'system';
+          if (stored) {
+            var parsed = JSON.parse(stored);
+            if (parsed && parsed.state && parsed.state.theme) {
+              theme = parsed.state.theme;
+            }
+          }
+          var resolvedId = theme;
+          var isDark = false;
+          if (theme === 'system') {
+            isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            resolvedId = isDark ? 'dark' : 'light';
+          } else {
+            var darkThemes = ['dark', 'midnight-marina', 'burj-gold', 'aurora'];
+            isDark = darkThemes.indexOf(theme) !== -1;
+            resolvedId = theme;
+          }
+          var root = document.documentElement;
+          root.setAttribute('data-theme', resolvedId);
+          if (isDark) {
+            root.classList.add('dark');
+          } else {
+            root.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-surface text-gray-100">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

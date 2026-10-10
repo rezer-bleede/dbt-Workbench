@@ -46,7 +46,7 @@ export function BranchSelector({
                   key={entry.commit_hash}
                   className="flex items-start gap-2 text-xs group"
                 >
-                  <div className="mt-1 w-2 h-2 rounded-full bg-accent/60 shrink-0" />
+                  <div className="mt-1 w-2 h-2 rounded-full bg-brand-primary/60 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-text font-medium truncate group-hover:text-text transition-colors">
                       {entry.message}

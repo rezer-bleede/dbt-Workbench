@@ -1,88 +1,78 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "./styles/theme.css";
 
-:root {
-  color-scheme: light dark;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-body {
-  margin: 0;
-  background: hsl(var(--color-bg));
-  color: hsl(var(--color-text));
-}
+/* =====================================================================
+   Compatibility layer — legacy dbt-Workbench class names re-expressed
+   with Property Intelligence surfaces (flat widget cards, hairline
+   borders, soft shadows). Kept so untouched components inherit the look.
+   ===================================================================== */
 
 .app-shell-gradient {
-  background:
-    radial-gradient(1200px 640px at 18% -12%, hsl(var(--fx-shell-glow-primary) / 0.22), transparent 62%),
-    radial-gradient(1100px 620px at 100% 0%, hsl(var(--fx-shell-glow-secondary) / 0.2), transparent 64%),
-    linear-gradient(180deg, hsl(var(--fx-shell-base-top)) 0%, hsl(var(--fx-shell-base-bottom)) 100%);
+  background-color: var(--color-bg-primary);
 }
 
-.panel-gradient {
-  background:
-    linear-gradient(165deg, hsl(var(--fx-panel-top) / 0.95) 0%, hsl(var(--fx-panel-mid) / 0.98) 55%, hsl(var(--fx-panel-bottom) / 0.94) 100%);
-  border: 1px solid hsl(var(--fx-panel-border-soft) / 0.95);
-  box-shadow:
-    inset 0 1px 0 hsl(var(--fx-panel-border-strong) / 0.35),
-    0 12px 28px hsl(var(--fx-shell-glow-primary) / 0.08);
-}
-
+.panel-gradient,
 .panel-gradient-subtle {
-  background:
-    linear-gradient(170deg, hsl(var(--fx-panel-top) / 0.68) 0%, hsl(var(--fx-panel-mid) / 0.75) 62%, hsl(var(--fx-panel-bottom) / 0.66) 100%);
-  border: 1px solid hsl(var(--fx-panel-border-soft) / 0.82);
-  box-shadow: inset 0 1px 0 hsl(var(--fx-panel-border-strong) / 0.22);
+  background-color: var(--color-widget-bg);
+  border: 1px solid var(--color-widget-border);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-md);
 }
 
 .panel-divider {
-  border-color: hsl(var(--fx-panel-border-strong) / 0.82) !important;
+  border-color: var(--color-border-primary) !important;
 }
 
 .panel-input {
-  background:
-    linear-gradient(180deg, hsl(var(--fx-panel-mid) / 0.86) 0%, hsl(var(--fx-panel-bottom) / 0.92) 100%);
-  border: 1px solid hsl(var(--fx-panel-border-soft) / 0.94);
-  color: hsl(var(--color-text));
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-sm);
 }
 
 .panel-input::placeholder {
-  color: hsl(var(--color-text-muted));
+  color: var(--color-text-tertiary);
 }
 
 .panel-input:focus {
   outline: none;
-  border-color: hsl(var(--fx-panel-border-strong));
-  box-shadow: 0 0 0 2px hsl(var(--color-ring) / 0.35);
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand-primary) 25%, transparent);
 }
 
 .panel-table {
-  background:
-    linear-gradient(180deg, hsl(var(--fx-panel-top) / 0.84) 0%, hsl(var(--fx-panel-bottom) / 0.82) 100%);
-  border: 1px solid hsl(var(--fx-panel-border-soft) / 0.94);
+  background-color: var(--color-widget-bg);
+  border: 1px solid var(--color-widget-border);
 }
 
 .panel-table thead {
-  background:
-    linear-gradient(180deg, hsl(var(--fx-panel-top) / 0.82) 0%, hsl(var(--fx-panel-mid) / 0.9) 100%);
+  background-color: var(--color-widget-header-bg);
 }
 
 .panel-table tbody tr {
-  border-color: hsl(var(--fx-panel-border-soft) / 0.62);
+  border-color: var(--color-border-primary);
 }
 
+/* PI button recipe mapped onto the legacy .btn hooks */
 .btn {
-  @apply bg-accent/20 text-accent px-3 py-2 rounded border border-accent/40 text-sm transition;
+  @apply rounded-lg px-3 py-1.5 text-sm font-semibold transition-all duration-150 cursor-pointer;
+  background-color: color-mix(in srgb, var(--color-brand-primary) 10%, transparent);
+  color: var(--color-brand-primary);
+  border: 1px solid color-mix(in srgb, var(--color-brand-primary) 30%, transparent);
 }
 
 .btn:hover {
-  @apply bg-accent/30;
+  background-color: color-mix(in srgb, var(--color-brand-primary) 18%, transparent);
+}
+
+.btn-sm {
+  @apply rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-150 cursor-pointer;
+  background-color: color-mix(in srgb, var(--color-brand-primary) 10%, transparent);
+  color: var(--color-brand-primary);
+  border: 1px solid color-mix(in srgb, var(--color-brand-primary) 30%, transparent);
+}
+
+.btn-sm:hover {
+  background-color: color-mix(in srgb, var(--color-brand-primary) 18%, transparent);
 }
 
 .run-progress-banner {
@@ -91,10 +81,14 @@ body {
   align-items: center;
   gap: 0.75rem;
   overflow: hidden;
-  border: 1px solid hsl(var(--color-primary) / 0.28);
+  border: 1px solid color-mix(in srgb, var(--color-brand-primary) 28%, transparent);
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;
-  background: linear-gradient(110deg, hsl(var(--color-primary) / 0.12), hsl(var(--fx-panel-top) / 0.5));
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--color-brand-primary) 12%, transparent),
+    var(--color-widget-bg)
+  );
 }
 
 .run-progress-banner::after {
@@ -102,7 +96,12 @@ body {
   inset: 0;
   pointer-events: none;
   content: '';
-  background: linear-gradient(105deg, transparent 20%, hsl(var(--color-primary) / 0.12) 50%, transparent 80%);
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    color-mix(in srgb, var(--color-brand-primary) 12%, transparent) 50%,
+    transparent 80%
+  );
   transform: translateX(-100%);
   animation: run-progress-sheen 2.4s ease-in-out infinite;
 }
@@ -115,8 +114,8 @@ body {
   height: 0.75rem;
   flex: 0 0 0.75rem;
   border-radius: 9999px;
-  background: hsl(var(--color-primary));
-  box-shadow: 0 0 0 0 hsl(var(--color-primary) / 0.45);
+  background: var(--color-brand-primary);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-brand-primary) 45%, transparent);
   animation: run-progress-pulse 1.8s ease-out infinite;
 }
 
@@ -138,8 +137,8 @@ body {
 .run-progress-dots i:nth-child(3) { animation-delay: 0.3s; }
 
 @keyframes run-progress-pulse {
-  70% { box-shadow: 0 0 0 0.5rem hsl(var(--color-primary) / 0); }
-  100% { box-shadow: 0 0 0 0 hsl(var(--color-primary) / 0); }
+  70% { box-shadow: 0 0 0 0.5rem color-mix(in srgb, var(--color-brand-primary) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-brand-primary) 0%, transparent); }
 }
 
 @keyframes run-progress-sheen {
@@ -156,11 +155,26 @@ body {
   .run-progress-dots i { animation: none; }
 }
 
+/* Thin themed scrollbars everywhere */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-secondary) transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--color-neutral-800));
-  border-radius: 4px;
+  background-color: var(--color-border-secondary);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-tertiary);
 }

@@ -5,7 +5,8 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { vi } from 'vitest'
 
 import { UserSummary } from '../types'
-import { Sidebar } from './Sidebar'
+import { Sidebar } from './layout/Sidebar'
+import { useSidebarStore } from '../stores/sidebarStore'
 
 const authValue = {
   isLoading: false,
@@ -35,6 +36,10 @@ const renderSidebar = (initialEntries: string[]) =>
   )
 
 describe('Sidebar route-scoped collapse behavior', () => {
+  beforeEach(() => {
+    useSidebarStore.setState({ collapsed: false, mobileOpen: false })
+  })
+
   it('defaults to collapsed on /sql route', () => {
     renderSidebar(['/sql'])
 

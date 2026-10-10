@@ -3,6 +3,7 @@ import { Background, Controls, MiniMap, ReactFlow, ReactFlowProvider, useReactFl
 import { Maximize2, Minimize2, ScanSearch, ZoomIn, ZoomOut } from 'lucide-react'
 import { LineageNode } from './LineageNode'
 import { layoutLineageGraph, type FlowNodeData, type LayoutEdge, type LayoutNode, type LineageLayoutMode } from '../utils/lineageLayout'
+import { useChartPalette } from '../utils/chartTokens'
 import '@xyflow/react/dist/style.css'
 
 export type LineageGraphNode = LayoutNode
@@ -12,13 +13,14 @@ const nodeTypes = { lineage: LineageNode }
 
 function GraphCanvas({ props }: { props: Props }) {
   const reactFlow = useReactFlow()
+  const palette = useChartPalette()
   const [layoutMode, setLayoutMode] = useState<LineageLayoutMode>('star')
   const graph = useMemo(() => layoutLineageGraph(props.nodes, props.edges, layoutMode), [props.nodes, props.edges, layoutMode])
   const nodes = useMemo(() => graph.nodes.map((node) => ({ ...node, data: { ...node.data, color: props.resolveColor(node.data), faded: props.highlighted.size > 0 && !props.highlighted.has(node.id) } })), [graph.nodes, props.highlighted, props.resolveColor])
   const edges = useMemo(() => graph.edges.map((edge) => {
     const active = props.highlighted.size === 0 || (props.highlighted.has(edge.source) && props.highlighted.has(edge.target))
-    return { ...edge, style: { stroke: active && props.highlighted.size > 0 ? '#38bdf8' : '#475569', strokeWidth: active && props.highlighted.size > 0 ? 2.5 : 1.5, opacity: active ? 0.92 : 0.25 }, markerEnd: { ...edge.markerEnd, color: active ? '#38bdf8' : '#64748b7a' } }
-  }) as Edge[], [graph.edges, props.highlighted])
+    return { ...edge, style: { stroke: active && props.highlighted.size > 0 ? palette.colors[1] : palette.borderSecondary, strokeWidth: active && props.highlighted.size > 0 ? 2.5 : 1.5, opacity: active ? 0.92 : 0.25 }, markerEnd: { ...edge.markerEnd, color: active ? palette.colors[1] : `${palette.axis}7a` } }
+  }) as Edge[], [graph.edges, props.highlighted, palette])
 
   useEffect(() => { if (nodes.length) requestAnimationFrame(() => reactFlow.fitView({ padding: 0.18, duration: 250 })) }, [layoutMode, nodes.length, reactFlow])
   const toggleFullscreen = useCallback(() => props.onToggleFullscreen(), [props])
@@ -31,7 +33,7 @@ function GraphCanvas({ props }: { props: Props }) {
       <button aria-label={props.isFullscreen ? 'Exit full screen' : 'Full screen'} onClick={toggleFullscreen} className="rounded p-1.5 hover:bg-surface-muted">{props.isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}</button>
     </div>
     <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView onNodeClick={(_, node) => props.onNodeClick(node.data)} minZoom={0.25} maxZoom={2.5} proOptions={{ hideAttribution: true }}>
-      <Background color="#1f2937" gap={32} size={1} /><Controls showInteractive={false} /><MiniMap nodeColor={(node) => String((node.data as FlowNodeData)?.color?.stroke || '#38bdf8')} pannable zoomable />
+      <Background color={palette.grid} gap={32} size={1} /><Controls showInteractive={false} /><MiniMap maskColor={`${palette.bgTertiary}8c`} nodeColor={(node) => String((node.data as FlowNodeData)?.color?.stroke || palette.colors[1])} pannable zoomable />
     </ReactFlow>
   </div>
 }

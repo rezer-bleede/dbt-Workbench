@@ -317,7 +317,7 @@ function SchedulesPage() {
         {isDeveloperOrAdmin && (
           <button
             onClick={handleCreateClick}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-accent hover:bg-accent/90"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm rounded-xl text-brand-accent-contrast bg-brand-primary hover:bg-brand-primary-hover font-bold shadow-md shadow-brand-primary/20"
           >
             New Schedule
           </button>

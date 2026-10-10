@@ -16,7 +16,10 @@ const DEFAULT_LAYOUT: SqlWorkbenchLayoutState = {
 }
 
 const DEFAULT_PANEL: SqlBottomPanelTab = 'results'
-const DEFAULT_THEME: SqlEditorTheme = 'dark'
+
+/** Follows the active app theme (set on <html> by the anti-flash script / theme store). */
+const themeFromDom = (): SqlEditorTheme =>
+  typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light'
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
@@ -33,7 +36,8 @@ const ensureBottomPanel = (value: unknown): SqlBottomPanelTab => {
   return DEFAULT_PANEL
 }
 
-const ensureEditorTheme = (value: unknown): SqlEditorTheme => (value === 'light' ? 'light' : DEFAULT_THEME)
+const ensureEditorTheme = (value: unknown): SqlEditorTheme =>
+  value === 'light' ? 'light' : value === 'dark' ? 'dark' : themeFromDom()
 
 const sanitizeV2 = (raw: Partial<SqlWorkbenchPersistedStateV2>): SqlWorkbenchPersistedStateV2 | null => {
   if (!Array.isArray(raw.tabs) || raw.tabs.length === 0) return null
@@ -144,4 +148,4 @@ export const getDefaultSqlWorkbenchLayout = (): SqlWorkbenchLayoutState => ({ ..
 
 export const getDefaultSqlWorkbenchPanel = (): SqlBottomPanelTab => DEFAULT_PANEL
 
-export const getDefaultSqlWorkbenchTheme = (): SqlEditorTheme => DEFAULT_THEME
+export const getDefaultSqlWorkbenchTheme = (): SqlEditorTheme => themeFromDom()

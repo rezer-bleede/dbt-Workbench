@@ -4,6 +4,7 @@ import { Environment, EnvironmentCreate, EnvironmentUpdate } from '../types';
 import { EnvironmentService } from '../services/environmentService';
 import { ProfileService, ProfileInfo } from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
+import ModalPortal from '../components/ui/ModalPortal';
 
 type Mode = 'list' | 'create' | 'edit';
 
@@ -351,9 +352,12 @@ function EnvironmentsPage() {
       </div>
 
       {/* Editor Modal */}
-      {isProfileModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 py-6">
-          <div className="panel-gradient flex h-[80vh] w-full max-w-4xl flex-col rounded-2xl p-6 shadow-xl">
+      <ModalPortal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        title="Manage Profiles"
+        className="bg-widget-bg border border-widget-border rounded-2xl shadow-lg flex h-[80vh] w-full max-w-4xl flex-col p-6"
+      >
             <h2 className="text-xl font-semibold text-text">Manage Profiles (profiles.yml)</h2>
             <p className="mt-1 text-sm text-muted">Update profiles and targets for all environments.</p>
             <div className="mt-4 flex-1">
@@ -378,13 +382,14 @@ function EnvironmentsPage() {
                 {isSavingProfile ? 'Saving...' : 'Save Profiles'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </ModalPortal>
 
-      {isProfileEditorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 py-6">
-          <div className="panel-gradient flex h-[70vh] w-full max-w-3xl flex-col rounded-2xl p-6 shadow-xl">
+      <ModalPortal
+        isOpen={isProfileEditorOpen}
+        onClose={() => setIsProfileEditorOpen(false)}
+        title="Profile YAML"
+        className="bg-widget-bg border border-widget-border rounded-2xl shadow-lg flex h-[70vh] w-full max-w-3xl flex-col p-6"
+      >
             <h2 className="text-xl font-semibold text-text">{editingProfileName ? `Edit ${editingProfileName}` : 'Add Profile'}</h2>
             <p className="mt-1 text-sm text-muted">Provide a YAML snippet for a single profile. It will be merged into profiles.yml.</p>
             {profileEditorError && (
@@ -412,9 +417,7 @@ function EnvironmentsPage() {
                 {isSavingProfile ? 'Saving...' : 'Save Profile'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </ModalPortal>
 
       {(mode === 'create' || mode === 'edit') && form && (
         <div className="panel-gradient rounded-2xl p-6">

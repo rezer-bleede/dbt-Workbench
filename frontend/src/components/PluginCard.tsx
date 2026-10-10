@@ -16,40 +16,40 @@ export function PluginCard({ plugin, onEnable, onDisable }: PluginCardProps) {
   }
 
   return (
-    <div className="border border-gray-800 rounded-lg p-4 bg-panel shadow-sm space-y-3">
+    <div className="border border-widget-border rounded-xl p-4 bg-widget-bg shadow-2xs hover:shadow-xs hover:border-brand-primary/30 transition-all space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-white">{plugin.name}</h3>
-          <p className="text-sm text-gray-400">v{plugin.version}</p>
+          <h3 className="text-lg font-semibold text-text-primary">{plugin.name}</h3>
+          <p className="text-sm text-text-tertiary">v{plugin.version}</p>
         </div>
         <button
           onClick={toggle}
-          className={`px-3 py-1 rounded text-sm font-medium ${
+          className={`px-3 py-1 rounded-lg text-sm font-semibold ${
             plugin.enabled
-              ? 'bg-red-500/20 text-red-200 hover:bg-red-500/30'
-              : 'bg-emerald-500/20 text-emerald-100 hover:bg-emerald-500/30'
+              ? 'bg-brand-danger/15 text-brand-danger border border-brand-danger/30 hover:bg-brand-danger/25'
+              : 'bg-brand-success/15 text-brand-success border border-brand-success/30 hover:bg-brand-success/25'
           }`}
         >
           {plugin.enabled ? 'Disable' : 'Enable'}
         </button>
       </div>
-      <p className="text-gray-300 text-sm leading-relaxed">{plugin.description}</p>
-      <div className="flex flex-wrap gap-2 text-xs text-gray-300">
+      <p className="text-text-secondary text-sm leading-relaxed">{plugin.description}</p>
+      <div className="flex flex-wrap gap-2 text-xs text-text-secondary">
         {plugin.capabilities.map((capability) => (
-          <span key={capability} className="px-2 py-1 rounded bg-gray-800 border border-gray-700">
+          <span key={capability} className="px-2 py-1 rounded-full bg-brand-primary/10 border border-brand-primary/20 text-brand-primary font-semibold">
             {capability}
           </span>
         ))}
       </div>
-      <div className="text-xs text-gray-400">
+      <div className="text-xs text-text-tertiary">
         <div className="flex items-center gap-2">
           <span className="font-semibold">Author:</span>
           <span>{plugin.author}</span>
         </div>
         {!plugin.compatibility_ok && (
-          <div className="text-amber-300">Compatibility check failed</div>
+          <div className="text-brand-warning">Compatibility check failed</div>
         )}
-        {plugin.last_error && <div className="text-red-400">{plugin.last_error}</div>}
+        {plugin.last_error && <div className="text-brand-danger">{plugin.last_error}</div>}
       </div>
     </div>
   )

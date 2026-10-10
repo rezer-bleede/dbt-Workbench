@@ -209,7 +209,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Description */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-muted">
+          <label className="mb-1.5 block text-xs font-bold text-text-tertiary uppercase tracking-wider">
             Description (optional)
           </label>
           <input
@@ -217,14 +217,14 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Brief description of this run"
-            className="panel-input w-full rounded-md px-3 py-2 text-sm"
+            className="panel-input w-full rounded-xl px-3 py-2 text-sm"
           />
         </div>
 
         {/* Parameters */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="mb-2 block text-sm font-medium text-muted">
+            <label className="mb-1.5 block text-xs font-bold text-text-tertiary uppercase tracking-wider">
               Select Models
             </label>
             <Autocomplete
@@ -238,7 +238,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-muted">
+            <label className="mb-1.5 block text-xs font-bold text-text-tertiary uppercase tracking-wider">
               Exclude Models
             </label>
             <Autocomplete
@@ -252,7 +252,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-muted">
+            <label className="mb-1.5 block text-xs font-bold text-text-tertiary uppercase tracking-wider">
               Target
             </label>
             <Autocomplete
@@ -325,14 +325,14 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
 
         {/* Error Display */}
         {error && (
-          <div className="rounded-md border border-rose-400/40 bg-rose-500/12 p-3">
-            <p className="text-sm text-rose-300">{error}</p>
+          <div className="rounded-lg border border-brand-danger/30 bg-brand-danger/10 p-3">
+            <p className="text-sm text-brand-danger">{error}</p>
           </div>
         )}
 
         {warning && (
-          <div className="rounded-md border border-amber-400/40 bg-amber-500/12 p-3">
-            <p className="text-sm text-amber-300">{warning}</p>
+          <div className="rounded-lg border border-brand-warning/30 bg-brand-warning/10 p-3">
+            <p className="text-sm text-brand-warning">{warning}</p>
           </div>
         )}
 
@@ -354,7 +354,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               data-testid={`${cmd.id}-execute`}
               onClick={() => void handleSubmit(undefined, cmd.id)}
               disabled={isLoading}
-              className="flex h-10 min-w-0 w-full flex-none items-center justify-center overflow-hidden rounded-md bg-primary px-2 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+              className="flex h-10 min-w-0 w-full flex-none items-center justify-center overflow-hidden rounded-xl bg-brand-primary px-2 py-2 text-xs font-bold text-brand-accent-contrast shadow-md shadow-brand-primary/20 transition-colors hover:bg-brand-primary-hover disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
               aria-busy={isLoading && pendingCommand === cmd.id}
             >
               {isLoading && pendingCommand === cmd.id ? (
