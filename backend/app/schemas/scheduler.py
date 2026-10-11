@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.execution import DbtCommand, RunStatus
 
@@ -143,6 +143,7 @@ class ScheduleBase(BaseModel):
     cron_expression: str
     timezone: str
     dbt_command: DbtCommand
+    custom_command: Optional[str] = None
     environment_id: int
     notification_config: NotificationConfig = Field(default_factory=NotificationConfig)
     retry_policy: RetryPolicy = Field(default_factory=RetryPolicy)
@@ -150,6 +151,12 @@ class ScheduleBase(BaseModel):
     catch_up_policy: CatchUpPolicy = CatchUpPolicy.SKIP
     overlap_policy: OverlapPolicy = OverlapPolicy.NO_OVERLAP
     enabled: bool = True
+
+    @model_validator(mode="after")
+    def _require_custom_command(self) -> "ScheduleBase":
+        if self.dbt_command == DbtCommand.CUSTOM and not (self.custom_command or "").strip():
+            raise ValueError("custom_command is required when dbt_command is 'custom'")
+        return self
 
 
 class ScheduleCreate(ScheduleBase):
@@ -162,6 +169,7 @@ class ScheduleUpdate(BaseModel):
     cron_expression: Optional[str] = None
     timezone: Optional[str] = None
     dbt_command: Optional[DbtCommand] = None
+    custom_command: Optional[str] = None
     environment_id: Optional[int] = None
     notification_config: Optional[NotificationConfig] = None
     retry_policy: Optional[RetryPolicy] = None
@@ -170,6 +178,12 @@ class ScheduleUpdate(BaseModel):
     overlap_policy: Optional[OverlapPolicy] = None
     enabled: Optional[bool] = None
     updated_by: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _require_custom_command(self) -> "ScheduleUpdate":
+        if self.dbt_command == DbtCommand.CUSTOM and self.custom_command is None:
+            raise ValueError("custom_command is required when dbt_command is 'custom'")
+        return self
 
 
 class ScheduleSummary(BaseModel):

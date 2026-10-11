@@ -643,7 +643,14 @@ class DbtExecutor:
         
         try:
             # Build command
-            cmd = self._get_dbt_command(run_detail.command, run_detail.parameters)
+            if run_detail.command == DbtCommand.CUSTOM:
+                custom = (run_detail.parameters or {}).get("custom_command", "")
+                if not custom:
+                    raise ValueError("Custom command run has no custom_command parameter")
+                cmd = ["/bin/sh", "-c", custom]
+                run_detail.log_lines.append(f"$ {custom}")
+            else:
+                cmd = self._get_dbt_command(run_detail.command, run_detail.parameters)
             
             # Determine working directory: prefer run-specific project path, fallback to default
             cwd = run_detail.project_path if run_detail.project_path else self.settings.dbt_project_path
@@ -705,8 +712,12 @@ class DbtExecutor:
                         if len(run_detail.log_lines) > self.settings.log_buffer_size:
                             run_detail.log_lines = run_detail.log_lines[-self.settings.log_buffer_size:]
 
-                # Capture artifacts on success
-                artifacts = self._capture_artifacts(run_id)
+                # Capture artifacts on success (custom commands produce no
+                # dbt target directory to snapshot)
+                if run_detail.command == DbtCommand.CUSTOM:
+                    artifacts = []
+                else:
+                    artifacts = self._capture_artifacts(run_id)
                 run_detail.artifacts_available = len(artifacts) > 0
             else:
                 run_detail.status = RunStatus.FAILED

@@ -267,6 +267,7 @@ class SchedulerService:
             cron_expression=schedule_in.cron_expression,
             timezone=schedule_in.timezone,
             dbt_command=schedule_in.dbt_command.value,
+            custom_command=schedule_in.custom_command,
             environment_id=schedule_in.environment_id,
             notification_config=schedule_in.notification_config.model_dump(),
             retry_policy=schedule_in.retry_policy.model_dump(),
@@ -324,6 +325,8 @@ class SchedulerService:
             db_schedule.timezone = schedule_in.timezone
         if schedule_in.dbt_command is not None:
             db_schedule.dbt_command = schedule_in.dbt_command.value
+        if schedule_in.custom_command is not None:
+            db_schedule.custom_command = schedule_in.custom_command
         if schedule_in.environment_id is not None:
             if workspace_id is not None:
                 env = (
@@ -490,6 +493,7 @@ class SchedulerService:
             cron_expression=db_schedule.cron_expression,
             timezone=db_schedule.timezone,
             dbt_command=DbtCommand(db_schedule.dbt_command),
+            custom_command=db_schedule.custom_command,
             environment_id=db_schedule.environment_id,
             notification_config=db_schedule.notification_config or {},
             retry_policy=db_schedule.retry_policy or {},
@@ -637,6 +641,7 @@ class SchedulerService:
 
         command = {
             "command": db_schedule.dbt_command,
+            "custom_command": db_schedule.custom_command,
             "environment_id": env.id,
         }
 
@@ -702,6 +707,11 @@ class SchedulerService:
             parameters["vars"] = variables
 
         dbt_command = DbtCommand(schedule.dbt_command)
+        if dbt_command == DbtCommand.CUSTOM:
+            custom = (schedule.custom_command or "").strip()
+            if not custom:
+                raise ValueError(f"Schedule {schedule.id} lacks a custom_command")
+            parameters = {"custom_command": custom}
 
         project_path = self._resolve_project_path(db, schedule)
         artifacts_path = self._resolve_artifacts_path(db, schedule)

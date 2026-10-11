@@ -18,6 +18,7 @@ class DbtCommand(str, Enum):
     SEED = "seed"
     DOCS_GENERATE = "docs generate"
     DEPS = "deps"
+    CUSTOM = "custom"
 
 
 class RunRequest(BaseModel):

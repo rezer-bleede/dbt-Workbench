@@ -359,7 +359,7 @@ export interface VersionCheckResponse {
 
 // Execution types
 export type RunStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
-export type DbtCommand = 'run' | 'test' | 'seed' | 'docs generate' | 'deps';
+export type DbtCommand = 'run' | 'test' | 'seed' | 'docs generate' | 'deps' | 'custom';
 
 export interface RunRequest {
   command: DbtCommand;
@@ -613,6 +613,7 @@ export interface ScheduleSummary {
 export interface Schedule extends ScheduleSummary {
   cron_expression: string;
   timezone: string;
+  custom_command?: string | null;
   notification_config: NotificationConfig;
   retry_policy: RetryPolicy;
   retention_policy?: RetentionPolicy | null;

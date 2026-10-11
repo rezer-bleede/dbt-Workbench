@@ -22,3 +22,6 @@ dbt-postgres==1.8.0
 dbt-duckdb==1.10.0
 dbt-rowlineage==0.1.7
 sqlglot==23.12.2
+# drop-zone ingestion scheduled runs (scripts/mixed_ingest)
+boto3==1.42.49
+pyarrow==23.0.0

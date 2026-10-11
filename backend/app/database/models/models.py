@@ -213,6 +213,7 @@ class Schedule(Base):
     cron_expression = Column(String, nullable=False)
     timezone = Column(String, nullable=False)
     dbt_command = Column(String, nullable=False)
+    custom_command = Column(String, nullable=True)
     environment_id = Column(Integer, ForeignKey("environments.id"), nullable=False)
     notification_config = Column(JSON, default=dict)
     retry_policy = Column(JSON, default=dict)

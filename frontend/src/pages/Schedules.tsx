@@ -24,7 +24,8 @@ interface ScheduleFormState {
   description?: string;
   cron_expression: string;
   timezone: string;
-  dbt_command: 'run' | 'test' | 'seed' | 'docs generate';
+  dbt_command: 'run' | 'test' | 'seed' | 'docs generate' | 'deps' | 'custom';
+  custom_command?: string;
   environment_id: number | '';
   notification_config: NotificationConfig;
   retry_policy: {
@@ -50,6 +51,7 @@ const defaultFormState: ScheduleFormState = {
   cron_expression: '0 * * * *',
   timezone: 'UTC',
   dbt_command: 'run',
+  custom_command: '',
   environment_id: '',
   notification_config: {},
   retry_policy: {
@@ -150,6 +152,7 @@ function SchedulesPage() {
       cron_expression: selectedSchedule.cron_expression,
       timezone: selectedSchedule.timezone,
       dbt_command: selectedSchedule.dbt_command,
+      custom_command: selectedSchedule.custom_command || '',
       environment_id: selectedSchedule.environment_id,
       notification_config: selectedSchedule.notification_config,
       retry_policy: selectedSchedule.retry_policy,
@@ -169,6 +172,10 @@ function SchedulesPage() {
     if (!isDeveloperOrAdmin) return;
     if (!form.environment_id) {
       setError('Environment is required');
+      return;
+    }
+    if (form.dbt_command === 'custom' && !form.custom_command?.trim()) {
+      setError('A shell command is required for custom schedules');
       return;
     }
     setIsSaving(true);
@@ -373,7 +380,7 @@ function SchedulesPage() {
                         {schedule.name}
                       </div>
                       <div className="text-xs text-muted">
-                        dbt {schedule.dbt_command} · Next:{' '}
+                        {schedule.dbt_command === 'custom' ? 'custom' : `dbt ${schedule.dbt_command}`} · Next:{' '}
                         {schedule.next_run_time
                           ? new Date(schedule.next_run_time).toLocaleString()
                           : 'n/a'}
@@ -463,11 +470,27 @@ function SchedulesPage() {
                               <option value="test">dbt test</option>
                               <option value="seed">dbt seed</option>
                               <option value="docs generate">dbt docs generate</option>
+                              <option value="custom">custom command</option>
                             </select>
                             <p className={helperTextClass}>
                               Choose the dbt command to execute.
                             </p>
                           </div>
+                          {form.dbt_command === 'custom' && (
+                            <div>
+                              <label className={labelClass}>Shell command</label>
+                              <textarea
+                                value={form.custom_command || ''}
+                                onChange={e => handleFormChange('custom_command', e.target.value)}
+                                className={textareaClass}
+                                rows={3}
+                                placeholder="python3 /app/data/scripts/mixed_ingest/run.py --execute --root /app/data/raw_data_mixed"
+                              />
+                              <p className={helperTextClass}>
+                                Run with /bin/sh -c in the backend container; its exit code decides success.
+                              </p>
+                            </div>
+                          )}
                           <div>
                             <label className={labelClass}>
                               Environment
@@ -704,7 +727,9 @@ function SchedulesPage() {
                   <div>
                     <h2 className="text-lg font-semibold text-text">{selectedSchedule.name}</h2>
                     <p className="text-sm text-muted">
-                      dbt {selectedSchedule.dbt_command} ·{' '}
+                      {selectedSchedule.dbt_command === 'custom'
+                        ? `custom: ${selectedSchedule.custom_command || ''}`
+                        : `dbt ${selectedSchedule.dbt_command}`} ·{' '}
                       {renderStatusBadge(selectedSchedule.status)}
                     </p>
                   </div>
