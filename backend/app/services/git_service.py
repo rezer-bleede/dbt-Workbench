@@ -359,6 +359,11 @@ def _ensure_repo(path: str) -> Repo:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"error": "not_a_repository", "message": f"{path} is not a git repository."},
         ) from exc
+    except Exception as exc:  # pragma: no cover - catch-all for unexpected Git/path errors
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": "git_error", "message": f"Failed to access repository at {path}: {str(exc)}"},
+        ) from exc
 
 
 def _get_or_create_repo_record(
