@@ -1,0 +1,124 @@
+---
+title: Version Control - Git Integration for dbt-Workbench
+description: Complete guide to dbt-Workbench version control features. Learn how to use Git integration for branch management, commit workflows, file editing, and model diffing.
+slug: /version-control
+keywords: [dbt version control, git integration, dbt git, branch management, dbt model diff]
+seo_primary_keyword: "dbt version control"
+seo_intent: "informational"
+last_reviewed: "2026-10-16"
+---
+
+import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'Version Control'},
+  ]}
+/>
+
+# Version Control
+
+dbt-Workbench includes built-in Git integration that lets you manage dbt projects with familiar version control workflows — all from the UI.
+
+## Features
+
+- **Branch switching** — Switch between Git branches without leaving the workbench
+- **Pull / Push / Commit** — Full Git workflow support with visual feedback
+- **File tree browser** — Navigate your dbt project structure in-app
+- **SQL/Jinja editor** — Edit models with syntax highlighting
+- **YAML editor** — Edit dbt config files with validation
+- **Model diff viewer** — Compare changes between branches
+- **Historical lineage browser** — View lineage graphs at any commit
+
+## Getting Started
+
+### Connect a Repository
+
+1. Navigate to **Settings > Git**
+2. Add your Git repository URL
+3. Configure authentication (SSH key or token)
+4. Select the default branch
+
+### Switching Branches
+
+Use the branch selector in the top bar to switch between branches. The workbench will:
+
+- Stash uncommitted changes (with confirmation)
+- Check out the selected branch
+- Refresh artifacts if `manifest.json` changed
+
+### Committing Changes
+
+1. Make edits in the File Editor
+2. Review changes in the Version Control panel
+3. Stage files by clicking the checkbox next to each file
+4. Enter a commit message
+5. Click **Commit**
+
+### Pushing to Remote
+
+After committing, click **Push** to upload your changes to the remote repository. The workbench will:
+
+- Show a confirmation dialog with the commit summary
+- Display push progress
+- Update the branch status indicator
+
+## Model Diff Viewer
+
+The model diff viewer lets you compare changes between branches:
+
+1. Open the **Version Control** page
+2. Select a base branch and target branch
+3. View a side-by-side diff of model changes
+4. See lineage impact — which downstream models are affected
+
+## Historical Lineage Browser
+
+View lineage graphs at any point in history:
+
+1. Open the **Lineage** page
+2. Click the **History** button
+3. Select a commit from the timeline
+4. The lineage graph updates to reflect that commit's state
+
+## Role-Based Access
+
+Git operations respect RBAC roles:
+
+| Role | Pull | Push | Commit | Branch Create |
+|------|------|------|--------|---------------|
+| Viewer | ✓ | ✗ | ✗ | ✗ |
+| Developer | ✓ | ✓ | ✓ | ✓ |
+| Admin | ✓ | ✓ | ✓ | ✓ |
+
+## Air-Gapped Considerations
+
+In air-gapped environments:
+
+- Git operations work with local repositories
+- Remote push/pull requires a Git mirror on the internal network
+- SSH keys can be mounted as secrets
+
+## Troubleshooting
+
+### Merge Conflicts
+
+If you encounter merge conflicts:
+
+1. The workbench will highlight conflicted files
+2. Open each file and resolve conflicts manually
+3. Stage the resolved files
+4. Complete the merge commit
+
+### Authentication Errors
+
+- Verify your SSH key or token has the correct permissions
+- Check that the repository URL is correct
+- For self-signed Git servers, add the CA certificate to the trust store
+
+## See Also
+
+- [File Editor](/docs/file-editor/) — Edit models and configs in-app
+- [Authentication & RBAC](/docs/auth-rbac/) — Role-based access control
+- [Air-Gapped Deployment](/docs/air-gapped-on-prem/) — Offline Git setup

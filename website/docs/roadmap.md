@@ -2,7 +2,7 @@
 title: dbt-Workbench roadmap
 description: Planned and completed roadmap milestones for dbt-Workbench.
 slug: /roadmap
-keywords: [dbt workbench, dbt-workbench roadmap, roadmap, open source dbt ui, dbt documentation]
+keywords: [dbt-Workbench, dbt-workbench roadmap, roadmap, open source dbt ui, dbt documentation]
 seo_primary_keyword: "dbt-workbench roadmap"
 seo_intent: "informational"
 last_reviewed: "2026-02-23"

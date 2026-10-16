@@ -2,7 +2,6 @@ import React from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
-import Heading from '@theme/Heading';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import {FaqJsonLd, HomeJsonLd} from '@site/src/components/seo/JsonLd';
 import GitHubCta from '@site/src/components/seo/GitHubCta';

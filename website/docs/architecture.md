@@ -2,7 +2,7 @@
 title: dbt-Workbench architecture
 description: System architecture and service overview for dbt-Workbench.
 slug: /architecture
-keywords: [dbt workbench, dbt-workbench architecture, architecture, open source dbt ui, dbt documentation]
+keywords: [dbt-Workbench, dbt-workbench architecture, architecture, open source dbt ui, dbt documentation]
 seo_primary_keyword: "dbt-workbench architecture"
 seo_intent: "informational"
 last_reviewed: "2026-02-23"

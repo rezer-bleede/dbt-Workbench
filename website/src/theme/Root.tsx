@@ -1,8 +1,7 @@
-import React, {Suspense} from 'react';
+import React from 'react';
 import Head from '@docusaurus/Head';
 import {useLocation} from '@docusaurus/router';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import ThemePicker from '@site/src/components/app/ThemePicker';
 
 export default function Root({children}: {children: React.ReactNode}) {
   const {siteConfig} = useDocusaurusContext();
@@ -43,7 +42,6 @@ export default function Root({children}: {children: React.ReactNode}) {
         <link rel="alternate" hrefLang="x-default" href={canonicalUrl} />
       </Head>
       {children}
-      <ThemePicker />
     </>
   );
 }

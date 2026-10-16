@@ -1,0 +1,131 @@
+---
+title: File Editor - In-App SQL and YAML Editing
+description: Guide to the dbt-Workbench file editor. Learn how to edit SQL models, Jinja templates, and YAML config files with syntax highlighting and validation.
+slug: /file-editor
+keywords: [dbt file editor, sql editor, yaml editor, dbt model editing, jinja editor]
+seo_primary_keyword: "dbt file editor"
+seo_intent: "informational"
+last_reviewed: "2026-10-16"
+---
+
+import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'File Editor'},
+  ]}
+/>
+
+# File Editor
+
+The File Editor lets you edit dbt project files directly in the workbench — no need to switch to an external editor.
+
+## Features
+
+- **SQL/Jinja editor** — Syntax highlighting for SQL and Jinja templates
+- **YAML editor** — Edit `dbt_project.yml`, schema files, and other configs
+- **File tree browser** — Navigate your project structure
+- **Auto-save** — Changes are saved automatically with debouncing
+- **Validation** — Real-time YAML validation and SQL linting
+- **Git integration** — Changes appear in the Version Control panel
+
+## Opening the File Editor
+
+1. Click **File Editor** in the sidebar
+2. Browse the file tree on the left
+3. Click any file to open it in the editor
+
+## Editing SQL Models
+
+The SQL editor supports:
+
+- Syntax highlighting for SQL and Jinja
+- Auto-completion for dbt functions (`ref`, `source`, `config`, etc.)
+- Error highlighting for invalid Jinja
+- Multi-cursor editing
+- Find and replace
+
+### Example: Editing a Model
+
+```sql
+-- models/staging/stg_orders.sql
+with source as (
+    select * from {{ ref('raw_orders') }}
+)
+
+select
+    order_id,
+    customer_id,
+    order_date,
+    status,
+    amount
+from source
+where status != 'cancelled'
+```
+
+## Editing YAML Configs
+
+The YAML editor supports:
+
+- Syntax highlighting
+- Schema validation for `dbt_project.yml`
+- Auto-completion for common fields
+- Error detection for invalid YAML
+
+### Example: dbt_project.yml
+
+```yaml
+name: 'my_dbt_project'
+version: '1.0.0'
+config-version: 2
+
+profile: 'default'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+models:
+  my_dbt_project:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
+```
+
+## Auto-Save and Git Integration
+
+Changes are auto-saved after a 500ms debounce. Once saved:
+
+1. The file appears in the **Version Control** panel
+2. You can review the diff
+3. Stage and commit the change
+
+## Role-Based Access
+
+| Role | View Files | Edit SQL | Edit YAML | Edit Config |
+|------|-----------|----------|-----------|-------------|
+| Viewer | ✓ | ✗ | ✗ | ✗ |
+| Developer | ✓ | ✓ | ✓ | ✗ |
+| Admin | ✓ | ✓ | ✓ | ✓ |
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+S` | Save (manual trigger) |
+| `Ctrl+F` | Find |
+| `Ctrl+H` | Find and replace |
+| `Ctrl+Z` | Undo |
+| `Ctrl+Shift+Z` | Redo |
+| `Ctrl+/` | Toggle comment |
+
+## See Also
+
+- [Version Control](/docs/version-control/) — Git integration and diff viewer
+- [SQL Workspace](/docs/sql-workspace/) — Ad-hoc SQL execution
+- [Authentication & RBAC](/docs/auth-rbac/) — Role-based access control

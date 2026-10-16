@@ -14,6 +14,8 @@ const sidebars: SidebarsConfig = {
         'lineage-overview',
         'column-lineage',
         'sql-workspace',
+        'version-control',
+        'file-editor',
         'ai-overview',
         'ai-configuration',
         'ai-mcp-connectivity',
