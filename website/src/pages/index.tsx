@@ -56,7 +56,11 @@ const homeFaqItems = [
 ];
 
 export default function Home(): JSX.Element {
-  const lineageScreenshotUrl = useBaseUrl('/img/screenshots/lineage-ui.png');
+  const demoGifUrl = useBaseUrl('/img/demo.gif');
+  const lineageGifUrl = useBaseUrl('/img/lineage-usecase.gif');
+  const runGifUrl = useBaseUrl('/img/run-usecase.gif');
+  const catalogGifUrl = useBaseUrl('/img/catalog-usecase.gif');
+  const sqlGifUrl = useBaseUrl('/img/sql-usecase.gif');
 
   return (
     <Layout
@@ -118,17 +122,16 @@ export default function Home(): JSX.Element {
 
         <section className={clsx('container', styles.screenshotSection)}>
           <div>
-            <Heading as="h2">See the product in action</Heading>
+            <Heading as="h2">4 Key Use Cases (4-Quadrant Product Preview)</Heading>
             <p>
-              Review lineage, run history, and catalog metadata in one place. Explore more visuals
-              on the screenshots page.
+              Explore interactive lineage DAGs, run orchestration with live logs, searchable data catalog, and SQL workspace execution in 4 multi-tiled quadrants.
             </p>
-            <Link to="/docs/screenshots/">View dbt-Workbench screenshots</Link>
+            <Link to="/docs/screenshots/">View dbt-Workbench screenshots & GIFs</Link>
           </div>
           <img
             className={styles.screenshot}
-            src={lineageScreenshotUrl}
-            alt="dbt-Workbench lineage visualization showing model dependencies"
+            src={demoGifUrl}
+            alt="dbt-Workbench 4-quadrant preview showing 4 key use cases"
             loading="lazy"
           />
         </section>

@@ -22,13 +22,37 @@ If dbt-Workbench helps your team, please star the repository.
 ## Product Preview
 
 <p align="center">
-  <img src="assets/demo.gif" alt="dbt-Workbench interactive demo" width="100%">
+  <img src="assets/demo.gif" alt="dbt-Workbench 4-quadrant preview showing 4 key use cases" width="100%">
 </p>
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/rezer-bleede/dbt-Workbench/main/assets/screenshots/lineage-readme.png" width="49%" alt="dbt-Workbench lineage visualization showing model dependencies">
-  <img src="https://raw.githubusercontent.com/rezer-bleede/dbt-Workbench/main/assets/screenshots/catalog-readme.png" width="49%" alt="dbt-Workbench catalog showing dbt model metadata">
-</p>
+### Key Use Cases (4-Quadrant Multi-Tiled Overview)
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <b>1. Lineage & Column DAG Visualization</b><br>
+      <img src="assets/lineage-usecase.gif" alt="Lineage Visualization Use Case" width="100%"><br>
+      <i>Explore model & column-level dependencies with interactive impact highlighting.</i>
+    </td>
+    <td width="50%" align="center">
+      <b>2. Run Orchestration & Real-time Logs</b><br>
+      <img src="assets/run-usecase.gif" alt="Run Orchestration Use Case" width="100%"><br>
+      <i>Trigger dbt commands, stream real-time execution logs, and monitor job run status.</i>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <b>3. Data Catalog & Metadata Search</b><br>
+      <img src="assets/catalog-usecase.gif" alt="Data Catalog Use Case" width="100%"><br>
+      <i>Search models, inspect column schemas, view test health, and monitor freshness.</i>
+    </td>
+    <td width="50%" align="center">
+      <b>4. SQL Workspace & Query Execution</b><br>
+      <img src="assets/sql-usecase.gif" alt="SQL Workspace Use Case" width="100%"><br>
+      <i>Inspect compiled dbt SQL, execute queries safely, and inspect result tables.</i>
+    </td>
+  </tr>
+</table>
 
 ## Try It in About a Minute
 
