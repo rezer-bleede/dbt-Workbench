@@ -123,10 +123,21 @@ async def _start_attempt_async(scheduled_run_id: int) -> None:
             .first()
         )
         if not db_run:
+            logger.warning("Scheduled run %s not found when starting attempt.", scheduled_run_id)
             return
         attempt = await scheduler_service.start_attempt_for_scheduled_run(db, db_run)
         if attempt and attempt.run_id:
-            asyncio.create_task(executor.execute_run(attempt.run_id))
+            db_run_check = (
+                db.query(db_models.ScheduledRun)
+                .filter(db_models.ScheduledRun.id == scheduled_run_id)
+                .first()
+            )
+            if db_run_check:
+                asyncio.create_task(executor.execute_run(attempt.run_id))
+            else:
+                logger.warning("Scheduled run %s was removed before execution.", scheduled_run_id)
+    except Exception as exc:
+        logger.exception("Error in _start_attempt_async for scheduled_run_id %s: %s", scheduled_run_id, exc)
     finally:
         db.close()
 

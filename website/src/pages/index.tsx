@@ -78,6 +78,11 @@ const tone = (s: string) =>
 
 export default function Home(): JSX.Element {
   const lineageScreenshotUrl = useBaseUrl('/img/screenshots/lineage-ui.png');
+  const demoGifUrl = useBaseUrl('/img/demo.gif');
+  const lineageGifUrl = useBaseUrl('/img/lineage-usecase.gif');
+  const runGifUrl = useBaseUrl('/img/run-usecase.gif');
+  const catalogGifUrl = useBaseUrl('/img/catalog-usecase.gif');
+  const sqlGifUrl = useBaseUrl('/img/sql-usecase.gif');
   const mixTotal = resourceMix.reduce((a, b) => a + b.value, 0);
   let acc = 0;
   const stops = resourceMix.map((r) => {
@@ -242,13 +247,19 @@ export default function Home(): JSX.Element {
         {/* Product in action */}
         <section style={{ marginBottom: 32, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, alignItems: 'center' }}>
           <div>
+          <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--color-text-primary)', margin: '0 0 8px' }}>See the product in action</h2>
             <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: '0 0 12px', lineHeight: 1.6 }}>
-              Review lineage, run history, and catalog metadata in one place. Explore more visuals on the screenshots page.
+              Explore interactive lineage DAGs, run orchestration with live logs, searchable data catalog, and SQL workspace execution in one place.
             </p>
-            <Link to="/docs/screenshots/" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-brand-primary)' }}>View dbt-Workbench screenshots →</Link>
+            <Link to="/docs/screenshots/" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-brand-primary)' }}>View dbt-Workbench screenshots & GIFs →</Link>
           </div>
-          <img src={lineageScreenshotUrl} alt="dbt-Workbench lineage visualization" loading="lazy" style={{ width: '100%', borderRadius: 14, border: '1px solid var(--color-widget-border)', boxShadow: 'var(--shadow-md)' }} />
+          <img
+            className={styles.screenshot}
+            src={demoGifUrl}
+            alt="dbt-Workbench 4-quadrant preview showing 4 key use cases"
+            loading="lazy"
+          />
         </section>
 
         {/* Documentation index re-skinned */}

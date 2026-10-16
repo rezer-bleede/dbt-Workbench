@@ -147,12 +147,15 @@ class ArtifactWatcher:
         logger.info(f"Started watching {self.base_path} for artifact changes")
     
     def stop_watching(self):
-        """Stop the file system watcher."""
+        """Stop the file system watcher and clear cached versions."""
         if self._observer is not None:
             self._observer.stop()
             self._observer.join()
             self._observer = None
             logger.info("Stopped artifact file watcher")
+        with self._lock:
+            self._versions = {filename: [] for filename in self.monitored_files}
+            self._current_versions = {filename: 0 for filename in self.monitored_files}
     
     def get_current_version(self, filename: str) -> Optional[ArtifactVersion]:
         """Get the current version of an artifact."""
