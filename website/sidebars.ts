@@ -4,29 +4,47 @@ const sidebars: SidebarsConfig = {
   docsSidebar: [
     {
       type: 'category',
-      label: 'Getting Started',
-      items: ['quickstart-docker', 'self-hosted-dbt-ui', 'production-readiness', 'screenshots'],
+      label: 'Overview',
+      items: ['quickstart-docker', 'self-hosted-dbt-ui', 'dbt-ui', 'screenshots', 'production-readiness'],
     },
     {
       type: 'category',
-      label: 'Core Documentation',
+      label: 'Develop',
       items: [
-        'dbt-ui',
         'lineage-overview',
         'column-lineage',
-        'run-orchestration',
-        'scheduler',
         'sql-workspace',
         'ai-overview',
         'ai-configuration',
         'ai-mcp-connectivity',
-        'ai-security-rbac',
-        'catalog',
         'docs-viewer',
         'artifacts',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Operate',
+      items: [
+        'run-orchestration',
+        'scheduler',
         'environments',
         'auth-rbac',
+        'ai-security-rbac',
         'air-gapped-on-prem',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Workspace',
+      items: [
+        'catalog',
+        'plugin-system',
+        'analytics-setup',
+        'architecture',
+        'contributing',
+        'roadmap',
+        'changelog',
+        'seo-growth-ops',
       ],
     },
     {
@@ -90,16 +108,6 @@ const sidebars: SidebarsConfig = {
         'tutorials/air-gapped-dbt-deployment-checklist',
         'tutorials/dbt-observability-with-run-history-and-artifacts',
       ],
-    },
-    {
-      type: 'category',
-      label: 'Reference',
-      items: ['analytics-setup', 'architecture', 'plugin-system'],
-    },
-    {
-      type: 'category',
-      label: 'Project',
-      items: ['contributing', 'roadmap', 'changelog', 'seo-growth-ops'],
     },
   ],
 };
