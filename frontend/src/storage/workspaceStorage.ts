@@ -17,7 +17,7 @@ export function loadWorkspaceId(): number | null {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
     const parsed = Number(raw)
-    return Number.isFinite(parsed) ? parsed : null
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null
   } catch {
     return null
   }

@@ -122,6 +122,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const applyLogin = (login: LoginResponse) => {
+    if (!login || !login.tokens || !login.tokens.access_token || !login.tokens.refresh_token) {
+      throw new Error('Invalid authentication response structure')
+    }
     const { tokens, user, active_workspace } = login
     const stored: StoredAuth = {
       accessToken: tokens.access_token,
@@ -133,7 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setState({
       isLoading: false,
       isAuthEnabled: true,
-      user,
+      user: user || null,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
       activeWorkspace: active_workspace || null,

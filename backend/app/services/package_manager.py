@@ -14,7 +14,6 @@ class PackageManager:
         """
         try:
             # key is package name (lowercase), value is version
-            # key is package name (lowercase), value is version
             # Use Popen to capture stdout/stderr separately
             process = subprocess.Popen(
                 [sys.executable, "-m", "pip", "list", "--format=json"],
@@ -40,9 +39,6 @@ class PackageManager:
             except json.JSONDecodeError as e:
                  logger.error(f"Failed to parse pip list output: {e}. Output was: {stdout}")
                  return []
-        except Exception as e:
-            logger.error(f"Error listing packages: {str(e)}")
-            return []
         except Exception as e:
             logger.error(f"Error listing packages: {str(e)}")
             return []

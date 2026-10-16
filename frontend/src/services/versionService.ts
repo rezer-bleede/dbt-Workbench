@@ -57,7 +57,7 @@ export class VersionService {
    * Remove a listener for version update events
    */
   removeUpdateListener(callback: (hasUpdates: boolean, response: VersionCheckResponse) => void): void {
-    const index = this.listeners.indexOf(callback)
+    const index: number = this.listeners.indexOf(callback)
     if (index > -1) {
       this.listeners.splice(index, 1)
     }
@@ -76,7 +76,7 @@ export class VersionService {
         }
       })
 
-      const versionData = response.data
+      const versionData: VersionCheckResponse = response.data
 
       // Update current versions if there are updates
       if (versionData.any_updates) {
@@ -84,7 +84,7 @@ export class VersionService {
       }
 
       // Notify all listeners
-      this.listeners.forEach(listener => {
+      this.listeners.forEach((listener: (hasUpdates: boolean, response: VersionCheckResponse) => void) => {
         try {
           listener(versionData.any_updates, versionData)
         } catch (error) {

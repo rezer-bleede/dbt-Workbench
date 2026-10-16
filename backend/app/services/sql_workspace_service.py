@@ -30,6 +30,14 @@ from app.schemas.sql_workspace import (
 )
 
 
+class QueryCancelledError(Exception):
+    pass
+
+
+class QueryTimeoutError(Exception):
+    pass
+
+
 @dataclass
 class ActiveQuery:
     cancel_event: threading.Event
@@ -658,14 +666,6 @@ class SqlWorkspaceService:
             return True
         finally:
             db.close()
-
-
-class QueryCancelledError(Exception):
-    pass
-
-
-class QueryTimeoutError(Exception):
-    pass
 
 
 _default_sql_workspace_service = SqlWorkspaceService(get_settings().dbt_artifacts_path, workspace_id=None)
