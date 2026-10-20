@@ -19,6 +19,10 @@ GitPython==3.1.43
 PyYAML==6.0.1
 dbt-core==1.8.0
 dbt-postgres==1.8.0
+# ClickHouse adapter for the property_intel profile: Workbench is the single
+# dbt execution plane (docker-compose sets CLICKHOUSE_* on this service), so
+# the adapter must be baked in rather than pip-installed at runtime.
+dbt-clickhouse==1.8.4
 dbt-duckdb==1.10.0
 dbt-rowlineage==0.1.7
 sqlglot==23.12.2
