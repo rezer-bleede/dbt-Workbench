@@ -5,6 +5,7 @@ import Layout from '@theme/Layout';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import {FaqJsonLd, HomeJsonLd} from '@site/src/components/seo/JsonLd';
 import GitHubCta from '@site/src/components/seo/GitHubCta';
+import styles from './index.module.css';
 
 const kpis = [
   { title: 'Total Models', value: 128, subtitle: '96 models · 18 seeds · 14 snapshots', tag: 'Healthy', color: 'success' as const, footer: 'Manifest' },
@@ -246,7 +247,6 @@ export default function Home(): JSX.Element {
 
         {/* Product in action */}
         <section style={{ marginBottom: 32, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, alignItems: 'center' }}>
-          <div>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--color-text-primary)', margin: '0 0 8px' }}>See the product in action</h2>
             <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: '0 0 12px', lineHeight: 1.6 }}>
