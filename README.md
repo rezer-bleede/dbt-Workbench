@@ -44,6 +44,54 @@ Open:
 The repository includes a ready-to-run demo dbt project in `./dbt_project` so you can run models,
 inspect lineage, and explore catalog metadata immediately.
 
+## Programmatic Access (REST and MCP)
+
+The UI uses the same REST API available to other programs. Browse its OpenAPI reference at
+`http://localhost:8080/docs`; API routes cover projects, runs, lineage, catalog, schedules, SQL,
+and artifacts.
+
+When `AUTH_ENABLED=true`, an admin can create a workspace-scoped API key with
+`POST /auth/api-keys` (the plaintext key is returned only once):
+
+```bash
+curl -X POST http://localhost:8080/auth/api-keys \
+  -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"automation","role":"developer","workspace_ids":[1]}'
+```
+
+Manage keys with `GET /auth/api-keys` and revoke with `DELETE /auth/api-keys/{id}`. Use the
+returned key as a Bearer token. With the default `AUTH_ENABLED=false`, the local API is open and
+API-key management is disabled; enable authentication before exposing it to a network.
+
+The optional stdio MCP server proxies the REST API and inherits its workspace checks and role
+permissions. It provides tools for lineage/catalog/artifacts, run status/history/cancellation,
+schedule CRUD/triggering, dbt commands, and SQL execution. Install backend dependencies:
+
+```bash
+cd backend && python3 -m pip install -r requirements.txt
+```
+
+Then add it to an MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "dbt-workbench": {
+      "command": "python3",
+      "args": ["-m", "app.mcp_server", "--api-url", "http://localhost:8080"],
+      "env": {
+        "PYTHONPATH": "/absolute/path/to/dbt-Workbench/backend",
+        "DBT_WORKBENCH_API_KEY": "dbw_your_key"
+      }
+    }
+  }
+}
+```
+
+Set `DBT_WORKBENCH_WORKSPACE_ID` to select a default workspace, or pass `workspace_id` to a tool.
+For an auth-disabled local instance, omit `DBT_WORKBENCH_API_KEY`.
+
 ## Who It Is For
 
 - **Analytics engineers:** Explore lineage, run models, inspect artifacts, and browse documentation

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
@@ -76,3 +77,24 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     workspace_ids: Optional[List[int]] = None
     default_workspace_id: Optional[int] = None
+
+
+class ApiKeyCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    role: Role = Role.VIEWER
+    workspace_ids: List[int] = Field(min_length=1)
+
+
+class ApiKeySummary(BaseModel):
+    id: int
+    name: str
+    key_prefix: str
+    role: Role
+    workspace_ids: List[int]
+    created_at: datetime
+    last_used_at: Optional[datetime] = None
+    revoked_at: Optional[datetime] = None
+
+
+class ApiKeyCreated(ApiKeySummary):
+    key: str

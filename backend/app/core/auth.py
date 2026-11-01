@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
@@ -41,6 +42,7 @@ class UserContext:
     workspace_ids: List[int]
     active_workspace_id: Optional[int]
     auth_enabled: bool
+    api_key_id: Optional[int] = None
 
 
 @dataclass
@@ -148,6 +150,7 @@ def get_db():
 async def get_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
     settings: Settings = Depends(get_settings),
+    db: Session = Depends(get_db),
 ) -> UserContext:
     if not settings.auth_enabled:
         return UserContext(
@@ -166,6 +169,28 @@ async def get_current_user(
                 "error": "authentication_required",
                 "message": "Authentication credentials were not provided.",
             },
+        )
+
+    if token.startswith("dbw_"):
+        key = db.query(db_models.ApiKey).filter(
+            db_models.ApiKey.key_hash == hashlib.sha256(token.encode()).hexdigest(),
+            db_models.ApiKey.revoked_at.is_(None),
+        ).first()
+        if not key:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"error": "invalid_api_key", "message": "API key is invalid or revoked."},
+            )
+        key.last_used_at = datetime.now(timezone.utc)
+        db.commit()
+        return UserContext(
+            id=None,
+            username=key.name,
+            role=Role(key.role),
+            workspace_ids=list(key.workspace_ids or []),
+            active_workspace_id=None,
+            auth_enabled=True,
+            api_key_id=key.id,
         )
 
     payload = decode_token(token, settings)
@@ -235,6 +260,12 @@ async def get_current_workspace(
             db.commit()
             db.refresh(workspace)
 
+        if current_user.api_key_id is not None and workspace.id not in current_user.workspace_ids:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"error": "forbidden", "message": "API key does not have access to this workspace."},
+            )
+
         return WorkspaceContext(
             id=workspace.id,
             key=workspace.key,
@@ -289,7 +320,25 @@ async def get_current_workspace(
             artifacts_path=workspace.artifacts_path,
         )
 
-    active_id = current_user.active_workspace_id
+    if current_user.api_key_id is not None:
+        requested_id = request.headers.get("X-Workspace-Id") or request.query_params.get("workspace_id")
+        if requested_id is None:
+            active_id = current_user.workspace_ids[0] if current_user.workspace_ids else None
+        else:
+            try:
+                active_id = int(requested_id)
+            except ValueError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={"error": "invalid_workspace", "message": "Workspace id must be an integer."},
+                ) from exc
+        if active_id is None or active_id not in current_user.workspace_ids:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"error": "forbidden", "message": "API key does not have access to this workspace."},
+            )
+    else:
+        active_id = current_user.active_workspace_id
     if active_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

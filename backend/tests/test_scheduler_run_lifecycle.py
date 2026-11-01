@@ -135,6 +135,7 @@ def test_scheduled_run_uses_environment_profile_and_target(monkeypatch):
         project_path=None,
         run_row_lineage=False,
         artifacts_path=None,
+        workspace_id=None,
     ):
         captured.update(parameters)
         return "run-123"

@@ -164,6 +164,7 @@ class AiActionService:
             description="AI confirmed execution",
             project_path=project_path,
             artifacts_path=workspace.artifacts_path,
+            workspace_id=workspace.id,
         )
         if background_tasks is not None:
             background_tasks.add_task(executor.execute_run, run_id)

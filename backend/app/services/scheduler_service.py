@@ -645,7 +645,6 @@ class SchedulerService:
             "environment_id": env.id,
         }
 
-        now = datetime.now(timezone.utc)
         db_run = db_models.ScheduledRun(
             schedule_id=db_schedule.id,
             triggering_event=triggering_event.value,
@@ -723,6 +722,7 @@ class SchedulerService:
                 description=f"Scheduled run (schedule {schedule.id}, attempt {attempt_number})",
                 project_path=project_path,
                 artifacts_path=artifacts_path,
+                workspace_id=schedule.environment.workspace_id,
             )
         except RuntimeError as exc:
             logger.warning("Max concurrent runs reached; cannot start scheduled run: %s", exc)

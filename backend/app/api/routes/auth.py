@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import secrets
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,11 +11,10 @@ from sqlalchemy.orm import Session
 from app.core.auth import (
     Role,
     UserContext,
-    WorkspaceContext,
     create_access_token,
     create_refresh_token,
     get_current_user,
-    get_current_workspace,
+    require_role,
 )
 from app.core.config import Settings, get_settings
 from app.database.connection import SessionLocal
@@ -25,6 +27,9 @@ from app.schemas.auth import (
     TokenResponse,
     UserSummary,
     WorkspaceSummary,
+    ApiKeyCreate,
+    ApiKeyCreated,
+    ApiKeySummary,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -312,3 +317,89 @@ def me(
 
     workspaces, default_workspace = auth_service.list_workspaces_for_user(db, user)
     return _to_user_summary(user, workspaces, default_workspace)
+
+
+@router.post("/api-keys", response_model=ApiKeyCreated, dependencies=[Depends(require_role(Role.ADMIN))])
+def create_api_key(
+    payload: ApiKeyCreate,
+    settings: Settings = Depends(get_settings),
+    db: Session = Depends(get_db),
+) -> ApiKeyCreated:
+    if not settings.auth_enabled:
+        raise HTTPException(status_code=400, detail="Enable AUTH_ENABLED to manage API keys.")
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="API key name cannot be blank.")
+    workspace_ids = list(dict.fromkeys(payload.workspace_ids))
+    active_ids = {
+        row[0]
+        for row in db.query(db_models.Workspace.id)
+        .filter(db_models.Workspace.id.in_(workspace_ids), db_models.Workspace.is_active.is_(True))
+        .all()
+    }
+    if active_ids != set(workspace_ids):
+        raise HTTPException(status_code=400, detail="workspace_ids must contain only active workspaces.")
+
+    raw_key = f"dbw_{secrets.token_urlsafe(32)}"
+    key = db_models.ApiKey(
+        name=name,
+        key_prefix=f"{raw_key[:12]}…",
+        key_hash=hashlib.sha256(raw_key.encode()).hexdigest(),
+        role=payload.role.value,
+        workspace_ids=workspace_ids,
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(key)
+    db.commit()
+    db.refresh(key)
+    return ApiKeyCreated(
+        id=key.id,
+        name=key.name,
+        key_prefix=key.key_prefix,
+        role=Role(key.role),
+        workspace_ids=key.workspace_ids,
+        created_at=key.created_at,
+        last_used_at=key.last_used_at,
+        revoked_at=key.revoked_at,
+        key=raw_key,
+    )
+
+
+@router.get("/api-keys", response_model=list[ApiKeySummary], dependencies=[Depends(require_role(Role.ADMIN))])
+def list_api_keys(
+    settings: Settings = Depends(get_settings),
+    db: Session = Depends(get_db),
+) -> list[ApiKeySummary]:
+    if not settings.auth_enabled:
+        raise HTTPException(status_code=400, detail="Enable AUTH_ENABLED to manage API keys.")
+    keys = db.query(db_models.ApiKey).order_by(db_models.ApiKey.id).all()
+    return [
+        ApiKeySummary(
+            id=key.id,
+            name=key.name,
+            key_prefix=key.key_prefix,
+            role=Role(key.role),
+            workspace_ids=key.workspace_ids or [],
+            created_at=key.created_at,
+            last_used_at=key.last_used_at,
+            revoked_at=key.revoked_at,
+        )
+        for key in keys
+    ]
+
+
+@router.delete("/api-keys/{key_id}", dependencies=[Depends(require_role(Role.ADMIN))])
+def revoke_api_key(
+    key_id: int,
+    settings: Settings = Depends(get_settings),
+    db: Session = Depends(get_db),
+) -> dict:
+    if not settings.auth_enabled:
+        raise HTTPException(status_code=400, detail="Enable AUTH_ENABLED to manage API keys.")
+    key = db.query(db_models.ApiKey).filter(db_models.ApiKey.id == key_id).first()
+    if not key:
+        raise HTTPException(status_code=404, detail="API key not found.")
+    if key.revoked_at is None:
+        key.revoked_at = datetime.now(timezone.utc)
+        db.commit()
+    return {"status": "revoked", "id": key.id}

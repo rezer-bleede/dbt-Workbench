@@ -602,6 +602,7 @@ class DbtExecutor:
         project_path: Optional[str] = None,
         run_row_lineage: bool = False,
         artifacts_path: Optional[str] = None,
+        workspace_id: Optional[int] = None,
     ) -> str:
         """Start a new dbt run."""
         run_id = self.generate_run_id()
@@ -622,6 +623,7 @@ class DbtExecutor:
             log_lines=[],
             project_path=project_path,
             run_row_lineage=run_row_lineage,
+            workspace_id=workspace_id,
         )
         
         self.run_history[run_id] = run_detail
@@ -634,6 +636,10 @@ class DbtExecutor:
         return run_id
     
     async def execute_run(self, run_id: str) -> None:
+        """Keep blocking subprocess I/O off the API event loop."""
+        await asyncio.to_thread(self._execute_run, run_id)
+
+    def _execute_run(self, run_id: str) -> None:
         """Execute the dbt run in a subprocess."""
         if run_id not in self.run_history:
             raise ValueError(f"Run {run_id} not found")
@@ -748,6 +754,7 @@ class DbtExecutor:
                         command=run_detail.command.value,
                         timestamp=run_detail.start_time,
                         status=run_detail.status.value,
+                        workspace_id=run_detail.workspace_id,
                         summary={
                             "description": run_detail.description,
                             "error_message": run_detail.error_message,
@@ -759,6 +766,7 @@ class DbtExecutor:
                 else:
                     db_run.status = run_detail.status.value
                     db_run.timestamp = run_detail.start_time
+                    db_run.workspace_id = run_detail.workspace_id
                     db_run.summary = {
                         "description": run_detail.description,
                         "error_message": run_detail.error_message,
@@ -821,10 +829,12 @@ class DbtExecutor:
             # Wait before checking again
             await asyncio.sleep(0.1)
     
-    def get_run_status(self, run_id: str) -> Optional[RunSummary]:
+    def get_run_status(self, run_id: str, workspace_id: Optional[int] = None) -> Optional[RunSummary]:
         """Get the current status of a run."""
         if run_id in self.run_history:
             run_detail = self.run_history[run_id]
+            if workspace_id is not None and run_detail.workspace_id != workspace_id:
+                return None
             return RunSummary(
                 run_id=run_detail.run_id,
                 command=run_detail.command,
@@ -834,13 +844,17 @@ class DbtExecutor:
                 duration_seconds=run_detail.duration_seconds,
                 description=run_detail.description,
                 error_message=run_detail.error_message,
-                artifacts_available=run_detail.artifacts_available
+                artifacts_available=run_detail.artifacts_available,
+                workspace_id=run_detail.workspace_id,
             )
             
         # Fallback to DB
         try:
             db = SessionLocal()
-            run = db.query(db_models.Run).filter(db_models.Run.run_id == run_id).first()
+            query = db.query(db_models.Run).filter(db_models.Run.run_id == run_id)
+            if workspace_id is not None:
+                query = query.filter(db_models.Run.workspace_id == workspace_id)
+            run = query.first()
             if run:
                 summary = run.summary or {}
                 return RunSummary(
@@ -852,7 +866,8 @@ class DbtExecutor:
                     duration_seconds=summary.get("duration_seconds"),
                     description=summary.get("description"),
                     error_message=summary.get("error_message"),
-                    artifacts_available=summary.get("artifacts_available", False)
+                    artifacts_available=summary.get("artifacts_available", False),
+                    workspace_id=run.workspace_id,
                 )
             return None
         except Exception as e:
@@ -862,16 +877,20 @@ class DbtExecutor:
             if 'db' in locals():
                 db.close()
     
-    def get_run_detail(self, run_id: str) -> Optional[RunDetail]:
+    def get_run_detail(self, run_id: str, workspace_id: Optional[int] = None) -> Optional[RunDetail]:
         """Get detailed information about a run."""
         # Check memory first
         if run_id in self.run_history:
-            return self.run_history[run_id]
+            detail = self.run_history[run_id]
+            return detail if workspace_id is None or detail.workspace_id == workspace_id else None
             
         # Fallback to DB
         try:
             db = SessionLocal()
-            run = db.query(db_models.Run).filter(db_models.Run.run_id == run_id).first()
+            query = db.query(db_models.Run).filter(db_models.Run.run_id == run_id)
+            if workspace_id is not None:
+                query = query.filter(db_models.Run.workspace_id == workspace_id)
+            run = query.first()
             if run:
                 summary = run.summary or {}
                 return RunDetail(
@@ -888,6 +907,7 @@ class DbtExecutor:
                     log_lines=run.logs or [],
                     artifacts_path=None,
                     run_row_lineage=summary.get("run_row_lineage", False),
+                    workspace_id=run.workspace_id,
                 )
             return None
         except Exception as e:
@@ -897,16 +917,19 @@ class DbtExecutor:
             if 'db' in locals():
                 db.close()
     
-    def get_run_history(self, page: int = 1, page_size: int = 20) -> List[RunSummary]:
+    def get_run_history(
+        self, page: int = 1, page_size: int = 20, workspace_id: Optional[int] = None
+    ) -> List[RunSummary]:
         """Get paginated run history from database."""
         try:
             db = SessionLocal()
             offset = (page - 1) * page_size
             
             # Query runs from DB
-            runs = db.query(db_models.Run).order_by(
-                db_models.Run.timestamp.desc()
-            ).offset(offset).limit(page_size).all()
+            query = db.query(db_models.Run)
+            if workspace_id is not None:
+                query = query.filter(db_models.Run.workspace_id == workspace_id)
+            runs = query.order_by(db_models.Run.timestamp.desc()).offset(offset).limit(page_size).all()
             
             history = []
             for run in runs:
@@ -920,7 +943,8 @@ class DbtExecutor:
                     duration_seconds=summary.get("duration_seconds"),
                     description=summary.get("description"),
                     error_message=summary.get("error_message"),
-                    artifacts_available=summary.get("artifacts_available", False)
+                    artifacts_available=summary.get("artifacts_available", False),
+                    workspace_id=run.workspace_id,
                 ))
             return history
         except Exception as e:
@@ -930,20 +954,28 @@ class DbtExecutor:
             if 'db' in locals():
                 db.close()
 
-    def get_run_history_total(self) -> int:
+    def get_run_history_total(self, workspace_id: Optional[int] = None) -> int:
         """Get total run count from database."""
         try:
             db = SessionLocal()
-            return db.query(db_models.Run).count()
+            query = db.query(db_models.Run)
+            if workspace_id is not None:
+                query = query.filter(db_models.Run.workspace_id == workspace_id)
+            return query.count()
         except Exception as e:
             print(f"Error fetching run history total: {e}")
-            return len(self.run_history)
+            return sum(
+                workspace_id is None or detail.workspace_id == workspace_id
+                for detail in self.run_history.values()
+            )
         finally:
             if 'db' in locals():
                 db.close()
     
-    def get_run_artifacts(self, run_id: str) -> List[ArtifactInfo]:
+    def get_run_artifacts(self, run_id: str, workspace_id: Optional[int] = None) -> List[ArtifactInfo]:
         """Get artifacts for a specific run."""
+        if workspace_id is not None and not self.get_run_status(run_id, workspace_id):
+            return []
         artifacts_path = self.run_artifacts.get(run_id)
         if not artifacts_path or not os.path.exists(artifacts_path):
             return []
@@ -962,8 +994,10 @@ class DbtExecutor:
         
         return artifacts
     
-    def cancel_run(self, run_id: str) -> bool:
+    def cancel_run(self, run_id: str, workspace_id: Optional[int] = None) -> bool:
         """Cancel a running dbt command."""
+        if workspace_id is not None and not self.get_run_status(run_id, workspace_id):
+            return False
         if run_id in self.active_runs:
             process = self.active_runs[run_id]
             if process.poll() is None:  # Still running

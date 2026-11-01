@@ -6,6 +6,8 @@ from sqlalchemy.orm import sessionmaker
 from app.database.connection import Base
 from app.database.models import models as db_models
 from app.database.services import dbt_service
+from app.schemas.execution import DbtCommand, RunDetail, RunStatus
+from app.services.dbt_executor import DbtExecutor
 
 
 def _session():
@@ -74,3 +76,18 @@ def test_get_run_respects_workspace_context():
 
     fetched_other = dbt_service.get_run(session, run_one.id, workspace_id=workspace_two.id)
     assert fetched_other is None
+
+
+def test_executor_status_respects_workspace_context():
+    executor = DbtExecutor()
+    executor.run_history["run-one"] = RunDetail(
+        run_id="run-one",
+        command=DbtCommand.RUN,
+        status=RunStatus.RUNNING,
+        start_time=datetime.datetime.utcnow(),
+        parameters={},
+        workspace_id=1,
+    )
+
+    assert executor.get_run_status("run-one", workspace_id=1) is not None
+    assert executor.get_run_status("run-one", workspace_id=2) is None

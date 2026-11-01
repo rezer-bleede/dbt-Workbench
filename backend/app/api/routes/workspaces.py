@@ -58,6 +58,17 @@ def list_workspaces(
             return [_to_summary(w) for w in workspaces]
 
     # When auth is enabled, restrict to workspaces assigned to the current user
+    if user_ctx.api_key_id is not None:
+        workspaces = (
+            db.query(db_models.Workspace)
+            .filter(
+                db_models.Workspace.id.in_(user_ctx.workspace_ids),
+                db_models.Workspace.is_active.is_(True),
+            )
+            .all()
+        )
+        return [_to_summary(w) for w in workspaces]
+
     if not settings.auth_enabled or user_ctx.id is None:
         workspaces = auth_service.list_all_workspaces(db)
         return [_to_summary(w) for w in workspaces]

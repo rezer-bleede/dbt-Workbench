@@ -60,6 +60,20 @@ class User(Base):
     workspaces = relationship("UserWorkspace", back_populates="user")
 
 
+class ApiKey(Base):
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    key_prefix = Column(String, nullable=False)
+    key_hash = Column(String, unique=True, index=True, nullable=False)
+    role = Column(String, nullable=False)
+    workspace_ids = Column(JSON, nullable=False, default=list)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+
+
 class UserWorkspace(Base):
     __tablename__ = "user_workspaces"
 

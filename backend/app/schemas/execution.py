@@ -13,6 +13,7 @@ class RunStatus(str, Enum):
 
 
 class DbtCommand(str, Enum):
+    BUILD = "build"
     RUN = "run"
     TEST = "test"
     SEED = "seed"
@@ -39,6 +40,7 @@ class RunSummary(BaseModel):
     description: Optional[str] = None
     error_message: Optional[str] = None
     artifacts_available: bool = False
+    workspace_id: Optional[int] = None
 
 
 class RunDetail(RunSummary):
