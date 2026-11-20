@@ -1,8 +1,9 @@
 import React, {type ReactNode} from 'react';
+import Link from '@docusaurus/Link';
 
 export default function NavbarLogo(): ReactNode {
   return (
-    <a href="/" className="navbar__brand" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+    <Link to="/" className="navbar__brand" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
       <div
         style={{
           width: 32,
@@ -34,6 +35,6 @@ export default function NavbarLogo(): ReactNode {
           Data Command Center
         </span>
       </div>
-    </a>
+    </Link>
   );
 }
