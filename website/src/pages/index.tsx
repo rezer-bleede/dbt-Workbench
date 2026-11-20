@@ -110,11 +110,11 @@ export default function Home(): JSX.Element {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span className="pi-pill pi-pill-success">System: ok</span>
-            <Link className="button button--primary" to="/docs/quickstart-docker/" style={{ borderRadius: 10, padding: '8px 14px', fontWeight: 600, fontSize: 13 }}>
-              Start with Docker Compose
+            <Link className="button button--primary" to="/demo/" style={{ borderRadius: 10, padding: '8px 14px', fontWeight: 600, fontSize: 13 }}>
+              Try the live demo
             </Link>
-            <Link to="/docs/dbt-ui/" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-brand-primary)' }}>
-              Read dbt UI guide
+            <Link to="/docs/quickstart-docker/" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-brand-primary)' }}>
+              Install with Docker
             </Link>
           </div>
         </div>
@@ -313,31 +313,11 @@ export default function Home(): JSX.Element {
           </div>
         </section>
 
-        {/* Interactive mini lineage preview */}
+        {/* Interactive demo CTA */}
         <section className="pi-card" style={{ padding: '1.25rem 1.5rem', marginBottom: 32 }}>
-          <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', margin: '0 0 8px' }}>Interactive lineage preview (app capture)</h2>
-          <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', margin: '0 0 12px' }}>A live mini-graph of model dependencies. Open docs for full graph.</p>
-          <svg viewBox="0 0 600 180" style={{ width: '100%', height: 180 }}>
-            {[
-              { x: 60, y: 90, label: 'raw.orders' },
-              { x: 220, y: 60, label: 'stg_orders' },
-              { x: 220, y: 120, label: 'stg_customers' },
-              { x: 380, y: 90, label: 'fct_orders' },
-              { x: 520, y: 90, label: 'mart_revenue' },
-            ].map((n, i) => (
-              <g key={i}>
-                <rect x={n.x - 46} y={n.y - 16} width={92} height={32} rx={8} fill="var(--color-widget-bg)" stroke="var(--color-widget-border)" />
-                <text x={n.x} y={n.y + 4} textAnchor="middle" fontSize={11} fontWeight={600} fill="var(--color-text-primary)">{n.label}</text>
-              </g>
-            ))}
-            {[[0,1],[0,2],[1,3],[2,3],[3,4]].map(([a,b],i)=> {
-              // compute positions
-              const pts = [{x:60,y:90},{x:220,y:60},{x:220,y:120},{x:380,y:90},{x:520,y:90}];
-              const p1=pts[a], p2=pts[b];
-              return <line key={i} x1={p1.x+46} y1={p1.y} x2={p2.x-46} y2={p2.y} stroke="var(--color-brand-primary)" strokeWidth={1.5} opacity={0.6} />
-            })}
-          </svg>
-          <Link to="/docs/lineage-overview/" style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-brand-primary)' }}>Open full lineage docs →</Link>
+          <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', margin: '0 0 8px' }}>Try the interactive lineage demo</h2>
+          <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', margin: '0 0 12px' }}>Click a model in a real sample project to see downstream impact. No install or sign-up.</p>
+          <Link to="/demo/" className="button button--primary">Try the live demo →</Link>
         </section>
 
         <style>{`

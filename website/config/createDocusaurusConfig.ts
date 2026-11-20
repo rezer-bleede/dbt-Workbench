@@ -204,6 +204,7 @@ export function createDocusaurusConfig(
           src: 'img/brand.svg',
         },
         items: [
+          { to: '/demo/', label: 'Live Demo', position: 'left' },
           { to: '/docs/quickstart-docker/', label: 'Quickstart', position: 'left' },
           {
             to: '/docs/lineage-overview/',

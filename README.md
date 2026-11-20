@@ -28,6 +28,9 @@ If dbt-Workbench helps your team, please star the repository.
 
 ## Try It in About a Minute
 
+Try downstream impact analysis in your browser—no install, account, or database required:
+[Open the interactive demo](https://rezer-bleede.github.io/dbt-Workbench/demo/).
+
 Prerequisites:
 - Docker
 - Docker Compose
